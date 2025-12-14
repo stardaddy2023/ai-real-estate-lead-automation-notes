@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+geoalchemy2
+google-cloud-aiplatform
+google-cloud-storage
+google-cloud-tasks
+pandas
+python-dotenv
+requests
+beautifulsoup4
+pydantic-settings
