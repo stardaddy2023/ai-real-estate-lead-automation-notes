@@ -32,7 +32,7 @@ interface LeadFinderProps {
     defaultView?: 'list' | 'map';
 }
 
-export function LeadFinder({ defaultView = 'list' }: LeadFinderProps) {
+export function LeadFinder({ defaultView = 'map' }: LeadFinderProps) {
     const { setSelectedProperty, toggleDetailPanel, fetchLeads, scoutedLeads, fetchScoutedLeads, viewMode, setViewMode } = useAppStore();
     const [isLoading, setIsLoading] = useState(false);
     const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
@@ -45,7 +45,7 @@ export function LeadFinder({ defaultView = 'list' }: LeadFinderProps) {
         try {
             const leadsToImport = scoutedLeads.filter((l: any) => selectedLeads.has(l.address));
 
-            const res = await fetch('http://localhost:8000/scout/import', {
+            const res = await fetch('http://127.0.0.1:8000/scout/import', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(leadsToImport)

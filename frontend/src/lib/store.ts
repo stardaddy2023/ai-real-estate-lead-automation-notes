@@ -34,7 +34,7 @@ interface AppState {
     selectedProperty: Property | null;
     isFilterOpen: boolean;
     isDetailPanelOpen: boolean;
-    activeZone: 'market_scout' | 'leads' | 'deals' | 'crm' | 'contacts' | 'campaigns' | 'analytics' | 'settings';
+    activeZone: 'market_scout' | 'leads' | 'my_leads' | 'deals' | 'crm' | 'contacts' | 'campaigns' | 'analytics' | 'settings';
     leads: Property[];
     filteredLeads: Property[]; // Add filteredLeads to interface
     viewMode: 'map' | 'list';
@@ -53,7 +53,7 @@ interface AppState {
         city: string;
         zip_code: string;
         county: string; // Add county
-        distress_type: string;
+        distress_type: string[];
         property_types: string[];
         limit: number;
     };
@@ -73,11 +73,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     // Scout State Initial Values
     scoutedLeads: [],
     searchFilters: {
-        city: 'Tucson',
+        city: '',
         zip_code: '',
         county: 'Pima', // Default to Pima
-        distress_type: 'all',
-        property_types: [],
+        distress_type: ['all'],
+        property_types: ['Single Family'],
         limit: 100
     },
 
@@ -93,7 +93,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     fetchLeads: async () => {
         try {
-            const res = await fetch('http://localhost:8000/leads');
+            const res = await fetch('http://127.0.0.1:8000/leads');
             const data = await res.json();
             set({ leads: data, filteredLeads: data }); // Initialize filteredLeads with all leads
         } catch (error) {
@@ -105,27 +105,41 @@ export const useAppStore = create<AppState>((set, get) => ({
     fetchScoutedLeads: async () => {
         const { searchFilters } = get();
         try {
-            // Parse the input (stored in city) to determine if it's a city, zip, or address
+            // Parse the input (stored in city) to determine if it's a city, zip, address, or county
             const searchInput = searchFilters.city.trim();
+            const upperInput = searchInput.toUpperCase();
             const isZip = /^\d{5}$/.test(searchInput);
+
+            // Check for County
+            let county = 'Pima'; // Default
+            if (upperInput.includes('PINAL')) {
+                county = 'Pinal';
+            } else if (upperInput.includes('PIMA')) {
+                county = 'Pima';
+            }
 
             // List of known Pima County cities/CDPs to prioritize as City search
             const knownCities = ['TUCSON', 'MARANA', 'ORO VALLEY', 'SAHUARITA', 'VAIL', 'CATALINA', 'GREEN VALLEY', 'SOUTH TUCSON'];
-            const isCity = knownCities.includes(searchInput.toUpperCase());
+            const isCity = knownCities.includes(upperInput);
+
+            // If input is just "Pima" or "Pinal" (or "Pima County"), we don't want to send it as address/city
+            const isCountyOnly = upperInput.includes('COUNTY') || upperInput === 'PIMA' || upperInput === 'PINAL';
 
             const payload = {
                 state: 'AZ',
-                county: searchFilters.county, // Use dynamic county
+                county: county,
                 city: isCity ? searchInput : '',
                 zip_code: isZip ? searchInput : '',
-                // If it's not a zip and not a known city, treat it as an address fragment
-                address: (!isZip && !isCity) ? searchInput : '',
+                // If it's not a zip, not a known city, and not just a county name, treat it as an address fragment
+                address: (!isZip && !isCity && !isCountyOnly) ? searchInput : '',
                 distress_type: searchFilters.distress_type,
                 property_types: searchFilters.property_types,
                 limit: searchFilters.limit
             };
 
-            const res = await fetch('http://localhost:8000/scout/search', {
+            console.log("DEBUG PAYLOAD:", payload);
+
+            const res = await fetch('http://127.0.0.1:8000/scout/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)

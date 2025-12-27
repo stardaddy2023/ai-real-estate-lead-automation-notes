@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     FRED_API_KEY: str = os.getenv("FRED_API_KEY", "")
     CENSUS_API_KEY: str = os.getenv("CENSUS_API_KEY", "")
     BLS_API_KEY: str = os.getenv("BLS_API_KEY", "")
+    
+    # AI
+    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
 
     class Config:
         env_file = ".env"

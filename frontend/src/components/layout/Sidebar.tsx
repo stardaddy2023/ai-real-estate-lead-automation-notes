@@ -10,15 +10,16 @@ import {
     Settings,
     Hexagon,
     Search,
-    Handshake
+    Handshake,
+    Inbox
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-    { id: 'market_scout', icon: BarChart3, label: 'Market Scout' },
+    { id: 'market_scout', icon: BarChart3, label: 'Market Recon' },
     { id: 'leads', icon: Search, label: 'Lead Scout' },
-    { id: 'deals', icon: Handshake, label: 'Deals' },
-    { id: 'crm', icon: Building2, label: 'My Properties' },
+    { id: 'my_leads', icon: Inbox, label: 'Lead Inbox' },
+    { id: 'crm', icon: Building2, label: 'Property Sniper' },
     { id: 'contacts', icon: Users, label: 'Contacts' },
     { id: 'campaigns', icon: MessageSquare, label: 'Campaigns' },
     { id: 'analytics', icon: BarChart3, label: 'Watchtower' },

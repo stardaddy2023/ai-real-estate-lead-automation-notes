@@ -1,0 +1,10 @@
+Fetching parcels with filters: {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100}
+Getting metadata for zip: 85705
+Got envelope: {'xmin': 969475.0646325462, 'ymin': 445597.0755741406, 'xmax': 995558.1066272967, 'ymax': 479691.0387139097, 'spatialReference': {'wkid': 2868}}
+Got polygon
+Fetching IDs for Zip Envelope...
+Found 2000 IDs in envelope. Took 1.34s
+*** USING POLYGON FILTER *** for 85705. Raw count: 2000
+After polygon filter count: 1990
+Enriched 0 leads with correct Zip Codes.
+Absentee Search: Found 1990 candidates.

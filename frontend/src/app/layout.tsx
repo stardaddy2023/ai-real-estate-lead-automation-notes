@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Rajdhani, Outfit } from "next/font/google";
 import "./globals.css";
+import { Providers } from "@/components/providers";
 
 const rajdhani = Rajdhani({
   weight: ['300', '400', '500', '600', '700'],
@@ -27,8 +28,11 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body
         className={`${rajdhani.variable} ${outfit.variable} font-sans antialiased bg-background text-foreground`}
+        suppressHydrationWarning
       >
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

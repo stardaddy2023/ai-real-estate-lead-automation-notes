@@ -1,18 +1,49 @@
-from fastapi import FastAPI, Depends, HTTPException
+import os
+import logging
+from typing import List, Optional, Union, Dict, Any
+from fastapi import FastAPI, Depends, HTTPException, Security
+from fastapi.security.api_key import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.core.database import Base, engine, get_db
+
+# New Models & Schemas
 from app.models.orm import LeadModel
-from app.models.Lead import Lead
+from app.models.user import UserModel
+from app.models.offer import OfferModel
+from app.schemas import Lead, LeadCreate, User, UserCreate, Offer, OfferCreate
+
+# Agents
 from app.agents.analyst_agent import LeadAnalystAgent
+from app.agents.engagement_agent import EngagementAgent
+from app.agents.underwriting_agent import UnderwritingAgent
+
+# Services
+from app.services.real_market_scout_service import RealMarketScoutService
+from app.services.pipeline.scout import ScoutService
+from app.services.pipeline.cleaner import CleanerService
+from app.services.vision_service import VisionService, PropertyConditionReport
+from app.services.lex_service import LexService, LegalReviewResponse
+from app.services.scribe_service import ScribeService
+from app.services.matchmaker_service import MatchmakerService, BuyerMatch
+from app.api.endpoints import dispositions, scout
 from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
 
-# Create tables
-Base.metadata.create_all(bind=engine)
+print("LOADING MAIN APP - DEBUG MODE")
 
-app = FastAPI(title="ARELA API", version="0.1.0")
+# --- AUTHENTICATION ---
+API_KEY_NAME = "X-API-Key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+async def get_api_key(api_key_header: str = Security(api_key_header)):
+    expected_key = os.getenv("ARELA_API_KEY", "arela-dev-key")
+    if api_key_header == expected_key:
+        return api_key_header
+    return api_key_header
+
+# --- APP SETUP ---
+app = FastAPI(title="ARELA API", version="0.2.0")
 
 # Configure CORS
 app.add_middleware(
@@ -23,46 +54,160 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Initialize DB Tables (Async)
+@app.on_event("startup")
+async def startup():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
 @app.get("/")
-def read_root():
-    return {"message": "Welcome to ARELA API"}
+async def read_root():
+    return {"message": "Welcome to ARELA API v0.2.0 (Architect Edition - Async)"}
 
-@app.get("/leads")
-def get_leads(db: Session = Depends(get_db)):
-    return db.query(LeadModel).all()
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "mode": "async"}
 
-@app.get("/leads/{lead_id}")
-def get_lead(lead_id: int, db: Session = Depends(get_db)):
-    lead = db.query(LeadModel).filter(LeadModel.id == lead_id).first()
+# --- ROUTERS ---
+app.include_router(dispositions.router, prefix="/api/v1/dispositions", tags=["dispositions"])
+app.include_router(scout.router, prefix="/api/v1/scout", tags=["scout"])
+
+# --- USERS ---
+@app.post("/api/v1/users/sync", response_model=User)
+async def sync_user(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
+    """
+    Ensures the OAuth user exists in our local DB.
+    """
+    stmt = select(UserModel).where(UserModel.email == user_in.email)
+    result = await db.execute(stmt)
+    user = result.scalars().first()
+    
+    if not user:
+        user = UserModel(
+            email=user_in.email,
+            external_id=user_in.external_id
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+    return user
+
+# --- LEADS ---
+@app.get("/api/v1/leads", response_model=List[Lead])
+async def get_leads(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
+    stmt = select(LeadModel).offset(skip).limit(limit)
+    result = await db.execute(stmt)
+    return result.scalars().all()
+
+@app.get("/api/v1/leads/{lead_id}", response_model=Lead)
+async def get_lead(lead_id: str, db: AsyncSession = Depends(get_db)):
+    stmt = select(LeadModel).where(LeadModel.id == lead_id)
+    result = await db.execute(stmt)
+    lead = result.scalars().first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     return lead
 
-@app.post("/leads")
-def create_lead(lead: Lead, db: Session = Depends(get_db)):
-    # Convert Pydantic model to dict, excluding None values to let DB defaults handle them if needed
-    # But here we want to pass everything provided
-    lead_data = lead.dict(exclude_unset=True)
+@app.post("/api/v1/leads", response_model=Lead)
+async def create_lead(lead_in: LeadCreate, db: AsyncSession = Depends(get_db)):
+    lead_data = lead_in.dict(exclude_unset=True)
     
-    # Ensure strategy has a default if not provided
-    if "strategy" not in lead_data:
-        lead_data["strategy"] = "Wholesale"
-        
     db_lead = LeadModel(**lead_data)
     db.add(db_lead)
-    db.commit()
-    db.refresh(db_lead)
+    await db.commit()
+    await db.refresh(db_lead)
     return db_lead
 
+# --- OFFERS ---
+@app.post("/api/v1/offers", response_model=Offer)
+async def create_offer(offer_in: OfferCreate, db: AsyncSession = Depends(get_db)):
+    # Verify lead exists
+    stmt = select(LeadModel).where(LeadModel.id == offer_in.lead_id)
+    result = await db.execute(stmt)
+    lead = result.scalars().first()
+    
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+        
+    db_offer = OfferModel(
+        lead_id=offer_in.lead_id,
+        offer_amount=offer_in.offer_amount
+    )
+    db.add(db_offer)
+    await db.commit()
+    await db.refresh(db_offer)
+    return db_offer
+
+@app.post("/api/v1/offers/{offer_id}/compliance", response_model=LegalReviewResponse)
+async def check_offer_compliance(offer_id: str, db: AsyncSession = Depends(get_db)):
+    stmt = select(OfferModel).where(OfferModel.id == offer_id)
+    result = await db.execute(stmt)
+    offer = result.scalars().first()
+    
+    if not offer:
+        raise HTTPException(status_code=404, detail="Offer not found")
+    
+    # Fetch Lead for context (ARV, etc.)
+    stmt_lead = select(LeadModel).where(LeadModel.id == offer.lead_id)
+    result_lead = await db.execute(stmt_lead)
+    lead = result_lead.scalars().first()
+    
+    offer_details = {
+        "offer_amount": offer.offer_amount,
+        "buyer_name": "ARELA Holdings LLC", # Placeholder
+        "estimated_value": lead.distress_score * 10000 if lead else 0, # Mock ARV logic
+        "property_address": lead.address_street if lead else "Unknown"
+    }
+    
+    service = LexService()
+    return await service.review_offer(offer_details)
+
+@app.post("/api/v1/offers/{offer_id}/contract")
+async def generate_contract(offer_id: str, db: AsyncSession = Depends(get_db)):
+    stmt = select(OfferModel).where(OfferModel.id == offer_id)
+    result = await db.execute(stmt)
+    offer = result.scalars().first()
+    
+    if not offer:
+        raise HTTPException(status_code=404, detail="Offer not found")
+        
+    stmt_lead = select(LeadModel).where(LeadModel.id == offer.lead_id)
+    result_lead = await db.execute(stmt_lead)
+    lead = result_lead.scalars().first()
+    
+    offer_data = {
+        "lead_id": lead.id if lead else "unknown",
+        "offer_amount": offer.offer_amount,
+        "property_address": lead.address_street if lead else "Unknown",
+        "buyer_name": "ARELA Holdings LLC",
+        "seller_name": lead.owner_name if lead else "Unknown Owner"
+    }
+    
+    service = ScribeService()
+    file_path = service.generate_contract_pdf(offer_data)
+    
+    service = ScribeService()
+    file_path = service.generate_contract_pdf(offer_data)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
+
+
+
+# --- AGENT ENDPOINTS (Legacy/Refactored) ---
+
 @app.post("/leads/{lead_id}/analyze")
-async def analyze_lead_endpoint(lead_id: int, db: Session = Depends(get_db)):
-    lead = db.query(LeadModel).filter(LeadModel.id == lead_id).first()
+async def analyze_lead_endpoint(lead_id: str, db: AsyncSession = Depends(get_db)):
+    stmt = select(LeadModel).where(LeadModel.id == lead_id)
+    result = await db.execute(stmt)
+    lead = result.scalars().first()
+    
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     
-    # Prepare data for agent
     lead_data = {
-        "address": lead.address,
+        "address": lead.address_street,
         "distress_score": lead.distress_score,
         "status": lead.status,
         "sqft": lead.sqft,
@@ -73,85 +218,70 @@ async def analyze_lead_endpoint(lead_id: int, db: Session = Depends(get_db)):
         "owner_name": lead.owner_name
     }
     
-    # Run Agent
     agent = LeadAnalystAgent()
     analysis_result = await agent.analyze_lead(lead_data)
     
-    # Update DB
     lead.distress_score = analysis_result.get("score", 0)
     lead.strategy = analysis_result.get("strategy", "Review")
-    # Note: We might want to save the reasoning too, but LeadModel needs a column for it.
-    # For now, we'll just return it to the frontend.
     
-    db.commit()
-    db.refresh(lead)
+    await db.commit()
+    await db.refresh(lead)
     
-    # Safe serialization
     lead_dict = {k: v for k, v in lead.__dict__.items() if not k.startswith('_')}
     
-    # Return combined data
     return {
         **lead_dict,
         "reasoning": analysis_result.get("reasoning", "")
     }
 
-from app.agents.engagement_agent import EngagementAgent
-
 @app.post("/leads/{lead_id}/skiptrace")
-async def skip_trace_endpoint(lead_id: int, db: Session = Depends(get_db)):
-    lead = db.query(LeadModel).filter(LeadModel.id == lead_id).first()
+async def skip_trace_endpoint(lead_id: str, db: AsyncSession = Depends(get_db)):
+    stmt = select(LeadModel).where(LeadModel.id == lead_id)
+    result = await db.execute(stmt)
+    lead = result.scalars().first()
+    
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     
-    # Run Agent
     agent = EngagementAgent()
-    result = await agent.skip_trace({"address": lead.address})
+    result = await agent.skip_trace({"address": lead.address_street})
     
-    # Update DB
     if result.get("status") == "found":
         lead.phone = result.get("phone")
         lead.email = result.get("email")
         lead.owner_name = result.get("owner_name")
         lead.mailing_address = result.get("mailing_address")
         lead.social_ids = result.get("social_ids")
-        db.commit()
-        db.refresh(lead)
+        await db.commit()
+        await db.refresh(lead)
     
     return lead
 
-from app.agents.underwriting_agent import UnderwritingAgent
-
 @app.post("/leads/{lead_id}/offer")
-async def generate_offer_endpoint(lead_id: int, db: Session = Depends(get_db)):
-    print(f"Received offer generation request for lead {lead_id}")
-    lead = db.query(LeadModel).filter(LeadModel.id == lead_id).first()
+async def generate_offer_endpoint(lead_id: str, db: AsyncSession = Depends(get_db)):
+    stmt = select(LeadModel).where(LeadModel.id == lead_id)
+    result = await db.execute(stmt)
+    lead = result.scalars().first()
+    
     if not lead:
-        print(f"Lead {lead_id} not found")
         raise HTTPException(status_code=404, detail="Lead not found")
     
-    # Prepare data
     property_data = {
         "sqft": lead.sqft,
         "has_pool": lead.has_pool,
         "has_garage": lead.has_garage
     }
-    print(f"Property data: {property_data}")
     
-    # Run Agent
     try:
         agent = UnderwritingAgent()
         result = await agent.generate_offer(property_data)
-        print(f"Offer result: {result}")
     except Exception as e:
-        print(f"Agent error: {e}")
         raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")
     
-    # Update DB
     lead.offer_amount = result.get("offer_amount")
-    db.commit()
-    db.refresh(lead)
+    await db.commit()
+    await db.refresh(lead)
     
-    # Safe serialization
     lead_dict = {k: v for k, v in lead.__dict__.items() if not k.startswith('_')}
     
     return {
@@ -159,8 +289,27 @@ async def generate_offer_endpoint(lead_id: int, db: Session = Depends(get_db)):
         "offer_details": result
     }
 
-# --- MARKET SCOUT MODULE ---
-from app.services.pipeline.market_scout import MarketScoutService
+# --- VISION ENDPOINTS ---
+
+class PhotoAnalysisRequest(BaseModel):
+    photo_urls: List[str]
+
+@app.post("/api/v1/leads/{lead_id}/analyze-photos", response_model=PropertyConditionReport)
+async def analyze_photos_endpoint(lead_id: str, request: PhotoAnalysisRequest, db: AsyncSession = Depends(get_db)):
+    # Verify lead exists
+    stmt = select(LeadModel).where(LeadModel.id == lead_id)
+    result = await db.execute(stmt)
+    lead = result.scalars().first()
+    
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    service = VisionService()
+    report = await service.analyze_property_photos(request.photo_urls)
+    
+    return report
+
+# --- SCOUT ENDPOINTS ---
 
 class MarketAnalysisRequest(BaseModel):
     state_fips: str
@@ -169,53 +318,61 @@ class MarketAnalysisRequest(BaseModel):
 
 @app.get("/scout/autocomplete")
 async def autocomplete_address(query: str):
-    """
-    Returns address suggestions based on partial input.
-    """
     service = ScoutService()
     suggestions = await service.autocomplete_address(query)
     return {"suggestions": suggestions}
 
 @app.post("/scout/market")
-def analyze_market_endpoint(request: MarketAnalysisRequest):
-    service = MarketScoutService()
+async def analyze_market_endpoint(request: MarketAnalysisRequest):
+    service = RealMarketScoutService()
     return service.analyze_market(
         state_fips=request.state_fips,
         county_fips=request.county_fips,
         market_name=request.market_name
     )
 
-# --- LEAD SCOUT MODULE ---
-from app.services.pipeline.scout import ScoutService
-from app.services.pipeline.cleaner import CleanerService
-from typing import List, Dict, Any
-
 class SearchFilters(BaseModel):
     zip_code: Optional[str] = None
     city: Optional[str] = None
     county: Optional[str] = None
     address: Optional[str] = None
-    distress_type: Optional[str] = None # "code_violations", "absentee_owner", "all"
+    distress_type: Optional[Union[List[str], str]] = None
     property_types: Optional[List[str]] = None
     limit: int = 100
 
 @app.post("/scout/search")
 async def search_leads(filters: SearchFilters):
+    # Force reload check
+    with open("debug_cleaner.log", "a") as f:
+        f.write(f"API RECEIVED SEARCH (RELOADED V2): {filters.dict()}\n")
+    
     scout = ScoutService()
     cleaner = CleanerService()
     
-    # 1. Fetch Raw Leads
     raw_leads = await scout.fetch_leads(filters.dict())
     
-    # 2. Clean & Normalize
+    with open("debug_cleaner.log", "a") as f:
+        f.write(f"API FOUND {len(raw_leads)} RAW LEADS\n")
+        
     cleaned_leads = cleaner.clean_leads(raw_leads)
     
-    # 3. Enforce Limit
-    # ScoutService over-fetches to account for attrition, so we must slice here.
+    with open("debug_cleaner.log", "a") as f:
+        f.write(f"API RETURNING {len(cleaned_leads)} CLEANED LEADS\n")
+    
+    # Debug Serialization
+    try:
+        import json
+        json_str = json.dumps(cleaned_leads[:filters.limit], default=str)
+        with open("debug_cleaner.log", "a") as f:
+            f.write("Serialization SUCCESS\n")
+    except Exception as e:
+        with open("debug_cleaner.log", "a") as f:
+            f.write(f"Serialization FAILED: {e}\n")
+            
     return cleaned_leads[:filters.limit]
 
 @app.post("/scout/import")
-async def import_leads(leads: List[Dict[str, Any]], db: Session = Depends(get_db)):
+async def import_leads(leads: List[Dict[str, Any]], db: AsyncSession = Depends(get_db)):
     imported_count = 0
     updated_count = 0
     
@@ -224,11 +381,11 @@ async def import_leads(leads: List[Dict[str, Any]], db: Session = Depends(get_db
         if not address:
             continue
             
-        # Check if exists
-        existing_lead = db.query(LeadModel).filter(LeadModel.address == address).first()
+        stmt = select(LeadModel).where(LeadModel.address_street == address)
+        result = await db.execute(stmt)
+        existing_lead = result.scalars().first()
         
         if existing_lead:
-            # Update missing info only
             updated = False
             fields_to_update = [
                 "owner_name", "sqft", "parcel_id", "zoning", "property_type", 
@@ -244,9 +401,8 @@ async def import_leads(leads: List[Dict[str, Any]], db: Session = Depends(get_db
             if updated:
                 updated_count += 1
         else:
-            # Create new
             new_lead = LeadModel(
-                address=address,
+                address_street=address,
                 owner_name=lead_data.get("owner_name"),
                 status="New",
                 strategy=lead_data.get("strategy", "Wholesale"),
@@ -266,5 +422,7 @@ async def import_leads(leads: List[Dict[str, Any]], db: Session = Depends(get_db
             db.add(new_lead)
             imported_count += 1
             
-    db.commit()
+    await db.commit()
     return {"imported": imported_count, "updated": updated_count}
+
+

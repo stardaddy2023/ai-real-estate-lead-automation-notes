@@ -1,0 +1,57 @@
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100}
+SCOUT FETCH_LEADS RECEIVED: {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100}
+TRACE: _fetch_absentee_owners called. Limit=100
+TRACE: Fetching candidates with limit=2000...
+TRACE: Candidates fetched: 1990
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '101080160', 'owner_name': 'Landeros Ricardo & Garcia Shirley Jt/Rs', 'address': '3341 W TRES NOGALES RD, Unincorporated Pima County, AZ 85705', 'address_street': '3341 W TRES NOGALES RD', 'address_city': 'Unincorporated Pima County', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'LANDEROS RICARDO & GARCIA SHIRLEY JT/RS, 3342 W SUNSET RD, TUCSON AZ, 85705', 'property_type': 'Single Family', 'year_built': None, 'sqft': None, 'lot_size': 12446.79958857, 'zoning': 'MU', 'assessed_value': 186249.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.30927251669886, 'longitude': -111.03863396993307, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Absentee Owner', 'Code Violations'], 'property_types': ['Single Family'], 'limit': 100}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100}
+TRACE: _fetch_absentee_owners called. Limit=100
+TRACE: Fetching candidates with limit=2000...
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100}
+TRACE: _fetch_absentee_owners called. Limit=100
+TRACE: Fetching candidates with limit=2000...
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100}
+TRACE: _fetch_absentee_owners called. Limit=100
+TRACE: Fetching candidates with limit=2000...
+TRACE: Candidates fetched: 1990
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '101080160', 'owner_name': 'Landeros Ricardo & Garcia Shirley Jt/Rs', 'address': '3341 W TRES NOGALES RD, Unincorporated Pima County, AZ 85705', 'address_street': '3341 W TRES NOGALES RD', 'address_city': 'Unincorporated Pima County', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'LANDEROS RICARDO & GARCIA SHIRLEY JT/RS, 3342 W SUNSET RD, TUCSON AZ, 85705', 'property_type': 'Single Family', 'year_built': None, 'sqft': None, 'lot_size': 12446.79958857, 'zoning': 'MU', 'assessed_value': 186249.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.30927251669886, 'longitude': -111.03863396993307, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Absentee Owner', 'Code Violations'], 'property_types': ['Single Family'], 'limit': 100}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '240_W_SAHUARO_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '115050720', 'owner_name': 'Nido 1 Llc', 'address': '240 W SAHUARO ST, Tucson, AZ 85705', 'address_street': '240 W SAHUARO ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NIDO 1 LLC, 6626 VISTA DEL MAR, PLAYA DEL REY CA, 90293', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 23579.47879348, 'zoning': 'O-3', 'assessed_value': 1246604.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.24953641531022, 'longitude': -110.97617064892727, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': "Dumping of furniture and mattresses.  The furniture and mattresses are dumped over the east wall onto someone else's vacant property and behind the dumpster which is located in the northeast corner outside the apartment complex. (COURTCMP)", 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': "Dumping of furniture and mattresses.  The furniture and mattresses are dumped over the east wall onto someone else's vacant property and behind the dumpster which is located in the northeast corner outside the apartment complex. (COURTCMP)", 'activity_num': 'T15DV07279'}], 'violation_count': 1}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85719', 'city': None, 'county': None, 'address': None, 'distress_type': ['Absentee Owner', 'Code Violations'], 'property_types': ['Single Family'], 'limit': 100}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '1020_N_TYNDALL_AV', 'source': 'tucson_code_enforcement', 'parcel_id': '11504480A', 'owner_name': 'Vesper Sly Ivy Llc 61.089% Et Al', 'address': '1020 N TYNDALL AV, Tucson, AZ 85719', 'address_street': '1020 N TYNDALL AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85719', 'mailing_address': 'VESPER SLY IVY LLC 61.089% ET AL, 595 MADISON AVE FL 37, NEW YORK NY, 10022', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 32824.45984543, 'zoning': 'UR-3', 'assessed_value': 99372000.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.235003192820194, 'longitude': -110.95776429104045, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'High levels of noise by garage door (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'High levels of noise by garage door (NOVERIFY)', 'activity_num': 'T21DV06864'}], 'violation_count': 1}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS

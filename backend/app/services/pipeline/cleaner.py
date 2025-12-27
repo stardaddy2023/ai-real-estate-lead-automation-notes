@@ -1,4 +1,5 @@
 import re
+import uuid
 
 class CleanerService:
     def __init__(self):
@@ -8,13 +9,22 @@ class CleanerService:
         """
         Standardizes addresses and removes duplicates within the batch.
         """
+        with open("debug_cleaner.log", "a") as f:
+            f.write(f"Cleaner received {len(raw_leads)} leads\n")
+            
         cleaned = []
         seen_addresses = set()
 
-        for lead in raw_leads:
+        for i, lead in enumerate(raw_leads):
+            if i == 0:
+                with open("debug_cleaner.log", "a") as f:
+                    f.write(f"First lead: {lead}\n")
+                    
             # 1. Normalize Address
             raw_addr = lead.get("address", "")
             if not raw_addr:
+                with open("debug_cleaner.log", "a") as f:
+                    f.write("Skipping lead with empty address\n")
                 continue
                 
             norm_addr = self._normalize_address(raw_addr)
@@ -31,7 +41,14 @@ class CleanerService:
                 # For now, just keep it.
                 pass
 
+            # 4. Ensure ID exists
+            if "id" not in lead:
+                lead["id"] = str(uuid.uuid4())
+
             cleaned.append(lead)
+            
+        with open("debug_cleaner.log", "a") as f:
+            f.write(f"Cleaner returning {len(cleaned)} leads\n")
             
         return cleaned
 

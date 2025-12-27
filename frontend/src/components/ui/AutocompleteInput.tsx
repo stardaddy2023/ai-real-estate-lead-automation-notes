@@ -7,9 +7,10 @@ interface AutocompleteProps {
     onChange: (value: string) => void;
     onSearch: () => void;
     placeholder?: string;
+    className?: string;
 }
 
-export default function AutocompleteInput({ value, onChange, onSearch, placeholder }: AutocompleteProps) {
+export default function AutocompleteInput({ value, onChange, onSearch, placeholder, className }: AutocompleteProps) {
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -63,7 +64,7 @@ export default function AutocompleteInput({ value, onChange, onSearch, placehold
     };
 
     return (
-        <div ref={wrapperRef} className="relative w-full max-w-md">
+        <div ref={wrapperRef} className={`relative w-full max-w-md ${className || ''}`}>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
@@ -72,7 +73,12 @@ export default function AutocompleteInput({ value, onChange, onSearch, placehold
                     className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && onSearch()}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            setIsOpen(false);
+                            onSearch();
+                        }
+                    }}
                 />
             </div>
 

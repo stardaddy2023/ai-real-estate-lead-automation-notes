@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Times New Roman', serif; line-height: 1.6; padding: 40px; }
+        h1 { text-align: center; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        h2 { font-size: 14px; text-transform: uppercase; margin-top: 20px; }
+        .section { margin-bottom: 15px; }
+        .signature-block { margin-top: 50px; display: flex; justify-content: space-between; }
+        .signature-line { border-top: 1px solid #000; width: 45%; margin-top: 40px; padding-top: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Real Estate Purchase and Sale Agreement</h1>
+    
+    <div class="section">
+        <p><strong>DATE:</strong> {{ date }}</p>
+    </div>
+
+    <div class="section">
+        <h2>1. PARTIES</h2>
+        <p>This Agreement is made between <strong>{{ seller_name }}</strong> ("Seller") and <strong>{{ buyer_name }}</strong> ("Buyer").</p>
+    </div>
+
+    <div class="section">
+        <h2>2. PROPERTY</h2>
+        <p>Seller agrees to sell and Buyer agrees to buy the property located at:</p>
+        <p><strong>{{ property_address }}</strong></p>
+    </div>
+
+    <div class="section">
+        <h2>3. PURCHASE PRICE</h2>
+        <p>The total purchase price is <strong>${{ purchase_price }}</strong>.</p>
+    </div>
+
+    <div class="section">
+        <h2>4. EARNEST MONEY</h2>
+        <p>Buyer shall deposit <strong>${{ earnest_money }}</strong> as earnest money with the Escrow Agent within 3 business days of acceptance.</p>
+    </div>
+
+    <div class="section">
+        <h2>5. CLOSING</h2>
+        <p>Closing shall occur on or before <strong>{{ closing_date }}</strong>.</p>
+    </div>
+
+    <div class="section">
+        <h2>6. TERMS AND CONDITIONS</h2>
+        <p>This sale is "AS-IS". Buyer has the right to inspect the property within {{ inspection_period }} days.</p>
+    </div>
+
+    <div class="signature-block">
+        <div class="signature-line">
+            Buyer Signature<br>
+            Date: _________________
+        </div>
+        <div class="signature-line">
+            Seller Signature<br>
+            Date: _________________
+        </div>
+    </div>
+</body>
+</html>

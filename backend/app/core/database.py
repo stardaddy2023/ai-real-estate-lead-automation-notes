@@ -1,21 +1,31 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker, declarative_base
 import os
+from app.core.config import settings
 
-# Create a SQLite database for now
-SQLALCHEMY_DATABASE_URL = "sqlite:///./arela.db"
+# Ensure Async Driver for SQLite
+database_url = settings.DATABASE_URL
+if database_url.startswith("sqlite://") and "aiosqlite" not in database_url:
+    database_url = database_url.replace("sqlite://", "sqlite+aiosqlite://")
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+engine = create_async_engine(
+    database_url, 
+    connect_args={"check_same_thread": False} if "sqlite" in database_url else {},
+    echo=False
 )
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+AsyncSessionLocal = sessionmaker(
+    bind=engine, 
+    class_=AsyncSession, 
+    expire_on_commit=False,
+    autoflush=False
+)
 
 Base = declarative_base()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db():
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()

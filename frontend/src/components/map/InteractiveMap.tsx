@@ -60,33 +60,40 @@ export function InteractiveMap({ leads, onSelect }: InteractiveMapProps) {
 
     return (
         <div className="flex-1 relative h-full w-full">
-            <Map
-                defaultCenter={{ lat: 32.2226, lng: -110.9747 }} // Tucson
-                defaultZoom={12}
-                mapId="DEMO_MAP_ID" // Required for AdvancedMarker
-                gestureHandling={'greedy'}
-                disableDefaultUI={true}
-                className="w-full h-full"
-                style={{ width: '100%', height: '100%' }}
-            >
-                <MapController leads={leads} selectedProperty={selectedProperty} />
+            <APIProvider apiKey={apiKey}>
+                <Map
+                    defaultCenter={{ lat: 32.2226, lng: -110.9747 }} // Tucson
+                    defaultZoom={12}
+                    mapId="DEMO_MAP_ID" // Required for AdvancedMarker
+                    gestureHandling={'greedy'}
+                    disableDefaultUI={true}
+                    className="w-full h-full"
+                    style={{ width: '100%', height: '100%' }}
+                >
+                    <MapController leads={leads} selectedProperty={selectedProperty} />
 
-                {leads.map((lead) => (
-                    lead.latitude && lead.longitude && (
-                        <AdvancedMarker
-                            key={lead.id}
-                            position={{ lat: lead.latitude, lng: lead.longitude }}
-                            onClick={() => onSelect(lead)}
-                        >
-                            <Pin
-                                background={lead.score && lead.score > 80 ? '#ef4444' : '#10b981'}
-                                borderColor={'#000'}
-                                glyphColor={'#fff'}
-                            />
-                        </AdvancedMarker>
-                    )
-                ))}
-            </Map>
+                    {leads.map((lead) => (
+                        lead.latitude && lead.longitude && (
+                            <AdvancedMarker
+                                key={lead.id}
+                                position={{ lat: lead.latitude, lng: lead.longitude }}
+                                onClick={() => onSelect(lead)}
+                            >
+                                <Pin
+                                    background={
+                                        lead.distress_signals && lead.distress_signals.length > 0 ? '#ef4444' : // Red for Distress
+                                            lead.equity_percent && lead.equity_percent > 50 ? '#10b981' : // Green for High Equity
+                                                lead.owner_type === 'CORPORATE' ? '#3b82f6' : // Blue for Cash Buyer/Corporate
+                                                    '#fbbf24' // Yellow default
+                                    }
+                                    borderColor={'#000'}
+                                    glyphColor={'#fff'}
+                                />
+                            </AdvancedMarker>
+                        )
+                    ))}
+                </Map>
+            </APIProvider>
 
             {/* HUD Elements Overlay */}
             <div className="absolute bottom-8 left-8 p-4 bg-background/80 backdrop-blur border border-border rounded-md pointer-events-none z-10">

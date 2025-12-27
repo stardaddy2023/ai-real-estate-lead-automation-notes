@@ -1,5 +1,9 @@
+"use client"
+
 import { useState } from 'react';
 import { Map, Construction, TrendingUp, Home, Users, Building } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { HeatmapView } from './HeatmapView';
 
 interface MarketAnalysis {
     market_name: string;
@@ -14,8 +18,11 @@ interface MarketAnalysis {
     dates: {
         unemployment: string;
         building_permits: string;
+        permits?: string;
         mortgage_rate: string;
+        mortgage?: string;
         population_growth: string;
+        population?: string;
     };
     breakdown: {
         unemployment_score: number;
@@ -43,7 +50,7 @@ export function MarketScout() {
         if (!market) return;
 
         try {
-            const res = await fetch('http://localhost:8000/scout/market', {
+            const res = await fetch('http://127.0.0.1:8000/scout/market', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -67,7 +74,7 @@ export function MarketScout() {
             <div className="p-6 border-b border-border bg-card/50">
                 <h1 className="text-2xl font-bold tracking-tight flex items-center">
                     <Map className="w-6 h-6 mr-3 text-primary" />
-                    Market Scout
+                    Market Recon
                 </h1>
                 <p className="text-muted-foreground mt-1">
                     Analyze market trends and identify hot spots using real-time economic data.
@@ -75,85 +82,98 @@ export function MarketScout() {
             </div>
 
             <div className="p-6 max-w-5xl mx-auto w-full space-y-8">
-                {/* Controls */}
-                <div className="flex items-center space-x-4 bg-card p-4 rounded-lg border border-border">
-                    <select
-                        className="flex-1 bg-background border border-border rounded-md px-3 py-2"
-                        value={selectedMarket}
-                        onChange={(e) => setSelectedMarket(e.target.value)}
-                    >
-                        {markets.map(m => (
-                            <option key={m.id} value={m.id}>{m.name}</option>
-                        ))}
-                    </select>
-                    <button
-                        onClick={handleAnalyze}
-                        disabled={loading}
-                        className="px-6 py-2 bg-primary text-black font-bold rounded-md hover:bg-primary/90 transition-all disabled:opacity-50"
-                    >
-                        {loading ? 'Analyzing...' : 'Analyze Market'}
-                    </button>
-                </div>
+                <Tabs defaultValue="report" className="w-full">
+                    <TabsList className="mb-6">
+                        <TabsTrigger value="report">Market Report</TabsTrigger>
+                        <TabsTrigger value="heatmap">Heatmap</TabsTrigger>
+                    </TabsList>
 
-                {/* Results */}
-                {analysis && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        {/* Score Card */}
-                        <div className="p-8 rounded-xl border border-primary/20 bg-primary/5 text-center relative overflow-hidden">
-                            <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.5))]" />
-                            <h2 className="text-3xl font-bold mb-2 relative z-10">{analysis.market_name}</h2>
-                            <div className="text-6xl font-black text-primary font-mono my-4 relative z-10">
-                                {analysis.score}/100
-                            </div>
-                            <div className="inline-block px-4 py-1 rounded-full bg-background/50 border border-primary/30 text-primary font-bold relative z-10">
-                                {analysis.verdict}
-                            </div>
+                    <TabsContent value="report" className="space-y-8">
+                        {/* Controls */}
+                        <div className="flex items-center space-x-4 bg-card p-4 rounded-lg border border-border">
+                            <select
+                                className="flex-1 bg-background border border-border rounded-md px-3 py-2"
+                                value={selectedMarket}
+                                onChange={(e) => setSelectedMarket(e.target.value)}
+                            >
+                                {markets.map(m => (
+                                    <option key={m.id} value={m.id}>{m.name}</option>
+                                ))}
+                            </select>
+                            <button
+                                onClick={handleAnalyze}
+                                disabled={loading}
+                                className="px-6 py-2 bg-primary text-black font-bold rounded-md hover:bg-primary/90 transition-all disabled:opacity-50"
+                            >
+                                {loading ? 'Analyzing...' : 'Analyze Market'}
+                            </button>
                         </div>
 
-                        {/* Metrics Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <MetricCard
-                                icon={Users}
-                                label="Unemployment"
-                                value={`${analysis.metrics.unemployment_rate}%`}
-                                date={analysis.dates.unemployment}
-                                score={analysis.breakdown.unemployment_score}
-                                maxScore={25}
-                            />
-                            <MetricCard
-                                icon={Construction}
-                                label="Building Permits"
-                                value={analysis.metrics.building_permits.toLocaleString()}
-                                date={analysis.dates.building_permits || analysis.dates.permits} // Handle key mismatch if any
-                                score={analysis.breakdown.permit_score}
-                                maxScore={25}
-                            />
-                            <MetricCard
-                                icon={Home}
-                                label="Mortgage Rate"
-                                value={`${analysis.metrics.mortgage_rate}%`}
-                                date={analysis.dates.mortgage_rate || analysis.dates.mortgage}
-                                score={analysis.breakdown.rate_score}
-                                maxScore={10}
-                            />
-                            <MetricCard
-                                icon={TrendingUp}
-                                label="Pop. Growth"
-                                value={`${analysis.metrics.population_growth}%`}
-                                date={analysis.dates.population_growth || analysis.dates.population}
-                                score={analysis.breakdown.pop_score}
-                                maxScore={40}
-                            />
-                        </div>
-                    </div>
-                )}
+                        {/* Results */}
+                        {analysis && (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                {/* Score Card */}
+                                <div className="p-8 rounded-xl border border-primary/20 bg-primary/5 text-center relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.5))]" />
+                                    <h2 className="text-3xl font-bold mb-2 relative z-10">{analysis.market_name}</h2>
+                                    <div className="text-6xl font-black text-primary font-mono my-4 relative z-10">
+                                        {analysis.score}/100
+                                    </div>
+                                    <div className="inline-block px-4 py-1 rounded-full bg-background/50 border border-primary/30 text-primary font-bold relative z-10">
+                                        {analysis.verdict}
+                                    </div>
+                                </div>
 
-                {!analysis && !loading && (
-                    <div className="text-center py-20 text-muted-foreground">
-                        <Building className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                        <p>Select a market and click analyze to see real-time data.</p>
-                    </div>
-                )}
+                                {/* Metrics Grid */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <MetricCard
+                                        icon={Users}
+                                        label="Unemployment"
+                                        value={`${analysis.metrics.unemployment_rate}%`}
+                                        date={analysis.dates.unemployment}
+                                        score={analysis.breakdown.unemployment_score}
+                                        maxScore={25}
+                                    />
+                                    <MetricCard
+                                        icon={Construction}
+                                        label="Building Permits"
+                                        value={analysis.metrics.building_permits.toLocaleString()}
+                                        date={analysis.dates.building_permits || analysis.dates.permits} // Handle key mismatch if any
+                                        score={analysis.breakdown.permit_score}
+                                        maxScore={25}
+                                    />
+                                    <MetricCard
+                                        icon={Home}
+                                        label="Mortgage Rate"
+                                        value={`${analysis.metrics.mortgage_rate}%`}
+                                        date={analysis.dates.mortgage_rate || analysis.dates.mortgage}
+                                        score={analysis.breakdown.rate_score}
+                                        maxScore={10}
+                                    />
+                                    <MetricCard
+                                        icon={TrendingUp}
+                                        label="Pop. Growth"
+                                        value={`${analysis.metrics.population_growth}%`}
+                                        date={analysis.dates.population_growth || analysis.dates.population}
+                                        score={analysis.breakdown.pop_score}
+                                        maxScore={40}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {!analysis && !loading && (
+                            <div className="text-center py-20 text-muted-foreground">
+                                <Building className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                                <p>Select a market and click analyze to see real-time data.</p>
+                            </div>
+                        )}
+                    </TabsContent>
+
+                    <TabsContent value="heatmap">
+                        <HeatmapView />
+                    </TabsContent>
+                </Tabs>
             </div>
         </div>
     );

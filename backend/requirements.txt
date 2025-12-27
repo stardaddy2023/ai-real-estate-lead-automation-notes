@@ -11,3 +11,8 @@ python-dotenv
 requests
 beautifulsoup4
 pydantic-settings
+aiosqlite
+playwright
+google-generativeai
+jinja2
+weasyprint
