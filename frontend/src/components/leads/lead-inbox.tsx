@@ -9,7 +9,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import dynamic from "next/dynamic"
 import { columns } from "./columns"
 import { DataTable } from "./data-table"
-const LeadMap = dynamic(() => import("./LeadMap").then(mod => mod.LeadMap), { ssr: false })
+import { GoogleScoutMap } from "@/components/scout/GoogleScoutMap"
+// const LeadMap = dynamic(() => import("./LeadMap").then(mod => mod.LeadMap), { ssr: false })
 import { Lead } from "@/types"
 
 async function getLeads(): Promise<Lead[]> {
@@ -51,9 +52,23 @@ export function LeadInbox() {
         lead.owner_name?.toLowerCase().includes(searchQuery.toLowerCase())
     ) || []
 
+    // Map Lead to ScoutResult for GoogleScoutMap
+    const mapLeads: any[] = filteredData.map(lead => ({
+        id: lead.id,
+        address: lead.address_street,
+        owner_name: lead.owner_name || "Unknown",
+        mailing_address: "N/A", // Not in Lead type
+        property_type: "Unknown",
+        distress_signals: [],
+        distress_score: lead.distress_score,
+        // Mock coordinates if missing (same logic as old LeadMap)
+        latitude: 32.2226 + (Math.random() - 0.5) * 0.1,
+        longitude: -110.9747 + (Math.random() - 0.5) * 0.1,
+    }))
+
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between">
+        <div className="space-y-4 h-full flex flex-col">
+            <div className="flex items-center justify-between shrink-0">
                 <h2 className="text-2xl font-bold tracking-tight">Lead Inbox</h2>
                 <div className="flex items-center gap-4">
                     <div className="relative w-64">
@@ -74,11 +89,20 @@ export function LeadInbox() {
                 </div>
             </div>
 
-            {view === "list" ? (
-                <DataTable columns={columns} data={filteredData} />
-            ) : (
-                <LeadMap leads={filteredData} />
-            )}
+            <div className="flex-1 min-h-0 relative rounded-lg border overflow-hidden">
+                {view === "list" ? (
+                    <div className="h-full overflow-auto p-1">
+                        <DataTable columns={columns} data={filteredData} />
+                    </div>
+                ) : (
+                    <div className="h-full w-full absolute inset-0">
+                        <GoogleScoutMap
+                            leads={mapLeads}
+                            onMarkerClick={(lead: any) => console.log("Clicked lead:", lead)}
+                        />
+                    </div>
+                )}
+            </div>
         </div>
     )
 }

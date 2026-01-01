@@ -8,12 +8,10 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
-import { Loader2, Map as MapIcon, List as ListIcon, Filter, Download, ChevronDown, Search } from 'lucide-react'
+import { Loader2, Map as MapIcon, List as ListIcon, Download, Search, X } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import { LeadDetailDialog } from './LeadDetailDialog'
+import { LeadFilters, PROPERTY_TYPES, DISTRESS_TYPES, DISABLED_DISTRESS_TYPES } from './LeadFilters'
 
 // Dynamic import for Map to avoid SSR issues
 const GoogleScoutMap = dynamic(() => import('./GoogleScoutMap').then(mod => mod.GoogleScoutMap), {
@@ -51,20 +49,7 @@ export interface ScoutResult {
     violations?: Array<{ description: string; activity_num: string }>
 }
 
-const PROPERTY_TYPES = ["Single Family", "Multi Family", "Condo", "Vacant Land", "Commercial"]
-const DISTRESS_TYPES = [
-    "Code Violations",
-    "Absentee Owner",
-    "Liens (HOA, Mechanics)",
-    "Pre-Foreclosure",
-    "Divorce",
-    "Judgements",
-    "Tax Liens",
-    "Unpaid Taxes",
-    "Probate",
-    "Eviction"
-]
-const DISABLED_DISTRESS_TYPES = ["Unpaid Taxes", "Probate", "Eviction"]
+
 
 export default function LeadScout() {
     // State
@@ -73,6 +58,7 @@ export default function LeadScout() {
     const [loading, setLoading] = useState(false)
     const [hoveredLeadId, setHoveredLeadId] = useState<string | null>(null)
     const [highlightedLeadId, setHighlightedLeadId] = useState<string | null>(null)
+    const [panToLeadId, setPanToLeadId] = useState<string | null>(null)
 
     // Filters
     const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>([])
@@ -97,6 +83,7 @@ export default function LeadScout() {
     const handleSearch = async () => {
         setLoading(true)
         setResults([]) // Clear previous results
+        setPanToLeadId(null) // Reset pan state
 
         try {
             const term = query.trim()
@@ -231,6 +218,7 @@ export default function LeadScout() {
     // Sync Map Click to List Scroll
     const handleMarkerClick = (lead: ScoutResult) => {
         setHighlightedLeadId(lead.id)
+        setPanToLeadId(lead.id) // Pan on marker click too
         setViewMode('list')
 
         // Scroll to item in list
@@ -242,156 +230,106 @@ export default function LeadScout() {
         }, 100)
     }
 
+    const handleMapClick = () => {
+        setViewMode('map')
+        setHighlightedLeadId(null)
+        setPanToLeadId(null)
+    }
+
     return (
         <div className="flex h-screen w-full bg-black text-white overflow-hidden relative">
 
-            {/* TOP SEARCH BAR (Floating) */}
-            <div className={`absolute top-4 z-50 w-full max-w-4xl px-4 transition-all duration-300 ease-in-out ${viewMode === 'list' ? 'left-[calc(50%+12rem)]' : 'left-1/2'} transform -translate-x-1/2`}>
-                <div className="bg-gray-950/80 backdrop-blur-md border border-gray-800 rounded-full shadow-2xl p-2 flex items-center gap-2">
+            {/* SEARCH BAR (Floating & Dynamic Position) */}
+            <div className={`absolute top-4 z-50 w-full max-w-2xl px-4 transition-all duration-300 ease-in-out ${viewMode === 'list' ? 'left-[calc(50%-12rem)]' : 'left-1/2'} -translate-x-1/2 transform pointer-events-none`}>
+                <div className="pointer-events-auto flex flex-col items-center w-full">
+                    <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-md shadow-lg flex items-center px-3 h-10 gap-2 w-full">
 
-                    {/* Location Input */}
-                    <div className="flex-1 min-w-[200px]">
-                        <AutocompleteInput
-                            value={query}
-                            onChange={setQuery}
-                            onSearch={handleSearch}
-                            placeholder="Search Zip Code, City, or Neighborhood..."
-                            className="bg-transparent border-none focus:ring-0 text-white placeholder:text-gray-400 h-10 w-full"
-                        />
+                        {/* Search Icon (Left) */}
+                        <Search className="text-gray-400 w-4 h-4 shrink-0" />
+
+                        {/* Location Input */}
+                        <div className="flex-1 min-w-[200px] h-full">
+                            <AutocompleteInput
+                                value={query}
+                                onChange={setQuery}
+                                onSearch={handleSearch}
+                                placeholder="Search Zip Code, City, or Neighborhood..."
+                                className="h-full w-full"
+                                inputClassName="bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white placeholder:text-gray-400 h-full w-full focus:outline-none text-sm px-0"
+                                showIcon={false}
+                            />
+                        </div>
+
+                        <div className="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1 hidden md:block" />
+
+                        {/* Limit Selector */}
+                        <select
+                            className="bg-transparent border-none text-gray-700 dark:text-gray-300 text-sm focus:outline-none cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-medium"
+                            value={limit}
+                            onChange={(e) => setLimit(Number(e.target.value))}
+                        >
+                            <option value={10} className="bg-white dark:bg-gray-900">10 Leads</option>
+                            <option value={25} className="bg-white dark:bg-gray-900">25 Leads</option>
+                            <option value={50} className="bg-white dark:bg-gray-900">50 Leads</option>
+                            <option value={100} className="bg-white dark:bg-gray-900">100 Leads</option>
+                            <option value={500} className="bg-white dark:bg-gray-900">500 Leads</option>
+                        </select>
+
+                        {/* Bulk Import Button */}
+                        {selectedLeadIds.size > 0 && (
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={handleBulkImport}
+                                className="bg-green-600 hover:bg-green-700 text-white rounded-md h-7 text-xs px-2 ml-2"
+                            >
+                                Import ({selectedLeadIds.size})
+                            </Button>
+                        )}
                     </div>
 
-                    <div className="h-6 w-px bg-gray-700 mx-1 hidden md:block" />
-
-                    {/* Limit Selector */}
-                    <select
-                        className="bg-gray-800 border border-gray-700 text-white text-sm rounded-md px-3 py-2 focus:outline-none focus:border-green-500"
-                        value={limit}
-                        onChange={(e) => setLimit(Number(e.target.value))}
-                    >
-                        <option value={10}>10 Leads</option>
-                        <option value={25}>25 Leads</option>
-                        <option value={50}>50 Leads</option>
-                        <option value={100}>100 Leads</option>
-                        <option value={500}>500 Leads</option>
-                    </select>
-
-                    {/* Bulk Import Button */}
-                    {selectedLeadIds.size > 0 && (
-                        <Button
-                            variant="default"
-                            size="sm"
-                            onClick={handleBulkImport}
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                        >
-                            Import Selected ({selectedLeadIds.size})
-                        </Button>
+                    {/* ACTIVE FILTERS (TAGS) */}
+                    {(selectedPropertyTypes.length > 0 || selectedDistressTypes.length > 0) && (
+                        <div className="flex flex-wrap gap-2 mt-2 justify-center w-full pointer-events-auto">
+                            {selectedPropertyTypes.map(type => (
+                                <Badge key={type} variant="secondary" className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700 shadow-sm hover:bg-white dark:hover:bg-gray-800 pl-2 pr-1 py-0.5 gap-1 cursor-pointer" onClick={() => togglePropertyType(type)}>
+                                    {type}
+                                    <X className="w-3 h-3 text-gray-400 hover:text-red-500" />
+                                </Badge>
+                            ))}
+                            {selectedDistressTypes.map(type => (
+                                <Badge key={type} variant="secondary" className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 shadow-sm hover:bg-white dark:hover:bg-gray-800 pl-2 pr-1 py-0.5 gap-1 cursor-pointer" onClick={() => toggleDistressType(type)}>
+                                    {type}
+                                    <X className="w-3 h-3 text-red-400 hover:text-red-600" />
+                                </Badge>
+                            ))}
+                        </div>
                     )}
-
-                    {/* Property Type Filter */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-9 px-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-full hidden md:flex items-center gap-1">
-                                {selectedPropertyTypes.length > 0 ? <span className="text-green-400 font-bold">{selectedPropertyTypes.length} Types</span> : "Property Type"}
-                                <ChevronDown className="h-3 w-3 opacity-50" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56 bg-gray-900 border-gray-700 text-white">
-                            <DropdownMenuLabel>Select Types</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            {PROPERTY_TYPES.map(type => (
-                                <DropdownMenuCheckboxItem
-                                    key={type}
-                                    checked={selectedPropertyTypes.includes(type)}
-                                    onCheckedChange={() => togglePropertyType(type)}
-                                >
-                                    {type}
-                                </DropdownMenuCheckboxItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    {/* Distress Filter */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-9 px-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-full hidden md:flex items-center gap-1">
-                                {selectedDistressTypes.length > 0 ? <span className="text-red-400 font-bold">{selectedDistressTypes.length} Distress</span> : "Distress"}
-                                <ChevronDown className="h-3 w-3 opacity-50" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56 bg-gray-900 border-gray-700 text-white">
-                            <DropdownMenuLabel>Select Signals</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            {DISTRESS_TYPES.map(type => (
-                                <DropdownMenuCheckboxItem
-                                    key={type}
-                                    checked={selectedDistressTypes.includes(type)}
-                                    onCheckedChange={() => toggleDistressType(type)}
-                                    disabled={DISABLED_DISTRESS_TYPES.includes(type)}
-                                >
-                                    {type}
-                                </DropdownMenuCheckboxItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    {/* More Filters (Popover or Dropdown) */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-9 w-9 p-0 rounded-full text-gray-300 hover:text-white hover:bg-gray-800">
-                                <Filter className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-72 bg-gray-900 border-gray-700 text-white p-4">
-                            <DropdownMenuLabel>Advanced Filters</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <div className="grid grid-cols-2 gap-4 mt-2">
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Min Beds</Label>
-                                    <input
-                                        type="number"
-                                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm"
-                                        value={minBeds}
-                                        onChange={(e) => setMinBeds(e.target.value)}
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Min Baths</Label>
-                                    <input
-                                        type="number"
-                                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm"
-                                        value={minBaths}
-                                        onChange={(e) => setMinBaths(e.target.value)}
-                                    />
-                                </div>
-                                <div className="space-y-1 col-span-2">
-                                    <Label className="text-xs">Min Sqft</Label>
-                                    <input
-                                        type="number"
-                                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm"
-                                        value={minSqft}
-                                        onChange={(e) => setMinSqft(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    {/* Search Button */}
-                    <Button
-                        onClick={handleSearch}
-                        disabled={loading}
-                        className="rounded-full bg-green-600 hover:bg-green-500 text-white px-6 h-10 ml-1"
-                    >
-                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                    </Button>
                 </div>
+            </div>
+
+            {/* RIGHT SIDE CONTROLS (Filters) */}
+            <div className="absolute top-4 right-4 z-50 pointer-events-auto flex items-center gap-2">
+                <LeadFilters
+                    selectedPropertyTypes={selectedPropertyTypes}
+                    setSelectedPropertyTypes={setSelectedPropertyTypes}
+                    selectedDistressTypes={selectedDistressTypes}
+                    setSelectedDistressTypes={setSelectedDistressTypes}
+                    minBeds={minBeds}
+                    setMinBeds={setMinBeds}
+                    minBaths={minBaths}
+                    setMinBaths={setMinBaths}
+                    minSqft={minSqft}
+                    setMinSqft={setMinSqft}
+                    onSearch={handleSearch}
+                />
             </div>
 
             {/* MAIN CONTENT AREA */}
             <div className="flex-1 relative h-full">
 
                 {/* LIST VIEW OVERLAY (Visible when viewMode is 'list') */}
-                <div className={`absolute top-0 left-0 bottom-0 w-96 bg-gray-950/90 backdrop-blur-md border-r border-gray-800 z-10 transition-transform duration-300 ease-in-out ${viewMode === 'list' ? 'translate-x-0' : '-translate-x-full'} pt-0`}>
+                <div className={`absolute top-0 right-0 bottom-0 w-96 bg-gray-950/90 backdrop-blur-md border-l border-gray-800 z-10 transition-transform duration-300 ease-in-out ${viewMode === 'list' ? 'translate-x-0' : 'translate-x-full'} pt-0`}>
                     <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 backdrop-blur-sm">
                         <div className="flex items-center gap-3">
                             <h2 className="font-semibold text-gray-200">RESULTS ({results.length})</h2>
@@ -433,6 +371,7 @@ export default function LeadScout() {
                                     }}
                                     onClick={() => {
                                         setSelectedLead(lead)
+                                        setPanToLeadId(lead.id) // Pan on card click
                                         setIsDetailOpen(true)
                                     }}
                                 >
@@ -499,14 +438,29 @@ export default function LeadScout() {
                     <GoogleScoutMap
                         leads={results}
                         highlightedLeadId={highlightedLeadId}
+                        panToLeadId={panToLeadId}
                         onMarkerClick={handleMarkerClick}
+                        onMapClick={handleMapClick}
                     />
                 </div>
+
+                {/* LOADING OVERLAY */}
+                {loading && (
+                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm pointer-events-none">
+                        <div className="bg-white dark:bg-gray-900 p-4 rounded-full shadow-2xl flex items-center gap-3 border border-gray-200 dark:border-gray-800">
+                            <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                            <span className="font-medium text-gray-900 dark:text-gray-100">Scouting Area...</span>
+                        </div>
+                    </div>
+                )}
 
                 {/* "Show List" Toggle Button (Bottom Center) */}
                 {viewMode === 'map' && results.length > 0 && (
                     <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-50">
-                        <Button onClick={() => setViewMode('list')} className="rounded-full shadow-2xl bg-gray-900 border border-gray-600 hover:bg-gray-800 px-6 py-6 text-base">
+                        <Button
+                            onClick={() => setViewMode('list')}
+                            className="rounded-full shadow-2xl bg-blue-600 hover:bg-blue-700 text-white border-none px-8 py-6 text-lg font-semibold transition-all transform hover:scale-105"
+                        >
                             <ListIcon className="w-5 h-5 mr-2" />
                             Show {results.length} Results
                         </Button>

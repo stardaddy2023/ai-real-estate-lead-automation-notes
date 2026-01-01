@@ -7,10 +7,12 @@ import { ScoutResult } from './LeadScout'
 interface GoogleScoutMapProps {
     leads: ScoutResult[]
     highlightedLeadId?: string | null
+    panToLeadId?: string | null
     onMarkerClick: (lead: ScoutResult) => void
+    onMapClick?: () => void
 }
 
-const MapController = ({ leads, highlightedLeadId }: { leads: ScoutResult[], highlightedLeadId?: string | null }) => {
+const MapController = ({ leads, panToLeadId }: { leads: ScoutResult[], panToLeadId?: string | null }) => {
     const map = useMap()
 
     useEffect(() => {
@@ -43,19 +45,19 @@ const MapController = ({ leads, highlightedLeadId }: { leads: ScoutResult[], hig
     }, [map, leads])
 
     useEffect(() => {
-        if (!map || !highlightedLeadId) return
+        if (!map || !panToLeadId) return
 
-        const lead = leads.find(l => (l.id === highlightedLeadId || l.parcel_id === highlightedLeadId))
+        const lead = leads.find(l => (l.id === panToLeadId || l.parcel_id === panToLeadId))
         if (lead && lead.latitude && lead.longitude) {
             map.panTo({ lat: lead.latitude, lng: lead.longitude })
             // Don't zoom in on hover, just pan.
         }
-    }, [map, highlightedLeadId, leads])
+    }, [map, panToLeadId, leads])
 
     return null
 }
 
-export function GoogleScoutMap({ leads, highlightedLeadId, onMarkerClick }: GoogleScoutMapProps) {
+export function GoogleScoutMap({ leads, highlightedLeadId, panToLeadId, onMarkerClick, onMapClick }: GoogleScoutMapProps) {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""
 
     // Default center (Tucson)
@@ -72,8 +74,9 @@ export function GoogleScoutMap({ leads, highlightedLeadId, onMarkerClick }: Goog
                     mapId="DEMO_MAP_ID" // Required for AdvancedMarker
                     className="h-full w-full"
                     disableDefaultUI={false}
+                    onClick={() => onMapClick && onMapClick()}
                 >
-                    <MapController leads={leads} highlightedLeadId={highlightedLeadId} />
+                    <MapController leads={leads} panToLeadId={panToLeadId} />
 
                     {leads.map((lead, index) => (
                         lead.latitude && lead.longitude ? (

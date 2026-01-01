@@ -47,8 +47,7 @@ export function MarketSidebar({ activeLayer, onLayerChange }: MarketSidebarProps
         <div className="w-64 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 h-full flex flex-col overflow-y-auto z-20">
             <div className="p-4 border-b border-gray-200 dark:border-gray-800">
                 <h2 className="font-bold text-lg flex items-center gap-2">
-                    <span className="text-blue-600 dark:text-blue-400">reventure</span>
-                    <span className="text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-gray-500">APP</span>
+                    <span className="text-foreground">Data Layers</span>
                 </h2>
             </div>
 

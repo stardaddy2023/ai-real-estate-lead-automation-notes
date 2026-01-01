@@ -8,9 +8,19 @@ interface AutocompleteProps {
     onSearch: () => void;
     placeholder?: string;
     className?: string;
+    inputClassName?: string;
+    showIcon?: boolean;
 }
 
-export default function AutocompleteInput({ value, onChange, onSearch, placeholder, className }: AutocompleteProps) {
+export default function AutocompleteInput({
+    value,
+    onChange,
+    onSearch,
+    placeholder,
+    className,
+    inputClassName,
+    showIcon = true
+}: AutocompleteProps) {
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -65,12 +75,14 @@ export default function AutocompleteInput({ value, onChange, onSearch, placehold
 
     return (
         <div ref={wrapperRef} className={`relative w-full max-w-md ${className || ''}`}>
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <div className="relative h-full">
+                {showIcon && (
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                )}
                 <input
                     type="text"
                     placeholder={placeholder || "Search city, zip, or address..."}
-                    className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"
+                    className={inputClassName || "w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     onKeyDown={(e) => {

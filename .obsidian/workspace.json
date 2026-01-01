@@ -195,12 +195,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "ARELA Notes/Old_ARELA Front End UI Design.md",
+                "file": "ARELA Notes/Data Sources Distressed Property Pima County.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Old_ARELA Front End UI Design"
+              "title": "Data Sources Distressed Property Pima County"
             }
           }
         ],
@@ -368,6 +368,9 @@
   },
   "active": "639235e0b7d791bc",
   "lastOpenFiles": [
+    "frontend/node_modules/@radix-ui/react-checkbox/dist/index.mjs.map",
+    "ARELA Notes/Old_ARELA Front End UI Design.md",
+    "frontend/src/components/scout/LeadFilters.tsx",
     "frontend/node_modules/@radix-ui/react-accordion/LICENSE",
     "frontend/node_modules/@radix-ui/react-accordion/README.md",
     "frontend/node_modules/@radix-ui/react-accordion/package.json",
@@ -378,8 +381,6 @@
     "frontend/node_modules/@radix-ui/react-accordion/dist/index.d.ts",
     "frontend/node_modules/@radix-ui/react-accordion/dist/index.d.mts",
     "frontend/node_modules/@radix-ui/react-accordion/dist",
-    "frontend/node_modules/@radix-ui/react-collapsible/dist/index.js",
-    "frontend/node_modules/@radix-ui/react-collapsible/dist",
     "frontend/node_modules/@radix-ui/react-radio-group/README.md",
     "ARELA Notes/Data Sources Distressed Property Pima County.md",
     "frontend/node_modules/@radix-ui/react-slider/README.md",
@@ -413,7 +414,6 @@
     "frontend/node_modules/date-fns-jalali/docs/unicodeTokens.md",
     "frontend/node_modules/date-fns-jalali/docs/timeZones.md",
     "frontend/node_modules/date-fns-jalali/docs/release.md",
-    "frontend/node_modules/date-fns-jalali/docs/i18n.md",
     "ARELA Org Chart.canvas"
   ]
 }
