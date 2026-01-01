@@ -137,19 +137,26 @@ class ScoutService:
     async def _enrich_violations_with_parcel_data(self, leads: List[Dict]):
         """
         Enriches code violation leads with owner info from the parcel layer.
-        Uses concurrent spatial queries to find the parcel at each violation's location.
+        Uses concurrent spatial queries (20 parallel) for reliable enrichment.
         """
         if not leads:
             return
-            
-        print(f"Enriching {len(leads)} code violations with parcel data (concurrent)...")
+        
+        import time
+        start_time = time.time()
+        print(f"Enriching {len(leads)} violations with parcel data (concurrent)...")
         
         base_url = "https://gisdata.pima.gov/arcgis1/rest/services/GISOpenData/LandRecords/MapServer/12/query"
         
         loop = asyncio.get_event_loop()
-        sem = asyncio.Semaphore(10)  # Limit to 10 concurrent requests
+        sem = asyncio.Semaphore(30)  # Increased to 30 concurrent requests
         
-        async def enrich_single(lead, idx):
+        # Use session for connection pooling (faster)
+        session = requests.Session()
+        adapter = requests.adapters.HTTPAdapter(pool_connections=30, pool_maxsize=30)
+        session.mount("https://", adapter)
+        
+        async def enrich_single(lead):
             """Enriches a single lead with parcel data."""
             async with sem:
                 lat = lead.get("latitude")
@@ -157,7 +164,6 @@ class ScoutService:
                 if not lat or not lon:
                     return False
                     
-                # Create a point geometry for spatial query
                 point_geom = {
                     "x": lon,
                     "y": lat,
@@ -168,7 +174,7 @@ class ScoutService:
                     "geometry": json.dumps(point_geom),
                     "geometryType": "esriGeometryPoint",
                     "spatialRel": "esriSpatialRelIntersects",
-                    "outFields": "PARCEL,MAIL1,MAIL2,MAIL3,MAIL4,MAIL5,ZIP,ZIP4,FCV,CURZONE_OL,GISAREA",
+                    "outFields": "PARCEL,MAIL1,MAIL2,MAIL3,MAIL4,MAIL5,ZIP,FCV,CURZONE_OL,GISAREA",
                     "returnGeometry": "false",
                     "outSR": "4326",
                     "f": "json"
@@ -177,7 +183,7 @@ class ScoutService:
                 try:
                     resp = await loop.run_in_executor(
                         None, 
-                        lambda: requests.get(base_url, params=params, timeout=5)
+                        lambda: session.get(base_url, params=params, timeout=5)
                     )
                     if resp.status_code == 200:
                         data = resp.json()
@@ -185,57 +191,44 @@ class ScoutService:
                         if features:
                             attr = features[0].get("attributes", {})
                             
-                            # Build mailing address from MAIL fields
+                            # Build mailing address
                             mail_parts = []
                             for i in range(1, 6):
                                 mail_val = attr.get(f"MAIL{i}")
                                 if mail_val and mail_val.strip():
                                     mail_parts.append(mail_val.strip())
-                            
-                            # Add Zip if available
-                            m_zip = attr.get("ZIP9") or attr.get("ZIP")
-                            if m_zip and m_zip != "000000000":
+                            m_zip = attr.get("ZIP")
+                            if m_zip and str(m_zip) != "000000000":
                                 mail_parts.append(str(m_zip))
-                            
                             mailing_address = ", ".join(mail_parts)
                             
-                            # Get owner name from MAIL1 (usually first line of mailing address)
-                            owner_name = attr.get("MAIL1", "").title() if attr.get("MAIL1") else None
-                            
-                            # Update lead with enriched data
-                            lead["owner_name"] = owner_name
+                            # Update lead
+                            lead["owner_name"] = attr.get("MAIL1", "").title() if attr.get("MAIL1") else None
                             lead["mailing_address"] = mailing_address
-                            # Use parcel ID from parcel layer (clean, no suffix)
-                            parcel = attr.get("PARCEL")
-                            if parcel:
-                                lead["parcel_id"] = parcel
+                            if attr.get("PARCEL"):
+                                lead["parcel_id"] = attr.get("PARCEL")
                             lead["zoning"] = attr.get("CURZONE_OL")
                             lead["lot_size"] = attr.get("GISAREA")
                             lead["assessed_value"] = attr.get("FCV")
                             
-                            # NOTE: Do NOT use parcel layer's ZIP field here!
-                            # That field contains the OWNER'S MAILING ZIP, not the property location.
-                            # Code Violations are known to be in Tucson - keep the city/zip from search or lookup.
-                            
-                            # Check for Absentee Owner status
-                            # If property street address is NOT in the mailing address, it's absentee
-                            prop_street = lead.get("address_street", "").upper().strip()
+                            # Check absentee status
+                            prop_street = (lead.get("address_street") or "").upper().strip()
                             if prop_street and mailing_address:
                                 if prop_street not in mailing_address.upper():
                                     if "Absentee Owner" not in lead.get("distress_signals", []):
                                         lead["distress_signals"].append("Absentee Owner")
-                            
                             return True
-                except Exception as e:
-                    pass  # Silent fail for individual enrichment
+                except Exception:
+                    pass
                 return False
         
         # Run all enrichment tasks concurrently
-        tasks = [enrich_single(lead, idx) for idx, lead in enumerate(leads)]
+        tasks = [enrich_single(lead) for lead in leads]
         results = await asyncio.gather(*tasks)
         
         enriched_count = sum(1 for r in results if r)
-        print(f"Enriched {enriched_count}/{len(leads)} code violations with parcel data.")
+        elapsed = time.time() - start_time
+        print(f"Enriched {enriched_count}/{len(leads)} violations with parcel data ({elapsed:.2f}s)")
 
     async def _enrich_violations_with_zip_codes(self, leads: List[Dict]):
         """

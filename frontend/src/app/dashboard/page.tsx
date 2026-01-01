@@ -2,18 +2,19 @@
 
 import * as React from "react"
 import { useAppStore } from "@/lib/store"
-import { MarketScout } from "@/components/scout/MarketScout"
+import MarketRecon from "@/components/scout/MarketRecon"
 import LeadScout from "@/components/scout/LeadScout"
 import { LeadInbox } from "@/components/leads/lead-inbox"
 import { DispositionsDashboard } from "@/components/dispositions/DispositionsDashboard"
 import { AnalyticsView } from "@/components/dashboard/AnalyticsView"
+import { RecorderDocuments } from "@/components/recorder/RecorderDocuments"
 
 export default function DashboardPage() {
     const { activeZone } = useAppStore()
 
     switch (activeZone) {
         case 'market_scout':
-            return <MarketScout />
+            return <MarketRecon />
         case 'leads':
             return <LeadScout />
         case 'my_leads':
@@ -22,6 +23,8 @@ export default function DashboardPage() {
                     <LeadInbox />
                 </div>
             )
+        case 'recorder':
+            return <RecorderDocuments />
         case 'crm':
             return <DispositionsDashboard />
         case 'analytics':

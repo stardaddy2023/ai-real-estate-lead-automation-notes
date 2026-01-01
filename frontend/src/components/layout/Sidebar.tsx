@@ -11,7 +11,8 @@ import {
     Hexagon,
     Search,
     Handshake,
-    Inbox
+    Inbox,
+    Database
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,6 +20,7 @@ const navItems = [
     { id: 'market_scout', icon: BarChart3, label: 'Market Recon' },
     { id: 'leads', icon: Search, label: 'Lead Scout' },
     { id: 'my_leads', icon: Inbox, label: 'Lead Inbox' },
+    { id: 'recorder', icon: Database, label: 'Recorder' },
     { id: 'crm', icon: Building2, label: 'Property Sniper' },
     { id: 'contacts', icon: Users, label: 'Contacts' },
     { id: 'campaigns', icon: MessageSquare, label: 'Campaigns' },

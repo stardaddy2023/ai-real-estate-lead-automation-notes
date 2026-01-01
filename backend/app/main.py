@@ -27,7 +27,7 @@ from app.services.vision_service import VisionService, PropertyConditionReport
 from app.services.lex_service import LexService, LegalReviewResponse
 from app.services.scribe_service import ScribeService
 from app.services.matchmaker_service import MatchmakerService, BuyerMatch
-from app.api.endpoints import dispositions, scout
+from app.api.endpoints import dispositions, scout, recorder
 from pydantic import BaseModel
 
 print("LOADING MAIN APP - DEBUG MODE")
@@ -48,7 +48,7 @@ app = FastAPI(title="ARELA API", version="0.2.0")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -71,6 +71,7 @@ async def health_check():
 # --- ROUTERS ---
 app.include_router(dispositions.router, prefix="/api/v1/dispositions", tags=["dispositions"])
 app.include_router(scout.router, prefix="/api/v1/scout", tags=["scout"])
+app.include_router(recorder.router, prefix="/api/v1/recorder", tags=["recorder"])
 
 # --- USERS ---
 @app.post("/api/v1/users/sync", response_model=User)

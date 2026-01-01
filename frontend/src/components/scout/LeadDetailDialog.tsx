@@ -1,19 +1,16 @@
 import React from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScoutResult } from './LeadScout'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { Building2, MapPin, User, Phone, Mail, DollarSign, Calendar, Ruler } from 'lucide-react'
+import { User, Phone, Mail, Building2, DollarSign, AlertTriangle, Gavel, FileText } from 'lucide-react'
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/simple-accordion"
 
 interface LeadDetailDialogProps {
     lead: ScoutResult | null
     open: boolean
     onOpenChange: (open: boolean) => void
 }
-
-import { SimpleAccordion, SimpleAccordionItem, SimpleAccordionTrigger, SimpleAccordionContent } from "@/components/ui/simple-accordion"
-import { AlertTriangle, FileText, Gavel } from 'lucide-react'
 
 export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogProps) {
     if (!lead) return null
@@ -30,19 +27,18 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
                             </Badge>
                         ))}
                     </DialogTitle>
-
                 </DialogHeader>
                 <div className="px-6 pb-2 -mt-2 text-sm text-gray-400">
                     APN: {lead.parcel_id || "Unknown"}
                 </div>
 
-                <SimpleAccordion className="w-full mt-4">
+                <Accordion type="single" collapsible className="w-full mt-4">
                     {/* Contact Info */}
-                    <SimpleAccordionItem value="contact">
-                        <SimpleAccordionTrigger>
+                    <AccordionItem value="contact">
+                        <AccordionTrigger>
                             <div className="flex items-center gap-2"><User className="h-5 w-5" /> Contact Information</div>
-                        </SimpleAccordionTrigger>
-                        <SimpleAccordionContent>
+                        </AccordionTrigger>
+                        <AccordionContent>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="flex items-center gap-3 p-3 border rounded-md bg-muted/20">
                                     <Phone className="h-5 w-5 text-muted-foreground" />
@@ -67,15 +63,15 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
                                     <p className="font-medium">{lead.mailing_address}</p>
                                 </div>
                             </div>
-                        </SimpleAccordionContent>
-                    </SimpleAccordionItem>
+                        </AccordionContent>
+                    </AccordionItem>
 
                     {/* Property Details */}
-                    <SimpleAccordionItem value="property">
-                        <SimpleAccordionTrigger>
+                    <AccordionItem value="property">
+                        <AccordionTrigger>
                             <div className="flex items-center gap-2"><Building2 className="h-5 w-5" /> Property Details</div>
-                        </SimpleAccordionTrigger>
-                        <SimpleAccordionContent>
+                        </AccordionTrigger>
+                        <AccordionContent>
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div><span className="text-muted-foreground">Type:</span> <p className="font-medium">{lead.property_type}</p></div>
                                 <div><span className="text-muted-foreground">Year Built:</span> <p className="font-medium">{lead.year_built || "N/A"}</p></div>
@@ -86,15 +82,15 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
                                 <div><span className="text-muted-foreground">Pool:</span> <p className="font-medium">{lead.pool ? "Yes" : "No/Unknown"}</p></div>
                                 <div><span className="text-muted-foreground">Garage:</span> <p className="font-medium">{lead.garage ? "Yes" : "No/Unknown"}</p></div>
                             </div>
-                        </SimpleAccordionContent>
-                    </SimpleAccordionItem>
+                        </AccordionContent>
+                    </AccordionItem>
 
                     {/* Financials */}
-                    <SimpleAccordionItem value="financials">
-                        <SimpleAccordionTrigger>
+                    <AccordionItem value="financials">
+                        <AccordionTrigger>
                             <div className="flex items-center gap-2"><DollarSign className="h-5 w-5" /> Financials & Equity</div>
-                        </SimpleAccordionTrigger>
-                        <SimpleAccordionContent>
+                        </AccordionTrigger>
+                        <AccordionContent>
                             <div className="space-y-3 text-sm">
                                 <div className="flex justify-between border-b pb-2">
                                     <span className="text-muted-foreground">Estimated ARV:</span>
@@ -109,15 +105,15 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
                                     <span>{lead.last_sale_date || "N/A"}</span>
                                 </div>
                             </div>
-                        </SimpleAccordionContent>
-                    </SimpleAccordionItem>
+                        </AccordionContent>
+                    </AccordionItem>
 
                     {/* Distressed Info */}
-                    <SimpleAccordionItem value="distress">
-                        <SimpleAccordionTrigger>
+                    <AccordionItem value="distress">
+                        <AccordionTrigger>
                             <div className="flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Distressed Info</div>
-                        </SimpleAccordionTrigger>
-                        <SimpleAccordionContent>
+                        </AccordionTrigger>
+                        <AccordionContent>
                             <div className="space-y-3 text-sm">
                                 {/* Show individual violations if present */}
                                 {lead.violations && lead.violations.length > 0 && (
@@ -147,26 +143,24 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
                                     <p className="text-muted-foreground">No distress signals detected.</p>
                                 )}
                             </div>
-                        </SimpleAccordionContent>
-                    </SimpleAccordionItem>
-
-
+                        </AccordionContent>
+                    </AccordionItem>
 
                     {/* Recorder Data (MCP Placeholder) */}
-                    <SimpleAccordionItem value="recorder">
-                        <SimpleAccordionTrigger>
+                    <AccordionItem value="recorder">
+                        <AccordionTrigger>
                             <div className="flex items-center gap-2"><Gavel className="h-5 w-5" /> Recorder Data (Liens/Judgments)</div>
-                        </SimpleAccordionTrigger>
-                        <SimpleAccordionContent>
+                        </AccordionTrigger>
+                        <AccordionContent>
                             <div className="p-4 border border-dashed rounded-md text-center text-muted-foreground bg-muted/10">
                                 <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
                                 <p>Recorder data integration coming soon.</p>
                                 <p className="text-xs">Will fetch Liens, Judgments, and Foreclosure notices.</p>
                             </div>
-                        </SimpleAccordionContent>
-                    </SimpleAccordionItem>
+                        </AccordionContent>
+                    </AccordionItem>
 
-                </SimpleAccordion>
+                </Accordion>
 
                 <div className="flex justify-end gap-2 mt-6">
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
