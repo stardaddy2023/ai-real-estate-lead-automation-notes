@@ -340,6 +340,7 @@ class SearchFilters(BaseModel):
     distress_type: Optional[Union[List[str], str]] = None
     property_types: Optional[List[str]] = None
     limit: int = 100
+    bounds: Optional[Dict[str, float]] = None # {xmin, ymin, xmax, ymax}
 
 @app.post("/scout/search")
 async def search_leads(filters: SearchFilters):

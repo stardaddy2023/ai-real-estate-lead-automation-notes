@@ -1,6 +1,6 @@
 import React from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ScoutResult } from './LeadScout'
+import { ScoutResult } from '@/lib/store'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { User, Phone, Mail, Building2, DollarSign, AlertTriangle, Gavel, FileText } from 'lucide-react'

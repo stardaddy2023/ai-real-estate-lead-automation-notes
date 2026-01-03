@@ -1,8 +1,10 @@
 "use client"
 
-import React, { useEffect, useState, useCallback } from 'react'
-import { APIProvider, Map, AdvancedMarker, Pin, useMap } from '@vis.gl/react-google-maps'
-import { ScoutResult } from './LeadScout'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
+import { APIProvider, Map, AdvancedMarker, Pin, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
+import { Button } from '@/components/ui/button'
+import { Pencil, X, Search } from 'lucide-react'
+import { ScoutResult } from '@/lib/store'
 
 interface GoogleScoutMapProps {
     leads: ScoutResult[]
@@ -10,6 +12,9 @@ interface GoogleScoutMapProps {
     panToLeadId?: string | null
     onMarkerClick: (lead: ScoutResult) => void
     onMapClick?: () => void
+    onMapSelection?: (bounds: { north: number, south: number, east: number, west: number } | null) => void
+    onSearchArea?: (bounds: { north: number, south: number, east: number, west: number }) => void
+    selectedBounds?: { north: number, south: number, east: number, west: number } | null
 }
 
 const MapController = ({ leads, panToLeadId }: { leads: ScoutResult[], panToLeadId?: string | null }) => {
@@ -57,8 +62,130 @@ const MapController = ({ leads, panToLeadId }: { leads: ScoutResult[], panToLead
     return null
 }
 
-export function GoogleScoutMap({ leads, highlightedLeadId, panToLeadId, onMarkerClick, onMapClick }: GoogleScoutMapProps) {
+const DrawingManager = ({ onSelection, isDrawing, setIsDrawing, initialBounds }: {
+    onSelection: (bounds: { north: number, south: number, east: number, west: number }) => void,
+    isDrawing: boolean,
+    setIsDrawing: (isDrawing: boolean) => void,
+    initialBounds?: { north: number, south: number, east: number, west: number } | null
+}) => {
+    const map = useMap()
+    const drawingLib = useMapsLibrary('drawing')
+    const [drawingManager, setDrawingManager] = useState<google.maps.drawing.DrawingManager | null>(null)
+    const rectangleRef = useRef<google.maps.Rectangle | null>(null)
+
+    // Effect to restore bounds on mount or update
+    useEffect(() => {
+        if (!map || !initialBounds || rectangleRef.current) return
+
+        const rectangle = new google.maps.Rectangle({
+            bounds: initialBounds,
+            fillColor: '#22c55e',
+            fillOpacity: 0.2,
+            strokeWeight: 2,
+            strokeColor: '#22c55e',
+            editable: true,
+            draggable: true,
+            map: map
+        })
+
+        rectangleRef.current = rectangle
+
+        // Add listeners to existing rectangle
+        google.maps.event.addListener(rectangle, 'bounds_changed', () => {
+            const newBounds = rectangle.getBounds()
+            if (newBounds) {
+                onSelection(newBounds.toJSON())
+            }
+        })
+
+    }, [map, initialBounds]) // Only run if map or initialBounds change (and no rect exists)
+
+    useEffect(() => {
+        if (!map || !drawingLib) return
+
+        const manager = new drawingLib.DrawingManager({
+            drawingMode: null,
+            drawingControl: false,
+            rectangleOptions: {
+                fillColor: '#22c55e',
+                fillOpacity: 0.2,
+                strokeWeight: 2,
+                strokeColor: '#22c55e',
+                editable: true,
+                draggable: true
+            }
+        })
+
+        manager.setMap(map)
+        setDrawingManager(manager)
+
+        return () => {
+            manager.setMap(null)
+        }
+    }, [map, drawingLib])
+
+    useEffect(() => {
+        if (!drawingManager) return
+
+        if (isDrawing) {
+            drawingManager.setDrawingMode(google.maps.drawing.OverlayType.RECTANGLE)
+            // Clear existing rectangle if any
+            if (rectangleRef.current) {
+                rectangleRef.current.setMap(null)
+                rectangleRef.current = null
+            }
+        } else {
+            drawingManager.setDrawingMode(null)
+        }
+    }, [isDrawing, drawingManager])
+
+    useEffect(() => {
+        if (!drawingManager) return
+
+        const listener = google.maps.event.addListener(drawingManager, 'overlaycomplete', (event: any) => {
+            if (event.type === 'rectangle') {
+                const rectangle = event.overlay as google.maps.Rectangle
+                rectangleRef.current = rectangle
+
+                const bounds = rectangle.getBounds()
+                if (bounds) {
+                    const json = bounds.toJSON()
+                    onSelection(json)
+                }
+
+                // Stop drawing mode but keep rectangle
+                setIsDrawing(false)
+
+                // Add listeners for edit/drag
+                google.maps.event.addListener(rectangle, 'bounds_changed', () => {
+                    const newBounds = rectangle.getBounds()
+                    if (newBounds) {
+                        onSelection(newBounds.toJSON())
+                    }
+                })
+            }
+        })
+
+        return () => {
+            google.maps.event.removeListener(listener)
+        }
+    }, [drawingManager, onSelection, setIsDrawing])
+
+    return null
+}
+
+export function GoogleScoutMap({ leads, highlightedLeadId, panToLeadId, onMarkerClick, onMapClick, onMapSelection, onSearchArea, selectedBounds }: GoogleScoutMapProps) {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""
+    const [isDrawing, setIsDrawing] = useState(false)
+
+    // Clear selection handler
+    const handleClearSelection = () => {
+        setIsDrawing(false)
+        if (onMapSelection) onMapSelection(null)
+        // Note: Clearing the visual rectangle is handled by DrawingManager re-mount or state logic, 
+        // but since we don't expose a clear method, we might need a ref or just rely on new search clearing it.
+        // For now, let's just trigger the callback.
+    }
 
     // Default center (Tucson)
     const defaultCenter = { lat: 32.2226, lng: -110.9747 }
@@ -78,6 +205,15 @@ export function GoogleScoutMap({ leads, highlightedLeadId, panToLeadId, onMarker
                 >
                     <MapController leads={leads} panToLeadId={panToLeadId} />
 
+                    {onMapSelection && (
+                        <DrawingManager
+                            onSelection={onMapSelection}
+                            isDrawing={isDrawing}
+                            setIsDrawing={setIsDrawing}
+                            initialBounds={selectedBounds}
+                        />
+                    )}
+
                     {leads.map((lead, index) => (
                         lead.latitude && lead.longitude ? (
                             <AdvancedMarker
@@ -96,6 +232,34 @@ export function GoogleScoutMap({ leads, highlightedLeadId, panToLeadId, onMarker
                         ) : null
                     ))}
                 </Map>
+
+                {/* Drawing Tools Overlay */}
+                {onMapSelection && (
+                    <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+                        <Button
+                            variant={isDrawing ? "destructive" : "secondary"}
+                            size="sm"
+                            onClick={() => setIsDrawing(!isDrawing)}
+                            className="shadow-md"
+                        >
+                            {isDrawing ? <X className="w-4 h-4 mr-2" /> : <Pencil className="w-4 h-4 mr-2" />}
+                            {isDrawing ? "Cancel" : "Draw Area"}
+                        </Button>
+
+                        {/* Search Area Button - Only visible when bounds exist and not drawing */}
+                        {selectedBounds && !isDrawing && onSearchArea && (
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => onSearchArea(selectedBounds)}
+                                className="shadow-md bg-green-600 hover:bg-green-700 text-white animate-in fade-in slide-in-from-left-2"
+                            >
+                                <Search className="w-4 h-4 mr-2" />
+                                Search Area
+                            </Button>
+                        )}
+                    </div>
+                )}
             </div>
         </APIProvider>
     )

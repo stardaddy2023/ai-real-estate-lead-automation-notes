@@ -8,16 +8,11 @@ interface Property {
     distress_score?: number;
     score?: number; // Keep for backward compatibility if needed
     reasoning?: string;
-    latitude?: number;
-    longitude?: number;
-    location?: { lat: number; lng: number }; // Keep for backward compatibility
-    phone?: string;
-    email?: string;
     owner_name?: string;
     mailing_address?: string;
-    social_ids?: { [key: string]: string };
-    bedrooms?: number;
-    bathrooms?: number;
+    property_type?: string;
+    beds?: number;
+    baths?: number;
     sqft?: number;
     lot_size?: number;
     year_built?: number;
@@ -30,14 +25,60 @@ interface Property {
     parcel_id?: string;
 }
 
+export interface ScoutResult {
+    id: string;
+    address: string;
+    owner_name: string;
+    mailing_address: string;
+    property_type: string;
+    last_sale_date?: string;
+    last_sale_price?: number;
+    assessed_value?: number;
+    year_built?: number;
+    sqft?: number;
+    lot_size?: number;
+    distress_signals: string[];
+    distress_score: number;
+    latitude: number;
+    longitude: number;
+    beds?: number;
+    baths?: number;
+    pool?: boolean;
+    garage?: boolean;
+    arv?: number;
+    phone?: string;
+    email?: string;
+    parcel_id?: string;
+    violation_count?: number;
+    violations?: Array<{ description: string; activity_num: string }>;
+}
+
 interface AppState {
     selectedProperty: Property | null;
     isFilterOpen: boolean;
     isDetailPanelOpen: boolean;
     activeZone: 'market_scout' | 'leads' | 'my_leads' | 'deals' | 'crm' | 'contacts' | 'campaigns' | 'analytics' | 'settings';
     leads: Property[];
-    filteredLeads: Property[]; // Add filteredLeads to interface
+    filteredLeads: Property[];
     viewMode: 'map' | 'list';
+
+    // Lead Scout State
+    leadScout: {
+        query: string;
+        results: ScoutResult[];
+        loading: boolean;
+        selectedPropertyTypes: string[];
+        selectedDistressTypes: string[];
+        limit: number;
+        minBeds: string;
+        minBaths: string;
+        minSqft: string;
+        viewMode: 'map' | 'list';
+        highlightedLeadId: string | null;
+        panToLeadId: string | null;
+        selectedLeadIds: Set<string>;
+        bounds: { north: number, south: number, east: number, west: number } | null;
+    };
 
     setSelectedProperty: (property: Property | null) => void;
     toggleFilter: () => void;
@@ -45,20 +86,22 @@ interface AppState {
     setActiveZone: (zone: AppState['activeZone']) => void;
     setViewMode: (mode: 'map' | 'list') => void;
     fetchLeads: () => Promise<void>;
-    filterDeals: (query: string) => void; // Add filterDeals to interface
+    filterDeals: (query: string) => void;
 
-    // Scout State
-    scoutedLeads: any[]; // Using any for now to avoid circular dependency, or duplicate interface
+    // Lead Scout Actions
+    setLeadScoutState: (state: Partial<AppState['leadScout']>) => void;
+    resetLeadScoutState: () => void;
+
+    // Scout State (Legacy/MarketRecon?)
     searchFilters: {
-        city: string;
         zip_code: string;
-        county: string; // Add county
+        county: string;
         distress_type: string[];
         property_types: string[];
         limit: number;
     };
     setSearchFilters: (filters: Partial<AppState['searchFilters']>) => void;
-    fetchScoutedLeads: () => Promise<void>;
+    scoutedLeads: any[];
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -67,25 +110,65 @@ export const useAppStore = create<AppState>((set, get) => ({
     isDetailPanelOpen: false,
     activeZone: 'market_scout',
     leads: [],
-    filteredLeads: [], // Initialize filteredLeads
+    filteredLeads: [],
     viewMode: 'map',
 
-    // Scout State Initial Values
-    scoutedLeads: [],
+    // Lead Scout Initial State
+    leadScout: {
+        query: "",
+        results: [],
+        loading: false,
+        selectedPropertyTypes: [],
+        selectedDistressTypes: [],
+        limit: 100,
+        minBeds: "",
+        minBaths: "",
+        minSqft: "",
+        viewMode: 'map',
+        highlightedLeadId: null,
+        panToLeadId: null,
+        selectedLeadIds: new Set(),
+        bounds: null,
+    },
+
+    // Scout State (Legacy)
     searchFilters: {
-        city: '',
         zip_code: '',
         county: 'Pima', // Default to Pima
         distress_type: ['all'],
         property_types: ['Single Family'],
         limit: 100
     },
+    scoutedLeads: [],
 
     setSelectedProperty: (property) => set({ selectedProperty: property, isDetailPanelOpen: !!property }),
     toggleFilter: () => set((state) => ({ isFilterOpen: !state.isFilterOpen })),
     toggleDetailPanel: (isOpen) => set({ isDetailPanelOpen: isOpen }),
     setActiveZone: (zone) => set({ activeZone: zone }),
     setViewMode: (mode) => set({ viewMode: mode }),
+
+    setLeadScoutState: (newState) => set((state) => ({
+        leadScout: { ...state.leadScout, ...newState }
+    })),
+    
+    resetLeadScoutState: () => set((state) => ({
+        leadScout: {
+            query: "",
+            results: [],
+            loading: false,
+            selectedPropertyTypes: [],
+            selectedDistressTypes: [],
+            limit: 100,
+            minBeds: "",
+            minBaths: "",
+            minSqft: "",
+            viewMode: 'map',
+            highlightedLeadId: null,
+            panToLeadId: null,
+            selectedLeadIds: new Set(),
+            bounds: null,
+        }
+    })),
 
     setSearchFilters: (filters) => set((state) => ({
         searchFilters: { ...state.searchFilters, ...filters }
@@ -98,60 +181,6 @@ export const useAppStore = create<AppState>((set, get) => ({
             set({ leads: data, filteredLeads: data }); // Initialize filteredLeads with all leads
         } catch (error) {
             console.error("Failed to fetch leads:", error);
-        }
-    },
-
-
-    fetchScoutedLeads: async () => {
-        const { searchFilters } = get();
-        try {
-            // Parse the input (stored in city) to determine if it's a city, zip, address, or county
-            const searchInput = searchFilters.city.trim();
-            const upperInput = searchInput.toUpperCase();
-            const isZip = /^\d{5}$/.test(searchInput);
-
-            // Check for County
-            let county = 'Pima'; // Default
-            if (upperInput.includes('PINAL')) {
-                county = 'Pinal';
-            } else if (upperInput.includes('PIMA')) {
-                county = 'Pima';
-            }
-
-            // List of known Pima County cities/CDPs to prioritize as City search
-            const knownCities = ['TUCSON', 'MARANA', 'ORO VALLEY', 'SAHUARITA', 'VAIL', 'CATALINA', 'GREEN VALLEY', 'SOUTH TUCSON'];
-            const isCity = knownCities.includes(upperInput);
-
-            // If input is just "Pima" or "Pinal" (or "Pima County"), we don't want to send it as address/city
-            const isCountyOnly = upperInput.includes('COUNTY') || upperInput === 'PIMA' || upperInput === 'PINAL';
-
-            const payload = {
-                state: 'AZ',
-                county: county,
-                city: isCity ? searchInput : '',
-                zip_code: isZip ? searchInput : '',
-                // If it's not a zip, not a known city, and not just a county name, treat it as an address fragment
-                address: (!isZip && !isCity && !isCountyOnly) ? searchInput : '',
-                distress_type: searchFilters.distress_type,
-                property_types: searchFilters.property_types,
-                limit: searchFilters.limit
-            };
-
-            console.log("DEBUG PAYLOAD:", payload);
-
-            const res = await fetch('http://127.0.0.1:8000/scout/search', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!res.ok) throw new Error('Search failed');
-            const data = await res.json();
-
-            // Server now handles filtering, so we just set the data
-            set({ scoutedLeads: data, activeZone: 'leads' });
-        } catch (error) {
-            console.error("Failed to fetch scouted leads:", error);
         }
     },
 

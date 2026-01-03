@@ -30,14 +30,48 @@ class ScoutService:
             "outFields": "*",
             "returnGeometry": "true",
             "outSR": "4326",  # WGS84 for Leaflet map compatibility
-            "resultRecordCount": limit * 3 if zip_code else limit,  # Fetch more if filtering
+            "resultRecordCount": limit * 10 if (zip_code or filters.get('bounds')) else limit,  # Fetch more if filtering (spatial)
             "f": "json",
             "orderByFields": "DT_ENT DESC"
         }
         
         # If zip code provided, use spatial query with envelope
         zip_polygon = None
-        if zip_code:
+        bounds = filters.get('bounds')
+        
+        if bounds:
+            # Handle Bounds Filter (Map Selection) - Priority over Zip
+            # Construct envelope from bounds
+            # Expected format: {xmin, ymin, xmax, ymax} or {south, west, north, east}
+            if 'west' in bounds:
+                 # Convert Google Maps bounds to Envelope
+                 envelope = {
+                     "xmin": bounds['west'],
+                     "ymin": bounds['south'],
+                     "xmax": bounds['east'],
+                     "ymax": bounds['north'],
+                     "spatialReference": {"wkid": 4326}
+                 }
+            elif 'xmin' in bounds:
+                 envelope = {
+                     "xmin": bounds['xmin'],
+                     "ymin": bounds['ymin'],
+                     "xmax": bounds['xmax'],
+                     "ymax": bounds['ymax'],
+                     "spatialReference": {"wkid": 4326}
+                 }
+            
+            # Create Shapely Polygon for client-side filtering
+            from shapely.geometry import box
+            zip_polygon = prep(box(envelope['xmin'], envelope['ymin'], envelope['xmax'], envelope['ymax']))
+            
+            # Add envelope to spatial query for server-side pre-filtering
+            params["geometry"] = json.dumps(envelope)
+            params["geometryType"] = "esriGeometryEnvelope"
+            params["spatialRel"] = "esriSpatialRelIntersects"
+            params["inSR"] = "4326"
+            
+        elif zip_code:
             zip_metadata = await self._get_zip_metadata(zip_code)
             if zip_metadata and "polygon" in zip_metadata:
                 zip_polygon = prep(zip_metadata["polygon"])
@@ -60,22 +94,22 @@ class ScoutService:
                 # Map to lead objects
                 leads = [self._map_tucson_violation(f) for f in features]
                 
-                # Client-side filtering by zip code (strict)
-                if zip_code and zip_polygon:
+                # Client-side filtering by zip code OR bounds (strict)
+                if (zip_code or bounds) and zip_polygon:
                     filtered_leads = []
                     for lead in leads:
                         if lead.get("latitude") and lead.get("longitude"):
                             pt = Point(lead["longitude"], lead["latitude"])
                             if zip_polygon.contains(pt):
-                                # Override extracted zip with search zip
-                                lead["address_zip"] = zip_code
+                                # Override extracted zip with search zip if searching by zip
+                                if zip_code:
+                                    lead["address_zip"] = zip_code
                                 # Update full address to include city and zip
-                                lead["address"] = f"{lead['address_street']}, Tucson, AZ {zip_code}"
+                                if zip_code:
+                                    lead["address"] = f"{lead['address_street']}, Tucson, AZ {zip_code}"
                                 filtered_leads.append(lead)
-                    print(f"After zip filter: {len(filtered_leads)} code violations.")
-                    leads = filtered_leads[:limit]
-                else:
-                    leads = leads[:limit]
+                    print(f"After spatial filter: {len(filtered_leads)} code violations.")
+                    leads = filtered_leads
                 
                 # Filter by specific address BEFORE enrichment (performance optimization)
                 address_filter = filters.get("address")
@@ -83,15 +117,8 @@ class ScoutService:
                     address_norm = address_filter.upper().strip()
                     leads = [l for l in leads if address_norm in l.get("address_street", "").upper()]
                     print(f"After address filter: {len(leads)} code violations.")
-                
-                # Only enrich the filtered results (not all 100!)
-                # Enrich with parcel data (owner info)
-                await self._enrich_violations_with_parcel_data(leads)
-                
-                # Enrich with zip codes based on coordinates (for leads missing zip)
-                await self._enrich_violations_with_zip_codes(leads)
-                
-                # ===== CONSOLIDATE MULTIPLE VIOLATIONS PER ADDRESS =====
+
+                # ===== CONSOLIDATE MULTIPLE VIOLATIONS PER ADDRESS (BEFORE LIMIT) =====
                 # Group violations by address and create consolidated leads
                 consolidated = {}
                 for lead in leads:
@@ -117,16 +144,23 @@ class ScoutService:
                             "activity_num": lead.get("id")
                         })
                         existing["violation_count"] = len(existing["violations"])
-                        # Keep any enrichment data from either source
+                        # Keep any enrichment data from either source (though not enriched yet)
                         if not existing.get("owner_name") and lead.get("owner_name"):
                             existing["owner_name"] = lead.get("owner_name")
-                        if not existing.get("mailing_address") and lead.get("mailing_address"):
-                            existing["mailing_address"] = lead.get("mailing_address")
-                        if not existing.get("parcel_id") and lead.get("parcel_id"):
-                            existing["parcel_id"] = lead.get("parcel_id")
                 
                 print(f"Consolidated {len(leads)} violations into {len(consolidated)} unique properties.")
-                return list(consolidated.values())[:limit]
+                
+                # Apply Limit AFTER Consolidation
+                final_leads = list(consolidated.values())[:limit]
+                
+                # Only enrich the filtered results (not all!)
+                # Enrich with parcel data (owner info)
+                await self._enrich_violations_with_parcel_data(final_leads)
+                
+                # Enrich with zip codes based on coordinates (for leads missing zip)
+                await self._enrich_violations_with_zip_codes(final_leads)
+                
+                return final_leads
             else:
                 print(f"Error fetching violations: {response.status_code}")
                 return []
@@ -137,103 +171,120 @@ class ScoutService:
     async def _enrich_violations_with_parcel_data(self, leads: List[Dict]):
         """
         Enriches code violation leads with owner info from the parcel layer.
-        Uses concurrent spatial queries (20 parallel) for reliable enrichment.
+        Uses BATCH spatial queries (Multipoint) for performance.
         """
         if not leads:
             return
         
         import time
         start_time = time.time()
-        print(f"Enriching {len(leads)} violations with parcel data (concurrent)...")
+        print(f"Enriching {len(leads)} violations with parcel data (BATCH)...")
         
         base_url = "https://gisdata.pima.gov/arcgis1/rest/services/GISOpenData/LandRecords/MapServer/12/query"
         
+        # Process in batches of 50
+        batch_size = 50
+        enriched_count = 0
+        
         loop = asyncio.get_event_loop()
-        sem = asyncio.Semaphore(30)  # Increased to 30 concurrent requests
         
-        # Use session for connection pooling (faster)
-        session = requests.Session()
-        adapter = requests.adapters.HTTPAdapter(pool_connections=30, pool_maxsize=30)
-        session.mount("https://", adapter)
-        
-        async def enrich_single(lead):
-            """Enriches a single lead with parcel data."""
-            async with sem:
+        for i in range(0, len(leads), batch_size):
+            batch = leads[i:i + batch_size]
+            
+            # 1. Build Multipoint Geometry
+            points = []
+            valid_leads = []
+            for lead in batch:
                 lat = lead.get("latitude")
                 lon = lead.get("longitude")
-                if not lat or not lon:
-                    return False
+                if lat and lon:
+                    points.append([lon, lat])
+                    valid_leads.append(lead)
+            
+            if not points:
+                continue
+                
+            multipoint = {
+                "points": points,
+                "spatialReference": {"wkid": 4326}
+            }
+            
+            params = {
+                "geometry": json.dumps(multipoint),
+                "geometryType": "esriGeometryMultipoint",
+                "spatialRel": "esriSpatialRelIntersects",
+                "outFields": "PARCEL,MAIL1,MAIL2,MAIL3,MAIL4,MAIL5,ZIP,FCV,CURZONE_OL,GISAREA",
+                "returnGeometry": "true",
+                "outSR": "4326",
+                "f": "json"
+            }
+            
+            try:
+                resp = await loop.run_in_executor(
+                    None, 
+                    lambda: requests.post(base_url, data=params, timeout=10)
+                )
+                
+                if resp.status_code == 200:
+                    data = resp.json()
+                    features = data.get("features", [])
                     
-                point_geom = {
-                    "x": lon,
-                    "y": lat,
-                    "spatialReference": {"wkid": 4326}
-                }
+                    # 2. Map Parcels to Leads (Point in Polygon)
+                    # Pre-process parcels into Shapely polygons
+                    parcels = []
+                    for f in features:
+                        attr = f.get("attributes", {})
+                        geom = f.get("geometry")
+                        if geom and "rings" in geom:
+                            try:
+                                poly = Polygon(geom["rings"][0])
+                                parcels.append((poly, attr))
+                            except:
+                                pass
+
+                    # Check each lead against parcels
+                    for lead in valid_leads:
+                        pt = Point(lead["longitude"], lead["latitude"])
+                        for poly, attr in parcels:
+                            if poly.contains(pt):
+                                # Match! Enrich.
+                                # Build mailing address
+                                mail_parts = []
+                                for k in range(1, 6):
+                                    mail_val = attr.get(f"MAIL{k}")
+                                    if mail_val and mail_val.strip():
+                                        mail_parts.append(mail_val.strip())
+                                m_zip = attr.get("ZIP")
+                                if m_zip and str(m_zip) != "000000000":
+                                    mail_parts.append(str(m_zip))
+                                mailing_address = ", ".join(mail_parts)
+                                
+                                lead["owner_name"] = attr.get("MAIL1", "").title() if attr.get("MAIL1") else None
+                                lead["mailing_address"] = mailing_address
+                                if attr.get("PARCEL"):
+                                    lead["parcel_id"] = attr.get("PARCEL")
+                                lead["zoning"] = attr.get("CURZONE_OL")
+                                lead["lot_size"] = attr.get("GISAREA")
+                                lead["assessed_value"] = attr.get("FCV")
+                                
+                                # Check absentee
+                                prop_street = (lead.get("address_street") or "").upper().strip()
+                                if prop_street and mailing_address:
+                                    if prop_street not in mailing_address.upper():
+                                        if "Absentee Owner" not in lead.get("distress_signals", []):
+                                            lead["distress_signals"].append("Absentee Owner")
+                                
+                                enriched_count += 1
+                                break # Found the parcel for this lead
+            except Exception as e:
+                print(f"Batch enrichment error: {e}")
                 
-                params = {
-                    "geometry": json.dumps(point_geom),
-                    "geometryType": "esriGeometryPoint",
-                    "spatialRel": "esriSpatialRelIntersects",
-                    "outFields": "PARCEL,MAIL1,MAIL2,MAIL3,MAIL4,MAIL5,ZIP,FCV,CURZONE_OL,GISAREA",
-                    "returnGeometry": "false",
-                    "outSR": "4326",
-                    "f": "json"
-                }
-                
-                try:
-                    resp = await loop.run_in_executor(
-                        None, 
-                        lambda: session.get(base_url, params=params, timeout=5)
-                    )
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        features = data.get("features", [])
-                        if features:
-                            attr = features[0].get("attributes", {})
-                            
-                            # Build mailing address
-                            mail_parts = []
-                            for i in range(1, 6):
-                                mail_val = attr.get(f"MAIL{i}")
-                                if mail_val and mail_val.strip():
-                                    mail_parts.append(mail_val.strip())
-                            m_zip = attr.get("ZIP")
-                            if m_zip and str(m_zip) != "000000000":
-                                mail_parts.append(str(m_zip))
-                            mailing_address = ", ".join(mail_parts)
-                            
-                            # Update lead
-                            lead["owner_name"] = attr.get("MAIL1", "").title() if attr.get("MAIL1") else None
-                            lead["mailing_address"] = mailing_address
-                            if attr.get("PARCEL"):
-                                lead["parcel_id"] = attr.get("PARCEL")
-                            lead["zoning"] = attr.get("CURZONE_OL")
-                            lead["lot_size"] = attr.get("GISAREA")
-                            lead["assessed_value"] = attr.get("FCV")
-                            
-                            # Check absentee status
-                            prop_street = (lead.get("address_street") or "").upper().strip()
-                            if prop_street and mailing_address:
-                                if prop_street not in mailing_address.upper():
-                                    if "Absentee Owner" not in lead.get("distress_signals", []):
-                                        lead["distress_signals"].append("Absentee Owner")
-                            return True
-                except Exception:
-                    pass
-                return False
-        
-        # Run all enrichment tasks concurrently
-        tasks = [enrich_single(lead) for lead in leads]
-        results = await asyncio.gather(*tasks)
-        
-        enriched_count = sum(1 for r in results if r)
         elapsed = time.time() - start_time
         print(f"Enriched {enriched_count}/{len(leads)} violations with parcel data ({elapsed:.2f}s)")
 
     async def _enrich_violations_with_zip_codes(self, leads: List[Dict]):
         """
-        Enriches code violation leads with proper zip codes using coordinate-based lookup
-        against the Zip Code layer (Layer 6).
+        Enriches code violation leads with proper zip codes using BATCH spatial queries.
         """
         if not leads:
             return
@@ -241,51 +292,74 @@ class ScoutService:
         zip_layer_url = "https://gisdata.pima.gov/arcgis1/rest/services/GISOpenData/Addresses/MapServer/6/query"
         loop = asyncio.get_event_loop()
         
-        async def lookup_zip(lead):
-            lat = lead.get("latitude")
-            lon = lead.get("longitude")
+        batch_size = 50
+        enriched_count = 0
+        
+        for i in range(0, len(leads), batch_size):
+            batch = leads[i:i + batch_size]
             
-            # Skip if already has zip or no coordinates
-            if lead.get("address_zip") or not lat or not lon:
-                return
+            points = []
+            valid_leads = []
+            for lead in batch:
+                # Skip if already has zip
+                if lead.get("address_zip"):
+                    continue
+                    
+                lat = lead.get("latitude")
+                lon = lead.get("longitude")
+                if lat and lon:
+                    points.append([lon, lat])
+                    valid_leads.append(lead)
+            
+            if not points:
+                continue
                 
-            point_geom = {
-                "x": lon,
-                "y": lat,
+            multipoint = {
+                "points": points,
                 "spatialReference": {"wkid": 4326}
             }
             
             params = {
-                "geometry": json.dumps(point_geom),
-                "geometryType": "esriGeometryPoint",
+                "geometry": json.dumps(multipoint),
+                "geometryType": "esriGeometryMultipoint",
                 "spatialRel": "esriSpatialRelIntersects",
                 "outFields": "ZIPCODE",
-                "returnGeometry": "false",
+                "returnGeometry": "true",
                 "f": "json"
             }
             
             try:
                 resp = await loop.run_in_executor(
                     None,
-                    lambda: requests.get(zip_layer_url, params=params, timeout=5)
+                    lambda: requests.post(zip_layer_url, data=params, timeout=10)
                 )
                 if resp.status_code == 200:
                     data = resp.json()
                     features = data.get("features", [])
-                    if features:
-                        zipcode = features[0].get("attributes", {}).get("ZIPCODE")
-                        if zipcode:
-                            lead["address_zip"] = str(zipcode)[:5]
-                            lead["address"] = f"{lead.get('address_street', '')}, Tucson, AZ {lead['address_zip']}"
+                    
+                    zips = []
+                    for f in features:
+                        zipcode = f.get("attributes", {}).get("ZIPCODE")
+                        geom = f.get("geometry")
+                        if zipcode and geom and "rings" in geom:
+                            try:
+                                poly = Polygon(geom["rings"][0])
+                                zips.append((poly, zipcode))
+                            except:
+                                pass
+                                
+                    for lead in valid_leads:
+                        pt = Point(lead["longitude"], lead["latitude"])
+                        for poly, zipcode in zips:
+                            if poly.contains(pt):
+                                lead["address_zip"] = str(zipcode)[:5]
+                                lead["address"] = f"{lead.get('address_street', '')}, Tucson, AZ {lead['address_zip']}"
+                                enriched_count += 1
+                                break
             except Exception:
                 pass
         
-        # Run lookups concurrently
-        tasks = [lookup_zip(lead) for lead in leads]
-        await asyncio.gather(*tasks)
-        
-        enriched = sum(1 for l in leads if l.get("address_zip"))
-        print(f"Enriched {enriched}/{len(leads)} code violations with zip codes.")
+        print(f"Enriched {enriched_count}/{len(leads)} code violations with zip codes.")
 
     # Filter priority order (most restrictive first)
     FILTER_PRIORITY = [
@@ -406,7 +480,8 @@ class ScoutService:
             # Step 1: Fetch from PRIMARY (most restrictive) source
             primary = selected[0]
             # Fetch more than needed since AND filtering will reduce results
-            fetch_limit = limit * 3 if len(selected) > 1 else limit
+            # Always fetch 3x to ensure we get enough candidates after spatial/secondary filtering
+            fetch_limit = limit * 3
             print(f"AND-Logic: Fetching from primary source '{primary}' with limit {fetch_limit}")
             
             candidates = await self._fetch_primary(primary, filters, fetch_limit)
@@ -627,6 +702,36 @@ class ScoutService:
             
             # Always add ZIP filter as backup/refinement
             where_parts.append(f"ZIP LIKE '{filters['zip_code']}%'")
+        
+        # Handle Bounds Filter (Map Selection)
+        bounds = filters.get('bounds')
+        if bounds:
+            # Construct envelope from bounds
+            # Expected format: {xmin, ymin, xmax, ymax} or {south, west, north, east}
+            if 'west' in bounds:
+                 # Convert Google Maps bounds to Envelope
+                 zip_metadata = {
+                     "envelope": {
+                         "xmin": bounds['west'],
+                         "ymin": bounds['south'],
+                         "xmax": bounds['east'],
+                         "ymax": bounds['north'],
+                         "spatialReference": {"wkid": 4326}
+                     },
+                     "polygon": None # No complex polygon for box selection
+                 }
+                 self._log(f"Using Map Selection Bounds: {zip_metadata['envelope']}")
+            elif 'xmin' in bounds:
+                 zip_metadata = {
+                     "envelope": {
+                         "xmin": bounds['xmin'],
+                         "ymin": bounds['ymin'],
+                         "xmax": bounds['xmax'],
+                         "ymax": bounds['ymax'],
+                         "spatialReference": {"wkid": 4326}
+                     },
+                     "polygon": None
+                 }
                 
         if filters.get('city'):
             where_parts.append(f"JURIS_OL = '{filters['city'].upper()}'")
@@ -675,7 +780,7 @@ class ScoutService:
                         "geometry": json.dumps(envelope),
                         "geometryType": "esriGeometryEnvelope",
                         "spatialRel": "esriSpatialRelIntersects",
-                        "inSR": "2868",
+                        "inSR": str(envelope.get("spatialReference", {}).get("wkid", "2868")), # Dynamic SR
                         "outFields": "OBJECTID",
                         "returnGeometry": "false",
                         "f": "json",
@@ -743,7 +848,7 @@ class ScoutService:
                         
                         # STRICT CLIENT-SIDE FILTERING
                         # 1. Polygon Filter (Best): Use actual Zip geometry
-                        if zip_metadata and "polygon" in zip_metadata:
+                        if zip_metadata and zip_metadata.get("polygon"):
                             self._log(f"*** USING POLYGON FILTER *** for {zip_code}. Raw count: {len(leads)}")
                             poly = zip_metadata["polygon"]
                             prepared_poly = prep(poly)

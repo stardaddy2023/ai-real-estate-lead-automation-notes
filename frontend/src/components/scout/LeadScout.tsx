@@ -12,6 +12,7 @@ import { Loader2, Map as MapIcon, List as ListIcon, Download, Search, X } from '
 import { useToast } from '@/components/ui/use-toast'
 import { LeadDetailDialog } from './LeadDetailDialog'
 import { LeadFilters, PROPERTY_TYPES, DISTRESS_TYPES, DISABLED_DISTRESS_TYPES } from './LeadFilters'
+import { useAppStore, ScoutResult } from '@/lib/store'
 
 // Dynamic import for Map to avoid SSR issues
 const GoogleScoutMap = dynamic(() => import('./GoogleScoutMap').then(mod => mod.GoogleScoutMap), {
@@ -19,71 +20,45 @@ const GoogleScoutMap = dynamic(() => import('./GoogleScoutMap').then(mod => mod.
     loading: () => <div className="w-full h-full bg-gray-900 animate-pulse flex items-center justify-center text-gray-500">Loading Map...</div>
 })
 
-export interface ScoutResult {
-    id: string
-    address: string
-    owner_name: string
-    mailing_address: string
-    property_type: string
-    last_sale_date?: string
-    last_sale_price?: number
-    assessed_value?: number
-    year_built?: number
-    sqft?: number
-    lot_size?: number
-    distress_signals: string[]
-    distress_score: number
-    latitude: number
-    longitude: number
-    // Enhanced fields
-    beds?: number
-    baths?: number
-    pool?: boolean
-    garage?: boolean
-    arv?: number
-    phone?: string
-    email?: string
-    parcel_id?: string
-    // Violation consolidation fields
-    violation_count?: number
-    violations?: Array<{ description: string; activity_num: string }>
-}
-
-
-
 export default function LeadScout() {
-    // State
-    const [query, setQuery] = useState("")
-    const [results, setResults] = useState<ScoutResult[]>([])
-    const [loading, setLoading] = useState(false)
-    const [hoveredLeadId, setHoveredLeadId] = useState<string | null>(null)
-    const [highlightedLeadId, setHighlightedLeadId] = useState<string | null>(null)
-    const [panToLeadId, setPanToLeadId] = useState<string | null>(null)
+    // Global State
+    const { leadScout, setLeadScoutState } = useAppStore()
+    const {
+        query, results, loading,
+        selectedPropertyTypes, selectedDistressTypes,
+        limit, minBeds, minBaths, minSqft,
+        viewMode, highlightedLeadId, panToLeadId, selectedLeadIds,
+        bounds
+    } = leadScout
 
-    // Filters
-    const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>([])
-    const [selectedDistressTypes, setSelectedDistressTypes] = useState<string[]>([])
-    const [minBeds, setMinBeds] = useState<string>("")
-    const [minBaths, setMinBaths] = useState<string>("")
-    const [minSqft, setMinSqft] = useState<string>("")
-    const [maxPrice, setMaxPrice] = useState<string>("")
-    const [limit, setLimit] = useState<number>(100)
-
-    const [viewMode, setViewMode] = useState<'list' | 'map'>('map') // Default to Map
     const { toast } = useToast()
 
-    // Detail Dialog State
+    // Local State (UI only)
     const [selectedLead, setSelectedLead] = useState<ScoutResult | null>(null)
     const [isDetailOpen, setIsDetailOpen] = useState(false)
+    const [hoveredLeadId, setHoveredLeadId] = useState<string | null>(null)
 
-    // Refs for scrolling
+    // Refs
     const listRef = useRef<HTMLDivElement>(null)
+    const abortControllerRef = useRef<AbortController | null>(null)
 
     // Search Handler
-    const handleSearch = async () => {
-        setLoading(true)
-        setResults([]) // Clear previous results
-        setPanToLeadId(null) // Reset pan state
+    const handleSearch = async (clearBounds = true, explicitBounds: any = null) => {
+        // Cancel previous search if running
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+        }
+
+        // Create new controller
+        const controller = new AbortController()
+        abortControllerRef.current = controller
+
+        // If clearBounds is true (text search), reset bounds to null
+        // If explicitBounds is provided, use it (Search Area button)
+        // Otherwise use current state bounds (Filter update)
+        const newBounds = explicitBounds || (clearBounds ? null : bounds)
+
+        setLeadScoutState({ loading: true, results: [], panToLeadId: null, bounds: newBounds })
 
         try {
             const term = query.trim()
@@ -91,7 +66,8 @@ export default function LeadScout() {
             const payload: any = {
                 property_types: selectedPropertyTypes.length > 0 ? selectedPropertyTypes : ["Single Family"],
                 distress_type: selectedDistressTypes, // Allow empty list for generic search
-                limit: limit
+                limit: limit,
+                bounds: newBounds // Include bounds in payload
             }
 
             // Smart Classification
@@ -111,7 +87,8 @@ export default function LeadScout() {
             const res = await fetch('http://localhost:8000/scout/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                signal: controller.signal
             })
 
             if (!res.ok) {
@@ -122,7 +99,7 @@ export default function LeadScout() {
 
             const data = await res.json()
             console.log("Search Results:", data) // Debug log
-            setResults(data)
+            setLeadScoutState({ results: data, loading: false })
 
             if (data.length === 0) {
                 toast({ title: "No leads found", description: "Try adjusting your filters." })
@@ -130,11 +107,27 @@ export default function LeadScout() {
                 toast({ title: `Found ${data.length} leads`, description: "Map updated." })
             }
 
-        } catch (error) {
+        } catch (error: any) {
+            if (error.name === 'AbortError') {
+                console.log("Search cancelled")
+                setLeadScoutState({ loading: false })
+                return
+            }
             console.error("Handle Search Error:", error)
             toast({ title: "Error", description: "Failed to fetch leads.", variant: "destructive" })
+            setLeadScoutState({ loading: false })
         } finally {
-            setLoading(false)
+            if (abortControllerRef.current === controller) {
+                abortControllerRef.current = null
+            }
+        }
+    }
+
+    const handleCancelSearch = () => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+            setLeadScoutState({ loading: false })
+            toast({ title: "Search Cancelled", description: "Operation stopped by user." })
         }
     }
 
@@ -162,9 +155,7 @@ export default function LeadScout() {
         }
     }
 
-    // Bulk Selection State
-    const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set())
-
+    // Bulk Selection
     const toggleSelectLead = (id: string) => {
         const newSelected = new Set(selectedLeadIds)
         if (newSelected.has(id)) {
@@ -172,14 +163,14 @@ export default function LeadScout() {
         } else {
             newSelected.add(id)
         }
-        setSelectedLeadIds(newSelected)
+        setLeadScoutState({ selectedLeadIds: newSelected })
     }
 
     const toggleSelectAll = () => {
         if (selectedLeadIds.size === results.length) {
-            setSelectedLeadIds(new Set())
+            setLeadScoutState({ selectedLeadIds: new Set() })
         } else {
-            setSelectedLeadIds(new Set(results.map(r => r.id)))
+            setLeadScoutState({ selectedLeadIds: new Set(results.map(r => r.id)) })
         }
     }
 
@@ -187,7 +178,7 @@ export default function LeadScout() {
         if (selectedLeadIds.size === 0) return
 
         let successCount = 0
-        setLoading(true)
+        setLeadScoutState({ loading: true })
 
         for (const id of Array.from(selectedLeadIds)) {
             const lead = results.find(r => r.id === id)
@@ -197,29 +188,30 @@ export default function LeadScout() {
             }
         }
 
-        setLoading(false)
+        setLeadScoutState({ loading: false, selectedLeadIds: new Set() })
         toast({ title: "Bulk Import Complete", description: `Imported ${successCount} leads.` })
-        setSelectedLeadIds(new Set())
     }
 
     // Toggle Filters
     const togglePropertyType = (type: string) => {
-        setSelectedPropertyTypes(prev =>
-            prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
-        )
+        setLeadScoutState({
+            selectedPropertyTypes: selectedPropertyTypes.includes(type)
+                ? selectedPropertyTypes.filter(t => t !== type)
+                : [...selectedPropertyTypes, type]
+        })
     }
 
     const toggleDistressType = (type: string) => {
-        setSelectedDistressTypes(prev =>
-            prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
-        )
+        setLeadScoutState({
+            selectedDistressTypes: selectedDistressTypes.includes(type)
+                ? selectedDistressTypes.filter(t => t !== type)
+                : [...selectedDistressTypes, type]
+        })
     }
 
-    // Sync Map Click to List Scroll
+    // Map Interactions
     const handleMarkerClick = (lead: ScoutResult) => {
-        setHighlightedLeadId(lead.id)
-        setPanToLeadId(lead.id) // Pan on marker click too
-        setViewMode('list')
+        setLeadScoutState({ highlightedLeadId: lead.id, panToLeadId: lead.id, viewMode: 'list' })
 
         // Scroll to item in list
         setTimeout(() => {
@@ -231,9 +223,18 @@ export default function LeadScout() {
     }
 
     const handleMapClick = () => {
-        setViewMode('map')
-        setHighlightedLeadId(null)
-        setPanToLeadId(null)
+        setLeadScoutState({ viewMode: 'map', highlightedLeadId: null, panToLeadId: null })
+    }
+
+    const handleMapSelection = (newBounds: { north: number, south: number, east: number, west: number } | null) => {
+        setLeadScoutState({ bounds: newBounds })
+        // Do NOT trigger search automatically. 
+        // User must click "Search Area" button or hit Enter.
+    }
+
+    // Explicit handler for "Search Area" button
+    const handleSearchArea = (searchBounds: any) => {
+        handleSearch(false, searchBounds)
     }
 
     return (
@@ -251,8 +252,8 @@ export default function LeadScout() {
                         <div className="flex-1 min-w-[200px] h-full">
                             <AutocompleteInput
                                 value={query}
-                                onChange={setQuery}
-                                onSearch={handleSearch}
+                                onChange={(val) => setLeadScoutState({ query: val })}
+                                onSearch={() => handleSearch(true)} // Clear bounds on text search
                                 placeholder="Search Zip Code, City, or Neighborhood..."
                                 className="h-full w-full"
                                 inputClassName="bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white placeholder:text-gray-400 h-full w-full focus:outline-none text-sm px-0"
@@ -266,7 +267,7 @@ export default function LeadScout() {
                         <select
                             className="bg-transparent border-none text-gray-700 dark:text-gray-300 text-sm focus:outline-none cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-medium"
                             value={limit}
-                            onChange={(e) => setLimit(Number(e.target.value))}
+                            onChange={(e) => setLeadScoutState({ limit: Number(e.target.value) })}
                         >
                             <option value={10} className="bg-white dark:bg-gray-900">10 Leads</option>
                             <option value={25} className="bg-white dark:bg-gray-900">25 Leads</option>
@@ -312,16 +313,16 @@ export default function LeadScout() {
             <div className="absolute top-4 right-4 z-50 pointer-events-auto flex items-center gap-2">
                 <LeadFilters
                     selectedPropertyTypes={selectedPropertyTypes}
-                    setSelectedPropertyTypes={setSelectedPropertyTypes}
+                    setSelectedPropertyTypes={(val) => setLeadScoutState({ selectedPropertyTypes: val })}
                     selectedDistressTypes={selectedDistressTypes}
-                    setSelectedDistressTypes={setSelectedDistressTypes}
+                    setSelectedDistressTypes={(val) => setLeadScoutState({ selectedDistressTypes: val })}
                     minBeds={minBeds}
-                    setMinBeds={setMinBeds}
+                    setMinBeds={(val) => setLeadScoutState({ minBeds: val })}
                     minBaths={minBaths}
-                    setMinBaths={setMinBaths}
+                    setMinBaths={(val) => setLeadScoutState({ minBaths: val })}
                     minSqft={minSqft}
-                    setMinSqft={setMinSqft}
-                    onSearch={handleSearch}
+                    setMinSqft={(val) => setLeadScoutState({ minSqft: val })}
+                    onSearch={() => handleSearch(false)} // Keep bounds on filter update
                 />
             </div>
 
@@ -349,7 +350,7 @@ export default function LeadScout() {
                             )}
                         </div>
                         <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => setViewMode('map')}>
+                            <Button variant="ghost" size="sm" onClick={() => setLeadScoutState({ viewMode: 'map' })}>
                                 <MapIcon className="h-4 w-4 mr-2" /> Map
                             </Button>
                         </div>
@@ -363,15 +364,15 @@ export default function LeadScout() {
                                     className={`p-4 bg-gray-800/50 border border-gray-700/50 rounded-lg hover:border-green-500/50 transition-all cursor-pointer group relative ${highlightedLeadId === lead.id ? 'ring-2 ring-green-500 bg-gray-800' : ''}`}
                                     onMouseEnter={() => {
                                         setHoveredLeadId(lead.id)
-                                        setHighlightedLeadId(lead.id)
+                                        setLeadScoutState({ highlightedLeadId: lead.id })
                                     }}
                                     onMouseLeave={() => {
                                         setHoveredLeadId(null)
-                                        setHighlightedLeadId(null)
+                                        setLeadScoutState({ highlightedLeadId: null })
                                     }}
                                     onClick={() => {
                                         setSelectedLead(lead)
-                                        setPanToLeadId(lead.id) // Pan on card click
+                                        setLeadScoutState({ panToLeadId: lead.id }) // Pan on card click
                                         setIsDetailOpen(true)
                                     }}
                                 >
@@ -441,15 +442,26 @@ export default function LeadScout() {
                         panToLeadId={panToLeadId}
                         onMarkerClick={handleMarkerClick}
                         onMapClick={handleMapClick}
+                        onMapSelection={handleMapSelection}
+                        onSearchArea={handleSearchArea}
+                        selectedBounds={bounds}
                     />
                 </div>
 
-                {/* LOADING OVERLAY */}
+                {/* LOADING OVERLAY WITH CANCEL */}
                 {loading && (
-                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm pointer-events-none">
-                        <div className="bg-white dark:bg-gray-900 p-4 rounded-full shadow-2xl flex items-center gap-3 border border-gray-200 dark:border-gray-800">
-                            <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
-                            <span className="font-medium text-gray-900 dark:text-gray-100">Scouting Area...</span>
+                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm">
+                        <div className="bg-gray-900 p-6 rounded-xl border border-gray-800 shadow-2xl flex flex-col items-center gap-4">
+                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-500"></div>
+                            <div className="text-white font-medium">Scouting Leads...</div>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={handleCancelSearch}
+                                className="mt-2"
+                            >
+                                Cancel Search
+                            </Button>
                         </div>
                     </div>
                 )}
@@ -458,7 +470,7 @@ export default function LeadScout() {
                 {viewMode === 'map' && results.length > 0 && (
                     <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-50">
                         <Button
-                            onClick={() => setViewMode('list')}
+                            onClick={() => setLeadScoutState({ viewMode: 'list' })}
                             className="rounded-full shadow-2xl bg-blue-600 hover:bg-blue-700 text-white border-none px-8 py-6 text-lg font-semibold transition-all transform hover:scale-105"
                         >
                             <ListIcon className="w-5 h-5 mr-2" />
