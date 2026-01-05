@@ -726,3 +726,879 @@ First lead: {'id': '1211_E_9TH_ST', 'source': 'tucson_code_enforcement', 'parcel
 Cleaner returning 500 leads
 API RETURNING 500 CLEANED LEADS
 Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 25, 'bounds': None}
+API FOUND 25 RAW LEADS
+Cleaner received 25 leads
+First lead: {'id': '331_E_FORT_LOWELL_RD', 'source': 'tucson_code_enforcement', 'parcel_id': '10604270A', 'owner_name': 'Ingram Gregory & Laura Living Tr', 'address': '331 E FORT LOWELL RD, Tucson, AZ 85705', 'address_street': '331 E FORT LOWELL RD', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'INGRAM GREGORY & LAURA LIVING TR, PO BOX 43515, TUCSON AZ, 85733', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 21990.64030538, 'zoning': 'C-2', 'assessed_value': 132432.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.26541438724176, 'longitude': -110.96660567107949, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'activity_num': 'T15DV07243'}], 'violation_count': 1}
+Cleaner returning 25 leads
+API RETURNING 25 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': 'dunbar', 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 25, 'bounds': None}
+API FOUND 25 RAW LEADS
+Cleaner received 25 leads
+First lead: {'id': '2090_S_SAN_ANTONIO_DR', 'source': 'tucson_code_enforcement', 'parcel_id': '118060070', 'owner_name': 'Iglesia De Cristo De La Sana Doctrina', 'address': '2090 S SAN ANTONIO DR', 'address_street': '2090 S SAN ANTONIO DR', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': None, 'mailing_address': 'IGLESIA DE CRISTO DE LA SANA DOCTRINA, 6782 S THIMBLEBERRY RD, TUCSON AZ, 85756', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 11464.87310908, 'zoning': 'R-2', 'assessed_value': 117508.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.19799937960063, 'longitude': -110.9993218719924, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'North side of property  Excessive storage on property- make shift showers made for workers , Possible construction Business on site (FIELD)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'North side of property  Excessive storage on property- make shift showers made for workers , Possible construction Business on site (FIELD)', 'activity_num': 'T22DV05610'}], 'violation_count': 1}
+Cleaner returning 25 leads
+API RETURNING 25 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 25, 'bounds': None}
+API FOUND 25 RAW LEADS
+Cleaner received 25 leads
+First lead: {'id': '240_W_SAHUARO_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '115050720', 'owner_name': 'Nido 1 Llc', 'address': '240 W SAHUARO ST, Tucson, AZ 85705', 'address_street': '240 W SAHUARO ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NIDO 1 LLC, 6626 VISTA DEL MAR, PLAYA DEL REY CA, 90293', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 23579.47879348, 'zoning': 'O-3', 'assessed_value': 1246604.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.24953641531022, 'longitude': -110.97617064892727, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': "Dumping of furniture and mattresses.  The furniture and mattresses are dumped over the east wall onto someone else's vacant property and behind the dumpster which is located in the northeast corner outside the apartment complex. (COURTCMP)", 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': "Dumping of furniture and mattresses.  The furniture and mattresses are dumped over the east wall onto someone else's vacant property and behind the dumpster which is located in the northeast corner outside the apartment complex. (COURTCMP)", 'activity_num': 'T15DV07279'}], 'violation_count': 1}
+Cleaner returning 25 leads
+API RETURNING 25 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': '', 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 25, 'bounds': {'south': 32.221260743379084, 'west': -110.98317742318967, 'north': 32.23589095747832, 'east': -110.94412445993284}}
+API FOUND 25 RAW LEADS
+Cleaner received 25 leads
+First lead: {'id': '1211_E_9TH_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '124060970', 'owner_name': 'Ff Spe 1 Llc', 'address': '1211 E 9TH ST', 'address_street': '1211 E 9TH ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': None, 'mailing_address': 'FF SPE 1 LLC, 2030 E BROADWAY BLVD STE 22, TUCSON AZ, 85719', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 36057.73521367, 'zoning': 'NR-3', 'assessed_value': 1329060.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.224190109226875, 'longitude': -110.9527844474069, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'RWOP - bull doze a ramp into the wash and paving it. (PENDING)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'RWOP - bull doze a ramp into the wash and paving it. (PENDING)', 'activity_num': 'T21DV06873'}, {'description': 'Trash towards north end of property in arroyo area. (NOVERIFY)', 'activity_num': 'T14DV03443'}, {'description': 'There�s tons of trash and dead brush/cactus need to be pickedup. (NOVERIFY)', 'activity_num': 'T21DV01702'}, {'description': 'Along west easement facing Santa Rita- refuse thrown along pedestrian row. (NOVERIFY)', 'activity_num': 'T15DV00064'}], 'violation_count': 4}
+Cleaner returning 25 leads
+API RETURNING 25 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85711', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 25, 'bounds': None}
+API FOUND 25 RAW LEADS
+Cleaner received 25 leads
+First lead: {'id': '4658_E_CALLE_AURORA', 'source': 'tucson_code_enforcement', 'parcel_id': '130190580', 'owner_name': 'Nesbitt Quintin L & Ramona Cp/Rs', 'address': '4658 E CALLE AURORA, Tucson, AZ 85711', 'address_street': '4658 E CALLE AURORA', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85711', 'mailing_address': 'NESBITT QUINTIN L & RAMONA CP/RS, 13710 W SAGEBRUSH RD, MARANA AZ, 85653', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 8308.62138717, 'zoning': 'R-1', 'assessed_value': 179824.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.197956710179746, 'longitude': -110.89301399564403, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'Trash furniture and debris in alleyway (FIELD)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'Trash furniture and debris in alleyway (FIELD)', 'activity_num': 'T22DV05618'}], 'violation_count': 1}
+Cleaner returning 25 leads
+API RETURNING 25 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '130190580', 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 25, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 25, 'bounds': None}
+API FOUND 25 RAW LEADS
+Cleaner received 25 leads
+First lead: {'id': '240_W_SAHUARO_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '115050720', 'owner_name': 'Nido 1 Llc', 'address': '240 W SAHUARO ST, Tucson, AZ 85705', 'address_street': '240 W SAHUARO ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NIDO 1 LLC, 6626 VISTA DEL MAR, PLAYA DEL REY CA, 90293', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 23579.47879348, 'zoning': 'O-3', 'assessed_value': 1246604.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.24953641531022, 'longitude': -110.97617064892727, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': "Dumping of furniture and mattresses.  The furniture and mattresses are dumped over the east wall onto someone else's vacant property and behind the dumpster which is located in the northeast corner outside the apartment complex. (COURTCMP)", 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': "Dumping of furniture and mattresses.  The furniture and mattresses are dumped over the east wall onto someone else's vacant property and behind the dumpster which is located in the northeast corner outside the apartment complex. (COURTCMP)", 'activity_num': 'T15DV07279'}], 'violation_count': 1}
+Cleaner returning 25 leads
+API RETURNING 25 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85711', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85711', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85711', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85711', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 10, 'bounds': None}
+API FOUND 10 RAW LEADS
+Cleaner received 10 leads
+First lead: {'id': '331_E_FORT_LOWELL_RD', 'source': 'tucson_code_enforcement', 'parcel_id': '10604270A', 'owner_name': 'Ingram Gregory & Laura Living Tr', 'address': '331 E FORT LOWELL RD, Tucson, AZ 85705', 'address_street': '331 E FORT LOWELL RD', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'INGRAM GREGORY & LAURA LIVING TR, PO BOX 43515, TUCSON AZ, 85733', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 21990.64030538, 'zoning': 'C-2', 'assessed_value': 132432.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.26541438724176, 'longitude': -110.96660567107949, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'activity_num': 'T15DV07243'}], 'violation_count': 1}
+Cleaner returning 10 leads
+API RETURNING 10 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner', 'Tax Liens'], 'property_types': ['Single Family'], 'limit': 10, 'bounds': None}
+API FOUND 10 RAW LEADS
+Cleaner received 10 leads
+First lead: {'id': '240_W_SAHUARO_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '115050720', 'owner_name': 'Nido 1 Llc', 'address': '240 W SAHUARO ST, Tucson, AZ 85705', 'address_street': '240 W SAHUARO ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NIDO 1 LLC, 6626 VISTA DEL MAR, PLAYA DEL REY CA, 90293', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 23579.47879348, 'zoning': 'O-3', 'assessed_value': 1246604.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.24953641531022, 'longitude': -110.97617064892727, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': "Dumping of furniture and mattresses.  The furniture and mattresses are dumped over the east wall onto someone else's vacant property and behind the dumpster which is located in the northeast corner outside the apartment complex. (COURTCMP)", 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': "Dumping of furniture and mattresses.  The furniture and mattresses are dumped over the east wall onto someone else's vacant property and behind the dumpster which is located in the northeast corner outside the apartment complex. (COURTCMP)", 'activity_num': 'T15DV07279'}], 'violation_count': 1}
+Cleaner returning 10 leads
+API RETURNING 10 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85711', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Tax Liens'], 'property_types': ['Single Family'], 'limit': 50, 'bounds': None}
+API FOUND 50 RAW LEADS
+Cleaner received 50 leads
+First lead: {'id': '4658_E_CALLE_AURORA', 'source': 'tucson_code_enforcement', 'parcel_id': '130190580', 'owner_name': 'Nesbitt Quintin L & Ramona Cp/Rs', 'address': '4658 E CALLE AURORA, Tucson, AZ 85711', 'address_street': '4658 E CALLE AURORA', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85711', 'mailing_address': 'NESBITT QUINTIN L & RAMONA CP/RS, 13710 W SAGEBRUSH RD, MARANA AZ, 85653', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 8308.62138717, 'zoning': 'R-1', 'assessed_value': 179824.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.197956710179746, 'longitude': -110.89301399564403, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'Trash furniture and debris in alleyway (FIELD)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'Trash furniture and debris in alleyway (FIELD)', 'activity_num': 'T22DV05618'}], 'violation_count': 1}
+Cleaner returning 50 leads
+API RETURNING 50 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Absentee Owner', 'Tax Liens'], 'property_types': ['Single Family'], 'limit': 25, 'bounds': None}
+TRACE: _fetch_absentee_owners called. Limit=75
+TRACE: Fetching candidates with limit=1500...
+TRACE: Candidates fetched: 1500
+API FOUND 25 RAW LEADS
+Cleaner received 25 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '101080160', 'owner_name': 'Landeros Ricardo & Garcia Shirley Jt/Rs', 'address': '3341 W TRES NOGALES RD, Unincorporated Pima County, AZ 85705', 'address_street': '3341 W TRES NOGALES RD', 'address_city': 'Unincorporated Pima County', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'LANDEROS RICARDO & GARCIA SHIRLEY JT/RS, 3342 W SUNSET RD, TUCSON AZ, 85705', 'property_type': 'Single Family', 'year_built': None, 'sqft': None, 'lot_size': 12446.79958857, 'zoning': 'MU', 'assessed_value': 186249.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.30927251669886, 'longitude': -111.03863396993307, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 25 leads
+API RETURNING 25 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Absentee Owner', 'Tax Liens'], 'property_types': ['Single Family'], 'limit': 25, 'bounds': None}
+TRACE: _fetch_absentee_owners called. Limit=75
+TRACE: Fetching candidates with limit=1500...
+TRACE: Candidates fetched: 1500
+API FOUND 25 RAW LEADS
+Cleaner received 25 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '101080160', 'owner_name': 'Landeros Ricardo & Garcia Shirley Jt/Rs', 'address': '3341 W TRES NOGALES RD, Unincorporated Pima County, AZ 85705', 'address_street': '3341 W TRES NOGALES RD', 'address_city': 'Unincorporated Pima County', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'LANDEROS RICARDO & GARCIA SHIRLEY JT/RS, 3342 W SUNSET RD, TUCSON AZ, 85705', 'property_type': 'Single Family', 'year_built': None, 'sqft': None, 'lot_size': 12446.79958857, 'zoning': 'MU', 'assessed_value': 186249.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.30927251669886, 'longitude': -111.03863396993307, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 25 leads
+API RETURNING 25 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Tax Liens'], 'property_types': ['Single Family'], 'limit': 25, 'bounds': None}
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85711', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Tax Liens'], 'property_types': ['Single Family'], 'limit': 25, 'bounds': None}
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Tax Liens'], 'property_types': ['Single Family'], 'limit': 25, 'bounds': None}
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Tax Liens'], 'property_types': ['Single Family'], 'limit': 25, 'bounds': None}
+API FOUND 25 RAW LEADS
+Cleaner received 25 leads
+First lead: {'id': '614_E_GLENN_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '10715014A', 'owner_name': 'A&K Team Llc', 'address': '614 E GLENN ST, Tucson, AZ 85705', 'address_street': '614 E GLENN ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'A&K TEAM LLC, 614 E GLENN ST, TUCSON AZ, 85705', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 41299.15755227, 'zoning': 'C-3', 'assessed_value': 584398.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.257467164579246, 'longitude': -110.96195911577104, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation'], 'violation_description': 'GRAFFITI (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'GRAFFITI (NOVERIFY)', 'activity_num': 'T16DV06717'}], 'violation_count': 1}
+Cleaner returning 25 leads
+API RETURNING 25 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Tax Liens'], 'property_types': ['Single Family'], 'limit': 10, 'bounds': None}
+API FOUND 10 RAW LEADS
+Cleaner received 10 leads
+First lead: {'id': '614_E_GLENN_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '10715014A', 'owner_name': 'A&K Team Llc', 'address': '614 E GLENN ST, Tucson, AZ 85705', 'address_street': '614 E GLENN ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'A&K TEAM LLC, 614 E GLENN ST, TUCSON AZ, 85705', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 41299.15755227, 'zoning': 'C-3', 'assessed_value': 584398.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.257467164579246, 'longitude': -110.96195911577104, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation'], 'violation_description': 'GRAFFITI (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'GRAFFITI (NOVERIFY)', 'activity_num': 'T16DV06717'}], 'violation_count': 1}
+Cleaner returning 10 leads
+API RETURNING 10 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Tax Liens'], 'property_types': ['Single Family'], 'limit': 10, 'bounds': None}
+API FOUND 10 RAW LEADS
+Cleaner received 10 leads
+First lead: {'id': '614_E_GLENN_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '10715014A', 'owner_name': 'A&K Team Llc', 'address': '614 E GLENN ST, Tucson, AZ 85705', 'address_street': '614 E GLENN ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'A&K TEAM LLC, 614 E GLENN ST, TUCSON AZ, 85705', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 41299.15755227, 'zoning': 'C-3', 'assessed_value': 584398.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.257467164579246, 'longitude': -110.96195911577104, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation'], 'violation_description': 'GRAFFITI (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'GRAFFITI (NOVERIFY)', 'activity_num': 'T16DV06717'}], 'violation_count': 1}
+Cleaner returning 10 leads
+API RETURNING 10 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Tax Liens'], 'property_types': ['Single Family'], 'limit': 25, 'bounds': None}
+API FOUND 25 RAW LEADS
+Cleaner received 25 leads
+First lead: {'id': '614_E_GLENN_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '10715014A', 'owner_name': 'A&K Team Llc', 'address': '614 E GLENN ST, Tucson, AZ 85705', 'address_street': '614 E GLENN ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'A&K TEAM LLC, 614 E GLENN ST, TUCSON AZ, 85705', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 41299.15755227, 'zoning': 'C-3', 'assessed_value': 584398.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.257467164579246, 'longitude': -110.96195911577104, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation'], 'violation_description': 'GRAFFITI (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'GRAFFITI (NOVERIFY)', 'activity_num': 'T16DV06717'}], 'violation_count': 1}
+Cleaner returning 25 leads
+API RETURNING 25 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Tax Liens'], 'property_types': ['Single Family'], 'limit': 25, 'bounds': None}
+API FOUND 25 RAW LEADS
+Cleaner received 25 leads
+First lead: {'id': '614_E_GLENN_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '10715014A', 'owner_name': 'A&K Team Llc', 'address': '614 E GLENN ST, Tucson, AZ 85705', 'address_street': '614 E GLENN ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'A&K TEAM LLC, 614 E GLENN ST, TUCSON AZ, 85705', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 41299.15755227, 'zoning': 'C-3', 'assessed_value': 584398.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.257467164579246, 'longitude': -110.96195911577104, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation'], 'violation_description': 'GRAFFITI (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'GRAFFITI (NOVERIFY)', 'activity_num': 'T16DV06717'}], 'violation_count': 1}
+Cleaner returning 25 leads
+API RETURNING 25 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': ['Code Violations', 'Tax Liens'], 'property_types': ['Single Family'], 'limit': 10, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': ['Code Violations'], 'property_types': ['Single Family'], 'limit': 10, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 10, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Tax Liens'], 'property_types': ['Single Family'], 'limit': 10, 'bounds': None}
+API FOUND 10 RAW LEADS
+Cleaner received 10 leads
+First lead: {'id': '614_E_GLENN_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '10715014A', 'owner_name': 'A&K Team Llc', 'address': '614 E GLENN ST, Tucson, AZ 85705', 'address_street': '614 E GLENN ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'A&K TEAM LLC, 614 E GLENN ST, TUCSON AZ, 85705', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 41299.15755227, 'zoning': 'C-3', 'assessed_value': 584398.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.257467164579246, 'longitude': -110.96195911577104, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation'], 'violation_description': 'GRAFFITI (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'GRAFFITI (NOVERIFY)', 'activity_num': 'T16DV06717'}], 'violation_count': 1}
+Cleaner returning 10 leads
+API RETURNING 10 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 10, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 10, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': ['Code Violations'], 'property_types': ['Single Family'], 'limit': 10, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': ['Absentee Owner'], 'property_types': ['Single Family'], 'limit': 10, 'bounds': None}
+TRACE: _fetch_absentee_owners called. Limit=30
+TRACE: Fetching candidates with limit=600...
+TRACE: Candidates fetched: 0
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': ['Absentee Owner'], 'property_types': ['Single Family'], 'limit': 10, 'bounds': None}
+TRACE: _fetch_absentee_owners called. Limit=30
+TRACE: Fetching candidates with limit=600...
+TRACE: Candidates fetched: 0
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2932 S ENCHANTED HILLS DR', 'distress_type': ['Absentee Owner'], 'property_types': ['Single Family'], 'limit': 10, 'bounds': None}
+TRACE: _fetch_absentee_owners called. Limit=30
+TRACE: Fetching candidates with limit=600...
+TRACE: Candidates fetched: 1
+TRACE: Checking Candidate: 2932 S ENCHANTED HILLS DR,  TUCSON, AZ 85713
+TRACE: Mailing Address: TKKR ENCHANTED HILLS LLC, 927 N PERRY AVE, TUCSON AZ, 85705
+TRACE: Prop Street: '2932 S ENCHANTED HILLS DR'
+TRACE: Is In Mailing? False
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '119223390', 'owner_name': 'Tkkr Enchanted Hills Llc', 'address': '2932 S ENCHANTED HILLS DR,  Tucson, AZ 85713', 'address_street': '2932 S ENCHANTED HILLS DR', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85713', 'mailing_address': 'TKKR ENCHANTED HILLS LLC, 927 N PERRY AVE, TUCSON AZ, 85705', 'property_type': 'Single Family', 'year_built': 1971, 'sqft': 1190, 'lot_size': 8749.49574455, 'zoning': 'R-1', 'assessed_value': 180313.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.18831661212768, 'longitude': -111.00866589827987, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': 3, 'baths': 2, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'estimated_value': None, 'last_sold_date': '2012-06-29 07:00:00', 'last_sold_price': 55000, 'property_url': 'https://www.realtor.com/realestateandhomes-detail/2932-S-Enchanted-Hills-Dr_Tucson_AZ_85713_M11916-49119', 'primary_photo': 'https://p.rdcpix.com/v01/l3191b043-m0od-w480_h360_x2.webp?w=1080&q=75'}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2932 S ENCHANTED HILLS DR', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 10, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '119223390', 'owner_name': 'Tkkr Enchanted Hills Llc', 'address': '2932 S ENCHANTED HILLS DR,  Tucson, AZ 85713', 'address_street': '2932 S ENCHANTED HILLS DR', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85713', 'mailing_address': 'TKKR ENCHANTED HILLS LLC, 927 N PERRY AVE, TUCSON AZ, 85705', 'property_type': 'Single Family', 'year_built': None, 'sqft': None, 'lot_size': 8749.49574455, 'zoning': 'R-1', 'assessed_value': 180313.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.18831661212768, 'longitude': -111.00866589827987, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2932 S ENCHANTED HILLS DR', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '119223390', 'owner_name': 'Tkkr Enchanted Hills Llc', 'address': '2932 S ENCHANTED HILLS DR,  Tucson, AZ 85713', 'address_street': '2932 S ENCHANTED HILLS DR', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85713', 'mailing_address': 'TKKR ENCHANTED HILLS LLC, 927 N PERRY AVE, TUCSON AZ, 85705', 'property_type': 'Single Family', 'year_built': None, 'sqft': None, 'lot_size': 8749.49574455, 'zoning': 'R-1', 'assessed_value': 180313.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.18831661212768, 'longitude': -111.00866589827987, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2932 S ENCHANTED HILLS DR', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '119223390', 'owner_name': 'Tkkr Enchanted Hills Llc', 'address': '2932 S ENCHANTED HILLS DR,  Tucson, AZ 85713', 'address_street': '2932 S ENCHANTED HILLS DR', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85713', 'mailing_address': 'TKKR ENCHANTED HILLS LLC, 927 N PERRY AVE, TUCSON AZ, 85705', 'property_type': 'Single Family', 'year_built': None, 'sqft': None, 'lot_size': 8749.49574455, 'zoning': 'R-1', 'assessed_value': 180313.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.18831661212768, 'longitude': -111.00866589827987, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2932 S ENCHANTED HILLS DR', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '119223390', 'owner_name': 'Tkkr Enchanted Hills Llc', 'address': '2932 S ENCHANTED HILLS DR,  Tucson, AZ 85713', 'address_street': '2932 S ENCHANTED HILLS DR', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85713', 'mailing_address': 'TKKR ENCHANTED HILLS LLC, 927 N PERRY AVE, TUCSON AZ, 85705', 'property_type': 'Single Family', 'year_built': 1971, 'sqft': 1190, 'lot_size': 8749.49574455, 'zoning': 'R-1', 'assessed_value': 180313.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.18831661212768, 'longitude': -111.00866589827987, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': 3, 'baths': 2, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'estimated_value': None, 'last_sold_date': '2012-06-29 07:00:00', 'last_sold_price': 55000, 'property_url': 'https://www.realtor.com/realestateandhomes-detail/2932-S-Enchanted-Hills-Dr_Tucson_AZ_85713_M11916-49119', 'primary_photo': 'https://p.rdcpix.com/v01/l3191b043-m0od-w480_h360_x2.webp?w=1080&q=75'}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Commercial', 'Multi Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '107112180', 'owner_name': 'Nussdorf Glenn', 'address': '3038 N ESTRELLA AV,  Tucson, AZ 85705', 'address_street': '3038 N ESTRELLA AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NUSSDORF GLENN, ATTN: 3D BROKERAGE, 2101 N COUNTRY CLUB RD STE 103, TUCSON AZ, 85716', 'property_type': 'Multi-Family', 'year_built': None, 'sqft': None, 'lot_size': 17483.14567899, 'zoning': 'R-2', 'assessed_value': 488937.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.262409119473894, 'longitude': -110.96927813738607, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '107112180', 'owner_name': 'Nussdorf Glenn', 'address': '3038 N ESTRELLA AV,  Tucson, AZ 85705', 'address_street': '3038 N ESTRELLA AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NUSSDORF GLENN, ATTN: 3D BROKERAGE, 2101 N COUNTRY CLUB RD STE 103, TUCSON AZ, 85716', 'property_type': 'Multi-Family', 'year_built': None, 'sqft': None, 'lot_size': 17483.14567899, 'zoning': 'R-2', 'assessed_value': 488937.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.262409119473894, 'longitude': -110.96927813738607, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Condo'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '107112180', 'owner_name': 'Nussdorf Glenn', 'address': '3038 N ESTRELLA AV,  Tucson, AZ 85705', 'address_street': '3038 N ESTRELLA AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NUSSDORF GLENN, ATTN: 3D BROKERAGE, 2101 N COUNTRY CLUB RD STE 103, TUCSON AZ, 85716', 'property_type': 'Multi-Family', 'year_built': None, 'sqft': None, 'lot_size': 17483.14567899, 'zoning': 'R-2', 'assessed_value': 488937.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.262409119473894, 'longitude': -110.96927813738607, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '107112180', 'owner_name': 'Nussdorf Glenn', 'address': '3038 N ESTRELLA AV,  Tucson, AZ 85705', 'address_street': '3038 N ESTRELLA AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NUSSDORF GLENN, ATTN: 3D BROKERAGE, 2101 N COUNTRY CLUB RD STE 103, TUCSON AZ, 85716', 'property_type': 'Multi-Family', 'year_built': None, 'sqft': None, 'lot_size': 17483.14567899, 'zoning': 'R-2', 'assessed_value': 488937.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.262409119473894, 'longitude': -110.96927813738607, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '107112180', 'owner_name': 'Nussdorf Glenn', 'address': '3038 N ESTRELLA AV,  Tucson, AZ 85705', 'address_street': '3038 N ESTRELLA AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NUSSDORF GLENN, ATTN: 3D BROKERAGE, 2101 N COUNTRY CLUB RD STE 103, TUCSON AZ, 85716', 'property_type': 'Multi-Family', 'year_built': None, 'sqft': None, 'lot_size': 17483.14567899, 'zoning': 'R-2', 'assessed_value': 488937.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.262409119473894, 'longitude': -110.96927813738607, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Condo'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '107112180', 'owner_name': 'Nussdorf Glenn', 'address': '3038 N ESTRELLA AV,  Tucson, AZ 85705', 'address_street': '3038 N ESTRELLA AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NUSSDORF GLENN, ATTN: 3D BROKERAGE, 2101 N COUNTRY CLUB RD STE 103, TUCSON AZ, 85716', 'property_type': 'Multi-Family', 'year_built': None, 'sqft': None, 'lot_size': 17483.14567899, 'zoning': 'R-2', 'assessed_value': 488937.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.262409119473894, 'longitude': -110.96927813738607, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Condo', 'Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '107112180', 'owner_name': 'Nussdorf Glenn', 'address': '3038 N ESTRELLA AV,  Tucson, AZ 85705', 'address_street': '3038 N ESTRELLA AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NUSSDORF GLENN, ATTN: 3D BROKERAGE, 2101 N COUNTRY CLUB RD STE 103, TUCSON AZ, 85716', 'property_type': 'Multi-Family', 'year_built': None, 'sqft': None, 'lot_size': 17483.14567899, 'zoning': 'R-2', 'assessed_value': 488937.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.262409119473894, 'longitude': -110.96927813738607, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Multi Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Multi Family', 'Single Family', 'Condo', 'Vacant Land', 'Commercial'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2932 S ENCHANTED HILLS DR', 'distress_type': [], 'property_types': ['Multi Family', 'Single Family', 'Condo', 'Vacant Land', 'Commercial'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '119223390', 'owner_name': 'Tkkr Enchanted Hills Llc', 'address': '2932 S ENCHANTED HILLS DR,  Tucson, AZ 85713', 'address_street': '2932 S ENCHANTED HILLS DR', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85713', 'mailing_address': 'TKKR ENCHANTED HILLS LLC, 927 N PERRY AVE, TUCSON AZ, 85705', 'property_type': 'Single Family', 'year_built': None, 'sqft': None, 'lot_size': 8749.49574455, 'zoning': 'R-1', 'assessed_value': 180313.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.18831661212768, 'longitude': -111.00866589827987, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2932 S ENCHANTED HILLS DR', 'distress_type': [], 'property_types': ['Multi Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2932 S ENCHANTED HILLS DR', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '119223390', 'owner_name': 'Tkkr Enchanted Hills Llc', 'address': '2932 S ENCHANTED HILLS DR,  Tucson, AZ 85713', 'address_street': '2932 S ENCHANTED HILLS DR', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85713', 'mailing_address': 'TKKR ENCHANTED HILLS LLC, 927 N PERRY AVE, TUCSON AZ, 85705', 'property_type': 'Single Family', 'year_built': None, 'sqft': None, 'lot_size': 8749.49574455, 'zoning': 'R-1', 'assessed_value': 180313.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.18831661212768, 'longitude': -111.00866589827987, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2932 S ENCHANTED HILLS DR', 'distress_type': [], 'property_types': ['Single Family', 'Multi Family', 'Condo'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '119223390', 'owner_name': 'Tkkr Enchanted Hills Llc', 'address': '2932 S ENCHANTED HILLS DR,  Tucson, AZ 85713', 'address_street': '2932 S ENCHANTED HILLS DR', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85713', 'mailing_address': 'TKKR ENCHANTED HILLS LLC, 927 N PERRY AVE, TUCSON AZ, 85705', 'property_type': 'Single Family', 'year_built': None, 'sqft': None, 'lot_size': 8749.49574455, 'zoning': 'R-1', 'assessed_value': 180313.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.18831661212768, 'longitude': -111.00866589827987, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2749 N fair oaks', 'distress_type': [], 'property_types': ['Single Family', 'Multi Family', 'Condo'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2745 N fair oaks', 'distress_type': [], 'property_types': ['Single Family', 'Multi Family', 'Condo'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '27', 'distress_type': [], 'property_types': ['Single Family', 'Multi Family', 'Condo'], 'limit': 100, 'bounds': None}
+API FOUND 20 RAW LEADS
+Cleaner received 20 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '101020660', 'owner_name': 'Burns Virgil D & Gwena L Jt/Rs', 'address': '2710 W RAPALLO WY, Unincorporated Pima County, AZ 85741', 'address_street': '2710 W RAPALLO WY', 'address_city': 'Unincorporated Pima County', 'address_state': 'AZ', 'address_zip': '85741', 'mailing_address': 'BURNS VIRGIL D & GWENA L JT/RS, 2710 W RAPALLO WAY, TUCSON AZ, 85741', 'property_type': 'Single Family', 'year_built': None, 'sqft': None, 'lot_size': 53616.92259171, 'zoning': 'CR-1', 'assessed_value': 366269.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.33268448057889, 'longitude': -111.02502209371244, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 20 leads
+API RETURNING 20 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N ESTRELLA AV', 'distress_type': [], 'property_types': ['Single Family', 'Multi Family', 'Condo'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2827 N FAIR OAKS AV', 'distress_type': [], 'property_types': ['Single Family', 'Multi Family', 'Condo'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '110067270', 'owner_name': 'Aaberg Ben Nathan', 'address': '2827 N FAIR OAKS AV, Tucson, AZ 85712', 'address_street': '2827 N FAIR OAKS AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85712', 'mailing_address': 'AABERG BEN NATHAN, 2827 N FAIR OAKS AVE, TUCSON AZ, 85712', 'property_type': 'Single Family', 'year_built': None, 'sqft': None, 'lot_size': 2171.60126918, 'zoning': 'R-2', 'assessed_value': 283087.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.258477379196925, 'longitude': -110.90319664835994, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 0, 'distress_signals': [], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2749 N Fair Oaks', 'distress_type': [], 'property_types': ['Single Family', 'Multi Family', 'Condo'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': [], 'property_types': ['Multi Family'], 'limit': 10, 'bounds': None}
+API FOUND 15 RAW LEADS
+Cleaner received 15 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '104017020', 'owner_name': 'Modern Court Properties Llc', 'address': '1599 W MODERN CT, Unincorporated Pima County, AZ 85705', 'address_street': '1599 W MODERN CT', 'address_city': 'Unincorporated Pima County', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'MODERN COURT PROPERTIES LLC, ATTN: VERN TAAFE - RPC, 1643 W MODERN CT, TUCSON AZ, 85705', 'property_type': 'Land', 'year_built': None, 'sqft': None, 'lot_size': 37877.39366228, 'zoning': 'MU', 'assessed_value': 193085.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.29409791469658, 'longitude': -111.00002784108925, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 15 leads
+API RETURNING 15 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family', 'Multi Family'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '107112180', 'owner_name': 'Nussdorf Glenn', 'address': '3038 N ESTRELLA AV,  Tucson, AZ 85705', 'address_street': '3038 N ESTRELLA AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NUSSDORF GLENN, ATTN: 3D BROKERAGE, 2101 N COUNTRY CLUB RD STE 103, TUCSON AZ, 85716', 'property_type': 'Multi-Family', 'year_built': None, 'sqft': None, 'lot_size': 17483.14567899, 'zoning': 'R-2', 'assessed_value': 488937.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.262409119473894, 'longitude': -110.96927813738607, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family', 'Vacant Land', 'Commercial'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2749 N Fair Oaks', 'distress_type': [], 'property_types': ['Single Family', 'Vacant Land', 'Commercial'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2749 N Fair Oaks', 'distress_type': [], 'property_types': ['Single Family', 'Vacant Land', 'Commercial', 'Multi Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N Estrella Ave', 'distress_type': [], 'property_types': ['Single Family', 'Multi Family'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '107112180', 'owner_name': 'Nussdorf Glenn', 'address': '3038 N ESTRELLA AV,  Tucson, AZ 85705', 'address_street': '3038 N ESTRELLA AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NUSSDORF GLENN, ATTN: 3D BROKERAGE, 2101 N COUNTRY CLUB RD STE 103, TUCSON AZ, 85716', 'property_type': 'Multi-Family', 'year_built': None, 'sqft': None, 'lot_size': 17483.14567899, 'zoning': 'R-2', 'assessed_value': 488937.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.262409119473894, 'longitude': -110.96927813738607, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2749 N Fair Oaks', 'distress_type': [], 'property_types': ['Single Family', 'Multi Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2749 N Fair Oaks', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2749 N Fair Oaks ave', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2749 N Fair Oaks', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2749 N Fair Oaks', 'distress_type': [], 'property_types': [], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2749 N Fair Oaks', 'distress_type': [], 'property_types': [], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2749 N Fair Oaks', 'distress_type': [], 'property_types': [], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2749 n fair oaks', 'distress_type': [], 'property_types': [], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2749 n fair oaks', 'distress_type': [], 'property_types': [], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '11007009C', 'owner_name': 'Terra Firma Rei Llc', 'address': '2749 N FAIR OAKS,  Tucson, AZ 85712', 'address_street': '2749 N FAIR OAKS', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85712', 'mailing_address': 'TERRA FIRMA REI LLC, 927 N PERRY AVE, TUCSON AZ, 85705', 'property_type': 'Multi-Family', 'year_built': None, 'sqft': None, 'lot_size': 11425.15964439, 'zoning': 'R-2', 'assessed_value': 377547.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.25707505316784, 'longitude': -110.90325640989043, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2749 n fair oaks', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '11007009C', 'owner_name': 'Terra Firma Rei Llc', 'address': '2749 N FAIR OAKS,  Tucson, AZ 85712', 'address_street': '2749 N FAIR OAKS', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85712', 'mailing_address': 'TERRA FIRMA REI LLC, 927 N PERRY AVE, TUCSON AZ, 85705', 'property_type': 'Multi-Family', 'year_built': None, 'sqft': None, 'lot_size': 11425.15964439, 'zoning': 'R-2', 'assessed_value': 377547.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.25707505316784, 'longitude': -110.90325640989043, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3830 n estrella', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3830 n estrella', 'distress_type': [], 'property_types': [], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N ESTRELLA AV', 'distress_type': [], 'property_types': [], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '107112180', 'owner_name': 'Nussdorf Glenn', 'address': '3038 N ESTRELLA AV,  Tucson, AZ 85705', 'address_street': '3038 N ESTRELLA AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NUSSDORF GLENN, ATTN: 3D BROKERAGE, 2101 N COUNTRY CLUB RD STE 103, TUCSON AZ, 85716', 'property_type': 'Multi-Family', 'year_built': None, 'sqft': None, 'lot_size': 17483.14567899, 'zoning': 'R-2', 'assessed_value': 488937.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.262409119473894, 'longitude': -110.96927813738607, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N ESTRELLA AV\\', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '3038 N ESTRELLA AV', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '107112180', 'owner_name': 'Nussdorf Glenn', 'address': '3038 N ESTRELLA AV,  Tucson, AZ 85705', 'address_street': '3038 N ESTRELLA AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NUSSDORF GLENN, ATTN: 3D BROKERAGE, 2101 N COUNTRY CLUB RD STE 103, TUCSON AZ, 85716', 'property_type': 'Multi-Family', 'year_built': None, 'sqft': None, 'lot_size': 17483.14567899, 'zoning': 'R-2', 'assessed_value': 488937.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.262409119473894, 'longitude': -110.96927813738607, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2749 n fair oaks', 'distress_type': [], 'property_types': [], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '11007009C', 'owner_name': 'Terra Firma Rei Llc', 'address': '2749 N FAIR OAKS,  Tucson, AZ 85712', 'address_street': '2749 N FAIR OAKS', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85712', 'mailing_address': 'TERRA FIRMA REI LLC, 927 N PERRY AVE, TUCSON AZ, 85705', 'property_type': 'Multi-Family', 'year_built': None, 'sqft': None, 'lot_size': 11425.15964439, 'zoning': 'R-2', 'assessed_value': 377547.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.25707505316784, 'longitude': -110.90325640989043, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2749 n fair oaks', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '614_E_GLENN_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '10715014A', 'owner_name': 'A&K Team Llc', 'address': '614 E GLENN ST, Tucson, AZ 85705', 'address_street': '614 E GLENN ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'A&K TEAM LLC, 614 E GLENN ST, TUCSON AZ, 85705', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 41299.15755227, 'zoning': 'C-3', 'assessed_value': 584398.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.257467164579246, 'longitude': -110.96195911577104, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation'], 'violation_description': 'GRAFFITI (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'GRAFFITI (NOVERIFY)', 'activity_num': 'T16DV06717'}], 'violation_count': 1}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2932 S Enchante Hills', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '2932 S Enchanted Hills', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '119223390', 'owner_name': 'Tkkr Enchanted Hills Llc', 'address': '2932 S ENCHANTED HILLS DR,  Tucson, AZ 85713', 'address_street': '2932 S ENCHANTED HILLS DR', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85713', 'mailing_address': 'TKKR ENCHANTED HILLS LLC, 927 N PERRY AVE, TUCSON AZ, 85705', 'property_type': 'Single Family', 'year_built': None, 'sqft': None, 'lot_size': 8749.49574455, 'zoning': 'R-1', 'assessed_value': 180313.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.18831661212768, 'longitude': -111.00866589827987, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Absentee Owner'], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Single Family'], 'limit': 10, 'bounds': None}
+API FOUND 10 RAW LEADS
+Cleaner received 10 leads
+First lead: {'id': '614_E_GLENN_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '10715014A', 'owner_name': 'A&K Team Llc', 'address': '614 E GLENN ST, Tucson, AZ 85705', 'address_street': '614 E GLENN ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'A&K TEAM LLC, 614 E GLENN ST, TUCSON AZ, 85705', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 41299.15755227, 'zoning': 'C-3', 'assessed_value': 584398.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.257467164579246, 'longitude': -110.96195911577104, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation'], 'violation_description': 'GRAFFITI (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'GRAFFITI (NOVERIFY)', 'activity_num': 'T16DV06717'}], 'violation_count': 1}
+Cleaner returning 10 leads
+API RETURNING 10 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 10, 'bounds': None}
+API FOUND 10 RAW LEADS
+Cleaner received 10 leads
+First lead: {'id': '240_W_SAHUARO_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '115050720', 'owner_name': 'Nido 1 Llc', 'address': '240 W SAHUARO ST, Tucson, AZ 85705', 'address_street': '240 W SAHUARO ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NIDO 1 LLC, 6626 VISTA DEL MAR, PLAYA DEL REY CA, 90293', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 23579.47879348, 'zoning': 'O-3', 'assessed_value': 1246604.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.24953641531022, 'longitude': -110.97617064892727, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': "Dumping of furniture and mattresses.  The furniture and mattresses are dumped over the east wall onto someone else's vacant property and behind the dumpster which is located in the northeast corner outside the apartment complex. (COURTCMP)", 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': "Dumping of furniture and mattresses.  The furniture and mattresses are dumped over the east wall onto someone else's vacant property and behind the dumpster which is located in the northeast corner outside the apartment complex. (COURTCMP)", 'activity_num': 'T15DV07279'}], 'violation_count': 1}
+Cleaner returning 10 leads
+API RETURNING 10 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 10, 'bounds': {'south': 32.22131088694215, 'west': -110.98281113660552, 'north': 32.235541788587575, 'east': -110.94405858075835}}
+API FOUND 10 RAW LEADS
+Cleaner received 10 leads
+First lead: {'id': '1211_E_9TH_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '124060970', 'owner_name': 'Ff Spe 1 Llc', 'address': '1211 E 9TH ST, Tucson, AZ 85705', 'address_street': '1211 E 9TH ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'FF SPE 1 LLC, 2030 E BROADWAY BLVD STE 22, TUCSON AZ, 85719', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 36057.73521367, 'zoning': 'NR-3', 'assessed_value': 1329060.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.224190109226875, 'longitude': -110.9527844474069, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'RWOP - bull doze a ramp into the wash and paving it. (PENDING)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'RWOP - bull doze a ramp into the wash and paving it. (PENDING)', 'activity_num': 'T21DV06873'}, {'description': 'Trash towards north end of property in arroyo area. (NOVERIFY)', 'activity_num': 'T14DV03443'}, {'description': 'There�s tons of trash and dead brush/cactus need to be pickedup. (NOVERIFY)', 'activity_num': 'T21DV01702'}], 'violation_count': 3}
+Cleaner returning 10 leads
+API RETURNING 10 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 50, 'bounds': {'south': 32.22131088694215, 'west': -110.98281113660552, 'north': 32.235541788587575, 'east': -110.94405858075835}}
+API FOUND 50 RAW LEADS
+Cleaner received 50 leads
+First lead: {'id': '1211_E_9TH_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '124060970', 'owner_name': 'Ff Spe 1 Llc', 'address': '1211 E 9TH ST, Tucson, AZ 85705', 'address_street': '1211 E 9TH ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'FF SPE 1 LLC, 2030 E BROADWAY BLVD STE 22, TUCSON AZ, 85719', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 36057.73521367, 'zoning': 'NR-3', 'assessed_value': 1329060.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.224190109226875, 'longitude': -110.9527844474069, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'RWOP - bull doze a ramp into the wash and paving it. (PENDING)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'RWOP - bull doze a ramp into the wash and paving it. (PENDING)', 'activity_num': 'T21DV06873'}, {'description': 'Trash towards north end of property in arroyo area. (NOVERIFY)', 'activity_num': 'T14DV03443'}, {'description': 'There�s tons of trash and dead brush/cactus need to be pickedup. (NOVERIFY)', 'activity_num': 'T21DV01702'}, {'description': 'Along west easement facing Santa Rita- refuse thrown along pedestrian row. (NOVERIFY)', 'activity_num': 'T15DV00064'}, {'description': 'TRASH AND REFUSE ALL AROUND DUMPSTERS (NOVERIFY)', 'activity_num': 'T21DV02422'}], 'violation_count': 5}
+Cleaner returning 50 leads
+API RETURNING 50 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '614_E_GLENN_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '10715014A', 'owner_name': 'A&K Team Llc', 'address': '614 E GLENN ST, Tucson, AZ 85705', 'address_street': '614 E GLENN ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'A&K TEAM LLC, 614 E GLENN ST, TUCSON AZ, 85705', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 41299.15755227, 'zoning': 'C-3', 'assessed_value': 584398.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.257467164579246, 'longitude': -110.96195911577104, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation'], 'violation_description': 'GRAFFITI (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'GRAFFITI (NOVERIFY)', 'activity_num': 'T16DV06717'}], 'violation_count': 1}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 13 RAW LEADS
+Cleaner received 13 leads
+First lead: {'id': '331_E_FORT_LOWELL_RD', 'source': 'tucson_code_enforcement', 'parcel_id': '10604270A', 'owner_name': 'Ingram Gregory & Laura Living Tr', 'address': '331 E FORT LOWELL RD, Tucson, AZ 85705', 'address_street': '331 E FORT LOWELL RD', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'INGRAM GREGORY & LAURA LIVING TR, PO BOX 43515, TUCSON AZ, 85733', 'property_type': 'Unknown', 'year_built': None, 'sqft': None, 'lot_size': 21990.64030538, 'zoning': 'C-2', 'assessed_value': 132432.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.26541438724176, 'longitude': -110.96660567107949, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'activity_num': 'T15DV07243'}], 'violation_count': 1}
+Cleaner returning 13 leads
+API RETURNING 13 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 13 RAW LEADS
+Cleaner received 13 leads
+First lead: {'id': '331_E_FORT_LOWELL_RD', 'source': 'tucson_code_enforcement', 'parcel_id': '10604270A', 'owner_name': 'Ingram Gregory & Laura Living Tr', 'address': '331 E FORT LOWELL RD, Tucson, AZ 85705', 'address_street': '331 E FORT LOWELL RD', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'INGRAM GREGORY & LAURA LIVING TR, PO BOX 43515, TUCSON AZ, 85733', 'property_type': 'Residential', 'year_built': None, 'sqft': None, 'lot_size': 21990.64030538, 'zoning': 'C-2', 'assessed_value': 132432.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.26541438724176, 'longitude': -110.96660567107949, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'activity_num': 'T15DV07243'}], 'violation_count': 1}
+Cleaner returning 13 leads
+API RETURNING 13 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 13 RAW LEADS
+Cleaner received 13 leads
+First lead: {'id': '331_E_FORT_LOWELL_RD', 'source': 'tucson_code_enforcement', 'parcel_id': '10604270A', 'owner_name': 'Ingram Gregory & Laura Living Tr', 'address': '331 E FORT LOWELL RD, Tucson, AZ 85705', 'address_street': '331 E FORT LOWELL RD', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'INGRAM GREGORY & LAURA LIVING TR, PO BOX 43515, TUCSON AZ, 85733', 'property_type': 'Vacant Land', 'year_built': None, 'sqft': None, 'lot_size': 21990.64030538, 'zoning': 'C-2', 'assessed_value': 132432.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.26541438724176, 'longitude': -110.96660567107949, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'activity_num': 'T15DV07243'}], 'violation_count': 1, 'estimated_value': None, 'last_sold_date': '2018-03-23 00:00:00', 'last_sold_price': 85000, 'property_url': 'https://www.realtor.com/realestateandhomes-detail/331-E-Fort-Lowell-Rd_Tucson_AZ_85705_M22136-53071', 'primary_photo': 'https://p.rdcpix.com/v01/l909a7243-m0od-w480_h360_x2.webp?w=1080&q=75'}
+Cleaner returning 13 leads
+API RETURNING 13 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Mobile Home Park'], 'limit': 100, 'bounds': None}
+API FOUND 16 RAW LEADS
+Cleaner received 16 leads
+First lead: {'id': '521_W_RILLITO_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '115150810', 'owner_name': 'Parra-Sanchez Raul & N Callejas Gloria A Cp/Rs', 'address': '521 W RILLITO ST, Tucson, AZ 85705', 'address_street': '521 W RILLITO ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'PARRA-SANCHEZ RAUL & N CALLEJAS GLORIA A CP/RS, 521 W RILLITO ST UNIT 14, TUCSON AZ, 85705', 'property_type': 'Mobile Home Park', 'year_built': None, 'sqft': None, 'lot_size': 48738.53313281, 'zoning': 'C-2', 'assessed_value': 517902.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.24785689159015, 'longitude': -110.98010856658722, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation'], 'violation_description': 'Installing new water meters, electricity meters and sewer connections without permits. (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'Installing new water meters, electricity meters and sewer connections without permits. (NOVERIFY)', 'activity_num': 'T11DV07897'}], 'violation_count': 1}
+Cleaner returning 16 leads
+API RETURNING 16 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 25 RAW LEADS
+Cleaner received 25 leads
+First lead: {'id': '331_E_FORT_LOWELL_RD', 'source': 'tucson_code_enforcement', 'parcel_id': '10604270A', 'owner_name': 'Ingram Gregory & Laura Living Tr', 'address': '331 E FORT LOWELL RD, Tucson, AZ 85705', 'address_street': '331 E FORT LOWELL RD', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'INGRAM GREGORY & LAURA LIVING TR, PO BOX 43515, TUCSON AZ, 85733', 'property_type': 'Vacant Land', 'year_built': None, 'sqft': None, 'lot_size': 21990.64030538, 'zoning': 'C-2', 'assessed_value': 132432.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.26541438724176, 'longitude': -110.96660567107949, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'activity_num': 'T15DV07243'}], 'violation_count': 1}
+Cleaner returning 25 leads
+API RETURNING 25 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 44 RAW LEADS
+Cleaner received 44 leads
+First lead: {'id': '331_E_FORT_LOWELL_RD', 'source': 'tucson_code_enforcement', 'parcel_id': '10604270A', 'owner_name': 'Ingram Gregory & Laura Living Tr', 'address': '331 E FORT LOWELL RD, Tucson, AZ 85705', 'address_street': '331 E FORT LOWELL RD', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'INGRAM GREGORY & LAURA LIVING TR, PO BOX 43515, TUCSON AZ, 85733', 'property_type': 'Vacant Land', 'year_built': None, 'sqft': None, 'lot_size': 21990.64030538, 'zoning': 'C-2', 'assessed_value': 132432.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.26541438724176, 'longitude': -110.96660567107949, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'activity_num': 'T15DV07243'}], 'violation_count': 1}
+Cleaner returning 44 leads
+API RETURNING 44 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 44 RAW LEADS
+Cleaner received 44 leads
+First lead: {'id': '331_E_FORT_LOWELL_RD', 'source': 'tucson_code_enforcement', 'parcel_id': '10604270A', 'owner_name': 'Ingram Gregory & Laura Living Tr', 'address': '331 E FORT LOWELL RD, Tucson, AZ 85705', 'address_street': '331 E FORT LOWELL RD', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'INGRAM GREGORY & LAURA LIVING TR, PO BOX 43515, TUCSON AZ, 85733', 'property_type': 'Vacant Land', 'year_built': None, 'sqft': None, 'lot_size': 21990.64030538, 'zoning': 'C-2', 'assessed_value': 132432.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.26541438724176, 'longitude': -110.96660567107949, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'activity_num': 'T15DV07243'}], 'violation_count': 1}
+Cleaner returning 44 leads
+API RETURNING 44 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 44 RAW LEADS
+Cleaner received 44 leads
+First lead: {'id': '331_E_FORT_LOWELL_RD', 'source': 'tucson_code_enforcement', 'parcel_id': '10604270A', 'owner_name': 'Ingram Gregory & Laura Living Tr', 'address': '331 E FORT LOWELL RD, Tucson, AZ 85705', 'address_street': '331 E FORT LOWELL RD', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'INGRAM GREGORY & LAURA LIVING TR, PO BOX 43515, TUCSON AZ, 85733', 'property_type': 'Vacant Land', 'year_built': None, 'sqft': None, 'lot_size': 21990.64030538, 'zoning': 'C-2', 'assessed_value': 132432.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.26541438724176, 'longitude': -110.96660567107949, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'activity_num': 'T15DV07243'}], 'violation_count': 1}
+Cleaner returning 44 leads
+API RETURNING 44 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 65 RAW LEADS
+Cleaner received 65 leads
+First lead: {'id': '331_E_FORT_LOWELL_RD', 'source': 'tucson_code_enforcement', 'parcel_id': '10604270A', 'owner_name': 'Ingram Gregory & Laura Living Tr', 'address': '331 E FORT LOWELL RD, Tucson, AZ 85705', 'address_street': '331 E FORT LOWELL RD', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'INGRAM GREGORY & LAURA LIVING TR, PO BOX 43515, TUCSON AZ, 85733', 'property_type': 'Vacant Land', 'year_built': None, 'sqft': None, 'lot_size': 21990.64030538, 'zoning': 'C-2', 'assessed_value': 132432.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.26541438724176, 'longitude': -110.96660567107949, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'activity_num': 'T15DV07243'}, {'description': 'weeds in the easement not being cut (NOVERIFY)', 'activity_num': 'T22DV00823'}], 'violation_count': 2}
+Cleaner returning 65 leads
+API RETURNING 65 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 70 RAW LEADS
+Cleaner received 70 leads
+First lead: {'id': '331_E_FORT_LOWELL_RD', 'source': 'tucson_code_enforcement', 'parcel_id': '10604270A', 'owner_name': 'Ingram Gregory & Laura Living Tr', 'address': '331 E FORT LOWELL RD, Tucson, AZ 85705', 'address_street': '331 E FORT LOWELL RD', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'INGRAM GREGORY & LAURA LIVING TR, PO BOX 43515, TUCSON AZ, 85733', 'property_type': 'Vacant Land', 'year_built': None, 'sqft': None, 'lot_size': 21990.64030538, 'zoning': 'C-2', 'assessed_value': 132432.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.26541438724176, 'longitude': -110.96660567107949, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'activity_num': 'T15DV07243'}, {'description': 'weeds in the easement not being cut (NOVERIFY)', 'activity_num': 'T22DV00823'}], 'violation_count': 2}
+Cleaner returning 70 leads
+API RETURNING 70 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 70 RAW LEADS
+Cleaner received 70 leads
+First lead: {'id': '331_E_FORT_LOWELL_RD', 'source': 'tucson_code_enforcement', 'parcel_id': '10604270A', 'owner_name': 'Ingram Gregory & Laura Living Tr', 'address': '331 E FORT LOWELL RD, Tucson, AZ 85705', 'address_street': '331 E FORT LOWELL RD', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'INGRAM GREGORY & LAURA LIVING TR, PO BOX 43515, TUCSON AZ, 85733', 'property_type': 'Vacant Land - Commercial, Urban Subdivided', 'year_built': None, 'sqft': None, 'lot_size': 21990.64030538, 'zoning': 'C-2', 'assessed_value': 132432.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.26541438724176, 'longitude': -110.96660567107949, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'activity_num': 'T15DV07243'}, {'description': 'weeds in the easement not being cut (NOVERIFY)', 'activity_num': 'T22DV00823'}], 'violation_count': 2, 'parcel_use_code': '0021'}
+Cleaner returning 70 leads
+API RETURNING 70 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 70 RAW LEADS
+Cleaner received 70 leads
+First lead: {'id': '331_E_FORT_LOWELL_RD', 'source': 'tucson_code_enforcement', 'parcel_id': '10604270A', 'owner_name': 'Ingram Gregory & Laura Living Tr', 'address': '331 E FORT LOWELL RD, Tucson, AZ 85705', 'address_street': '331 E FORT LOWELL RD', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'INGRAM GREGORY & LAURA LIVING TR, PO BOX 43515, TUCSON AZ, 85733', 'property_type': 'Vacant Land - Commercial, Urban Subdivided', 'year_built': None, 'sqft': None, 'lot_size': 21990.64030538, 'zoning': 'C-2', 'assessed_value': 132432.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.26541438724176, 'longitude': -110.96660567107949, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'activity_num': 'T15DV07243'}, {'description': 'weeds in the easement not being cut (NOVERIFY)', 'activity_num': 'T22DV00823'}], 'violation_count': 2, 'parcel_use_code': '0021'}
+Cleaner returning 70 leads
+API RETURNING 70 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85711', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 13 RAW LEADS
+Cleaner received 13 leads
+First lead: {'id': '4850_E_ANDREW_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '131042380', 'owner_name': 'Val Val Construction Llc', 'address': '4850 E ANDREW ST, Tucson, AZ 85711', 'address_street': '4850 E ANDREW ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85711', 'mailing_address': 'VAL VAL CONSTRUCTION LLC, 5010 N 17TH ST, TUCSON AZ, 85711', 'property_type': 'Vacant Land - Residential, Urban Subdivided', 'year_built': None, 'sqft': None, 'lot_size': 6899.33221143, 'zoning': 'R-2', 'assessed_value': 34000.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.20308228426354, 'longitude': -110.88844350077592, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'PERMIT T04BU01803 ISSUED ON 7-21-04 AND EXPIRED ON 1-17-05 WITH NO INSPECTION (PENDING)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'PERMIT T04BU01803 ISSUED ON 7-21-04 AND EXPIRED ON 1-17-05 WITH NO INSPECTION (PENDING)', 'activity_num': 'T22DV05163'}, {'description': 'TALL GRASS AND WEEDS ON A VACANT LOT (NOVERIFY)', 'activity_num': 'T22DV05145'}, {'description': 'Tires left for Brush+Bulky NEVER PICKED UP (NOVERIFY)', 'activity_num': 'T19DV04332'}, {'description': 'WEEDS (PENDING)', 'activity_num': 'T19DV02489'}], 'violation_count': 4, 'parcel_use_code': '0011', 'estimated_value': None, 'last_sold_date': '2025-11-10 00:00:00', 'last_sold_price': 50000, 'property_url': 'https://www.realtor.com/realestateandhomes-detail/4850-E-Andrew-St_Tucson_AZ_85711_M24527-65878', 'primary_photo': None}
+Cleaner returning 13 leads
+API RETURNING 13 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '8571', 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85713', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 94 RAW LEADS
+Cleaner received 94 leads
+First lead: {'id': '2590_S_MISSION_RD', 'source': 'tucson_code_enforcement', 'parcel_id': '11807237F', 'owner_name': 'Mission Sierra 3 Llc', 'address': '2590 S MISSION RD, Tucson, AZ 85713', 'address_street': '2590 S MISSION RD', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85713', 'mailing_address': 'MISSION SIERRA 3 LLC, PO BOX 85489, TUCSON AZ, 85754', 'property_type': 'Vacant Land - Commercial, Urban Subdivided', 'year_built': None, 'sqft': None, 'lot_size': 39642.79692276, 'zoning': 'C-1', 'assessed_value': 247554.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.19285672154061, 'longitude': -110.99954518682786, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'Illegal dumping on old circle k property. (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'Illegal dumping on old circle k property. (NOVERIFY)', 'activity_num': 'T16DV06764'}], 'violation_count': 1, 'parcel_use_code': '0021'}
+Cleaner returning 94 leads
+API RETURNING 94 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85713', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85713', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 94 RAW LEADS
+Cleaner received 94 leads
+First lead: {'id': '2590_S_MISSION_RD', 'source': 'tucson_code_enforcement', 'parcel_id': '11807237F', 'owner_name': 'Mission Sierra 3 Llc', 'address': '2590 S MISSION RD, Tucson, AZ 85713', 'address_street': '2590 S MISSION RD', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85713', 'mailing_address': 'MISSION SIERRA 3 LLC, PO BOX 85489, TUCSON AZ, 85754', 'property_type': 'Vacant Land - Commercial, Urban Subdivided', 'year_built': None, 'sqft': None, 'lot_size': 39642.79692276, 'zoning': 'C-1', 'assessed_value': 247554.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.19285672154061, 'longitude': -110.99954518682786, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'Illegal dumping on old circle k property. (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'Illegal dumping on old circle k property. (NOVERIFY)', 'activity_num': 'T16DV06764'}], 'violation_count': 1, 'parcel_use_code': '0021'}
+Cleaner returning 94 leads
+API RETURNING 94 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85711', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 13 RAW LEADS
+Cleaner received 13 leads
+First lead: {'id': '4850_E_ANDREW_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '131042380', 'owner_name': 'Val Val Construction Llc', 'address': '4850 E ANDREW ST, Tucson, AZ 85711', 'address_street': '4850 E ANDREW ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85711', 'mailing_address': 'VAL VAL CONSTRUCTION LLC, 5010 N 17TH ST, TUCSON AZ, 85711', 'property_type': 'Vacant Land - Residential, Urban Subdivided', 'year_built': None, 'sqft': None, 'lot_size': 6899.33221143, 'zoning': 'R-2', 'assessed_value': 34000.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.20308228426354, 'longitude': -110.88844350077592, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'PERMIT T04BU01803 ISSUED ON 7-21-04 AND EXPIRED ON 1-17-05 WITH NO INSPECTION (PENDING)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'PERMIT T04BU01803 ISSUED ON 7-21-04 AND EXPIRED ON 1-17-05 WITH NO INSPECTION (PENDING)', 'activity_num': 'T22DV05163'}, {'description': 'TALL GRASS AND WEEDS ON A VACANT LOT (NOVERIFY)', 'activity_num': 'T22DV05145'}, {'description': 'Tires left for Brush+Bulky NEVER PICKED UP (NOVERIFY)', 'activity_num': 'T19DV04332'}, {'description': 'WEEDS (PENDING)', 'activity_num': 'T19DV02489'}], 'violation_count': 4, 'parcel_use_code': '0011'}
+Cleaner returning 13 leads
+API RETURNING 13 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': None, 'city': None, 'county': None, 'address': '927 N PERRY AV', 'distress_type': [], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 1 RAW LEADS
+Cleaner received 1 leads
+First lead: {'source': 'pima_county_gis', 'parcel_id': '117023950', 'owner_name': 'Krkt Family Tr', 'address': '927 N PERRY AV, Tucson, AZ 85705', 'address_street': '927 N PERRY AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'KRKT FAMILY TR, 927 N PERRY AVE, TUCSON AZ, 85705', 'property_type': 'Single Family', 'year_built': None, 'sqft': None, 'lot_size': 5280.05778311, 'zoning': 'R-2', 'assessed_value': 456214.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.233652707621644, 'longitude': -110.9743009961484, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 0, 'distress_signals': [], 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'flood_zone': 'ZONE X'}
+Cleaner returning 1 leads
+API RETURNING 1 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 0 RAW LEADS
+Cleaner received 0 leads
+Cleaner returning 0 leads
+API RETURNING 0 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '2530_N_STONE_AV', 'source': 'tucson_code_enforcement', 'parcel_id': '107141280', 'owner_name': 'Madison Marc M', 'address': '2530 N STONE AV, Tucson, AZ 85705', 'address_street': '2530 N STONE AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'MADISON MARC M, 2554 N STONE AVE, TUCSON AZ, 85705', 'property_type': 'Single Family Residential - Site ≤5 Acres', 'year_built': None, 'sqft': None, 'lot_size': 6782.85883519, 'zoning': 'C-2', 'assessed_value': 158821.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.25323193132567, 'longitude': -110.97161024267398, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'activity_num': 'T09DV05680'}], 'violation_count': 1, 'parcel_use_code': '0131', 'flood_zone': 'ZONE X'}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '2530_N_STONE_AV', 'source': 'tucson_code_enforcement', 'parcel_id': '107141280', 'owner_name': 'Madison Marc M', 'address': '2530 N STONE AV, Tucson, AZ 85705', 'address_street': '2530 N STONE AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'MADISON MARC M, 2554 N STONE AVE, TUCSON AZ, 85705', 'property_type': 'Single Family Residential - Site ≤5 Acres', 'year_built': None, 'sqft': None, 'lot_size': 6782.85883519, 'zoning': 'C-2', 'assessed_value': 158821.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.25323193132567, 'longitude': -110.97161024267398, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'activity_num': 'T09DV05680'}], 'violation_count': 1, 'parcel_use_code': '0131', 'flood_zone': 'ZONE X'}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '2530_N_STONE_AV', 'source': 'tucson_code_enforcement', 'parcel_id': '107141280', 'owner_name': 'Madison Marc M', 'address': '2530 N STONE AV, Tucson, AZ 85705', 'address_street': '2530 N STONE AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'MADISON MARC M, 2554 N STONE AVE, TUCSON AZ, 85705', 'property_type': 'Single Family Residential - Site ≤5 Acres', 'year_built': None, 'sqft': None, 'lot_size': 6782.85883519, 'zoning': 'C-2', 'assessed_value': 158821.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.25323193132567, 'longitude': -110.97161024267398, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'activity_num': 'T09DV05680'}], 'violation_count': 1, 'parcel_use_code': '0131', 'flood_zone': 'ZONE X'}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '2530_N_STONE_AV', 'source': 'tucson_code_enforcement', 'parcel_id': '107141280', 'owner_name': 'Madison Marc M', 'address': '2530 N STONE AV, Tucson, AZ 85705', 'address_street': '2530 N STONE AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'MADISON MARC M, 2554 N STONE AVE, TUCSON AZ, 85705', 'property_type': 'Single Family Residential - Site ≤5 Acres', 'year_built': None, 'sqft': None, 'lot_size': 6782.85883519, 'zoning': 'C-2', 'assessed_value': 158821.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.25323193132567, 'longitude': -110.97161024267398, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'activity_num': 'T09DV05680'}], 'violation_count': 1, 'parcel_use_code': '0131', 'flood_zone': 'ZONE X'}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '2530_N_STONE_AV', 'source': 'tucson_code_enforcement', 'parcel_id': '107141280', 'owner_name': 'Madison Marc M', 'address': '2530 N STONE AV, Tucson, AZ 85705', 'address_street': '2530 N STONE AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'MADISON MARC M, 2554 N STONE AVE, TUCSON AZ, 85705', 'property_type': 'Single Family Residential - Site ≤5 Acres', 'year_built': None, 'sqft': None, 'lot_size': 6782.85883519, 'zoning': 'C-2', 'assessed_value': 158821.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.25323193132567, 'longitude': -110.97161024267398, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'activity_num': 'T09DV05680'}], 'violation_count': 1, 'parcel_use_code': '0131', 'flood_zone': 'ZONE X'}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '2530_N_STONE_AV', 'source': 'tucson_code_enforcement', 'parcel_id': '107141280', 'owner_name': 'Madison Marc M', 'address': '2530 N STONE AV, Tucson, AZ 85705', 'address_street': '2530 N STONE AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'MADISON MARC M, 2554 N STONE AVE, TUCSON AZ, 85705', 'property_type': 'Single Family Residential - Site ≤5 Acres', 'year_built': None, 'sqft': None, 'lot_size': 6782.85883519, 'zoning': 'C-2', 'assessed_value': 158821.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.25323193132567, 'longitude': -110.97161024267398, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'activity_num': 'T09DV05680'}], 'violation_count': 1, 'parcel_use_code': '0131', 'flood_zone': 'ZONE X'}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '2530_N_STONE_AV', 'source': 'tucson_code_enforcement', 'parcel_id': '107141280', 'owner_name': 'Madison Marc M', 'address': '2530 N STONE AV, Tucson, AZ 85705', 'address_street': '2530 N STONE AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'MADISON MARC M, 2554 N STONE AVE, TUCSON AZ, 85705', 'property_type': 'Single Family Residential - Site ≤5 Acres', 'year_built': None, 'sqft': None, 'lot_size': 6782.85883519, 'zoning': 'C-2', 'assessed_value': 158821.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.25323193132567, 'longitude': -110.97161024267398, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'activity_num': 'T09DV05680'}], 'violation_count': 1, 'parcel_use_code': '0131', 'flood_zone': 'ZONE X'}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '2530_N_STONE_AV', 'source': 'tucson_code_enforcement', 'parcel_id': '107141280', 'owner_name': 'Madison Marc M', 'address': '2530 N STONE AV, Tucson, AZ 85705', 'address_street': '2530 N STONE AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'MADISON MARC M, 2554 N STONE AVE, TUCSON AZ, 85705', 'property_type': 'Single Family Residential - Site ≤5 Acres', 'year_built': None, 'sqft': None, 'lot_size': 6782.85883519, 'zoning': 'C-2', 'assessed_value': 158821.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.25323193132567, 'longitude': -110.97161024267398, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'activity_num': 'T09DV05680'}], 'violation_count': 1, 'parcel_use_code': '0131', 'flood_zone': 'ZONE X'}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '2530_N_STONE_AV', 'source': 'tucson_code_enforcement', 'parcel_id': '107141280', 'owner_name': 'Madison Marc M', 'address': '2530 N STONE AV, Tucson, AZ 85705', 'address_street': '2530 N STONE AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'MADISON MARC M, 2554 N STONE AVE, TUCSON AZ, 85705', 'property_type': 'Single Family Residential - Site ≤5 Acres', 'year_built': None, 'sqft': None, 'lot_size': 6782.85883519, 'zoning': 'C-2', 'assessed_value': 158821.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.25323193132567, 'longitude': -110.97161024267398, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'activity_num': 'T09DV05680'}], 'violation_count': 1, 'parcel_use_code': '0131', 'flood_zone': 'ZONE X'}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '2530_N_STONE_AV', 'source': 'tucson_code_enforcement', 'parcel_id': '107141280', 'owner_name': 'Madison Marc M', 'address': '2530 N STONE AV, Tucson, AZ 85705', 'address_street': '2530 N STONE AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'MADISON MARC M, 2554 N STONE AVE, TUCSON AZ, 85705', 'property_type': 'Single Family Residential - Site ≤5 Acres', 'year_built': None, 'sqft': None, 'lot_size': 6782.85883519, 'zoning': 'C-2', 'assessed_value': 158821.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.25323193132567, 'longitude': -110.97161024267398, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'activity_num': 'T09DV05680'}], 'violation_count': 1, 'parcel_use_code': '0131', 'flood_zone': 'ZONE X'}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '2530_N_STONE_AV', 'source': 'tucson_code_enforcement', 'parcel_id': '107141280', 'owner_name': 'Madison Marc M', 'address': '2530 N STONE AV, Tucson, AZ 85705', 'address_street': '2530 N STONE AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'MADISON MARC M, 2554 N STONE AVE, TUCSON AZ, 85705', 'property_type': 'Single Family Residential - Site ≤5 Acres', 'year_built': None, 'sqft': None, 'lot_size': 6782.85883519, 'zoning': 'C-2', 'assessed_value': 158821.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.25323193132567, 'longitude': -110.97161024267398, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'activity_num': 'T09DV05680'}], 'violation_count': 1, 'parcel_use_code': '0131', 'flood_zone': 'ZONE X'}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Single Family'], 'limit': 100, 'bounds': None}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '2530_N_STONE_AV', 'source': 'tucson_code_enforcement', 'parcel_id': '107141280', 'owner_name': 'Madison Marc M', 'address': '2530 N STONE AV, Tucson, AZ 85705', 'address_street': '2530 N STONE AV', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'MADISON MARC M, 2554 N STONE AVE, TUCSON AZ, 85705', 'property_type': 'Single Family Residential - Site ≤5 Acres', 'year_built': None, 'sqft': None, 'lot_size': 6782.85883519, 'zoning': 'C-2', 'assessed_value': 158821.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.25323193132567, 'longitude': -110.97161024267398, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'Site has excessive junk.  The items on the property are piled quite high - approximately 6 feet high. (NOVERIFY)', 'activity_num': 'T09DV05680'}], 'violation_count': 1, 'parcel_use_code': '0131', 'flood_zone': 'ZONE X', 'school_district': 'AMPHITHEATER UNIFIED SCHOOL DISTRICT'}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Multi Family'], 'limit': 100, 'bounds': None}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '240_W_SAHUARO_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '115050720', 'owner_name': 'Nido 1 Llc', 'address': '240 W SAHUARO ST, Tucson, AZ 85705', 'address_street': '240 W SAHUARO ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NIDO 1 LLC, 6626 VISTA DEL MAR, PLAYA DEL REY CA, 90293', 'property_type': 'Multi-Family', 'year_built': None, 'sqft': None, 'lot_size': 23579.47879348, 'zoning': 'O-3', 'assessed_value': 1246604.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.24953641531022, 'longitude': -110.97617064892727, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': "Dumping of furniture and mattresses.  The furniture and mattresses are dumped over the east wall onto someone else's vacant property and behind the dumpster which is located in the northeast corner outside the apartment complex. (COURTCMP)", 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': "Dumping of furniture and mattresses.  The furniture and mattresses are dumped over the east wall onto someone else's vacant property and behind the dumpster which is located in the northeast corner outside the apartment complex. (COURTCMP)", 'activity_num': 'T15DV07279'}], 'violation_count': 1, 'parcel_use_code': '0355', 'flood_zone': 'ZONE X'}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Multi Family'], 'limit': 100, 'bounds': None}
+API FOUND 100 RAW LEADS
+Cleaner received 100 leads
+First lead: {'id': '240_W_SAHUARO_ST', 'source': 'tucson_code_enforcement', 'parcel_id': '115050720', 'owner_name': 'Nido 1 Llc', 'address': '240 W SAHUARO ST, Tucson, AZ 85705', 'address_street': '240 W SAHUARO ST', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'NIDO 1 LLC, 6626 VISTA DEL MAR, PLAYA DEL REY CA, 90293', 'property_type': 'Multi-Family', 'year_built': None, 'sqft': None, 'lot_size': 23579.47879348, 'zoning': 'O-3', 'assessed_value': 1246604.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.24953641531022, 'longitude': -110.97617064892727, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': "Dumping of furniture and mattresses.  The furniture and mattresses are dumped over the east wall onto someone else's vacant property and behind the dumpster which is located in the northeast corner outside the apartment complex. (COURTCMP)", 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': "Dumping of furniture and mattresses.  The furniture and mattresses are dumped over the east wall onto someone else's vacant property and behind the dumpster which is located in the northeast corner outside the apartment complex. (COURTCMP)", 'activity_num': 'T15DV07279'}], 'violation_count': 1, 'parcel_use_code': '0355', '_parcel_enriched': True, 'flood_zone': 'ZONE X', 'school_district': 'TUCSON UNIFIED SCHOOL DISTRICT'}
+Cleaner returning 100 leads
+API RETURNING 100 CLEANED LEADS
+Serialization SUCCESS
+API RECEIVED SEARCH (RELOADED V2): {'zip_code': '85705', 'city': None, 'county': None, 'address': None, 'distress_type': ['Code Violations', 'Absentee Owner'], 'property_types': ['Vacant Land'], 'limit': 100, 'bounds': None}
+API FOUND 68 RAW LEADS
+Cleaner received 68 leads
+First lead: {'id': '331_E_FORT_LOWELL_RD', 'source': 'tucson_code_enforcement', 'parcel_id': '10604270A', 'owner_name': 'Ingram Gregory & Laura Living Tr', 'address': '331 E FORT LOWELL RD, Tucson, AZ 85705', 'address_street': '331 E FORT LOWELL RD', 'address_city': 'Tucson', 'address_state': 'AZ', 'address_zip': '85705', 'mailing_address': 'INGRAM GREGORY & LAURA LIVING TR, PO BOX 43515, TUCSON AZ, 85733', 'property_type': 'Vacant Land - Commercial, Urban Subdivided', 'year_built': None, 'sqft': None, 'lot_size': 21990.64030538, 'zoning': 'C-2', 'assessed_value': 132432.0, 'last_sale_date': None, 'last_sale_price': None, 'latitude': 32.26541438724176, 'longitude': -110.96660567107949, 'status': 'New', 'strategy': 'Wholesale', 'distress_score': 1, 'distress_signals': ['Code Violation', 'Absentee Owner'], 'violation_description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'beds': None, 'baths': None, 'pool': None, 'garage': None, 'arv': None, 'phone': None, 'email': None, 'violations': [{'description': 'POSSIBLE INOPERABLE VEHICLES, WEEDS, REFUSE (COURTCMP)', 'activity_num': 'T15DV07243'}, {'description': 'weeds in the easement not being cut (NOVERIFY)', 'activity_num': 'T22DV00823'}], 'violation_count': 2, 'parcel_use_code': '0021', '_parcel_enriched': True, 'flood_zone': 'ZONE AE', 'school_district': 'AMPHITHEATER UNIFIED SCHOOL DISTRICT'}
+Cleaner returning 68 leads
+API RETURNING 68 CLEANED LEADS
+Serialization SUCCESS

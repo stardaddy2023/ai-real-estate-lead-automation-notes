@@ -9,7 +9,19 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 
-export const PROPERTY_TYPES = ["Single Family", "Multi Family", "Condo", "Vacant Land", "Commercial"]
+export const PROPERTY_TYPES = [
+    "Single Family",
+    "Multi Family",
+    "Condo",
+    "Vacant Land",
+    "Commercial",
+    "Mobile Home Park",
+    "Industrial / Storage",
+    "Parking",
+    "Partially Complete",
+    "Salvage / Teardown",
+    "Mixed Use"
+]
 export const DISTRESS_TYPES = [
     "Code Violations",
     "Absentee Owner",

@@ -51,7 +51,7 @@ export default function AutocompleteInput({
             }
 
             try {
-                const res = await fetch(`http://localhost:8000/scout/autocomplete?query=${encodeURIComponent(value)}`);
+                const res = await fetch(`http://127.0.0.1:8000/scout/autocomplete?query=${encodeURIComponent(value)}`);
                 if (res.ok) {
                     const data = await res.json();
                     setSuggestions(data.suggestions || []);
@@ -77,7 +77,10 @@ export default function AutocompleteInput({
         <div ref={wrapperRef} className={`relative w-full max-w-md ${className || ''}`}>
             <div className="relative h-full">
                 {showIcon && (
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Search
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 cursor-pointer hover:text-green-500 transition-colors"
+                        onClick={onSearch}
+                    />
                 )}
                 <input
                     type="text"
@@ -87,6 +90,7 @@ export default function AutocompleteInput({
                     onChange={(e) => onChange(e.target.value)}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') {
+                            console.log("DEBUG: Enter key pressed in AutocompleteInput")
                             setIsOpen(false);
                             onSearch();
                         }

@@ -1,0 +1,331 @@
+<!DOCTYPE html><html lang="en" ng-app="Avalon" class="ng-scope"><head><meta http-equiv="origin-trial" content="A7vZI3v+Gz7JfuRolKNM4Aff6zaGuT7X0mf3wtoZTnKv6497cVMnhy03KDqX7kBz/q/iidW7srW31oQbBt4VhgoAAACUeyJvcmlnaW4iOiJodHRwczovL3d3dy5nb29nbGUuY29tOjQ0MyIsImZlYXR1cmUiOiJEaXNhYmxlVGhpcmRQYXJ0eVN0b3JhZ2VQYXJ0aXRpb25pbmczIiwiZXhwaXJ5IjoxNzU3OTgwODAwLCJpc1N1YmRvbWFpbiI6dHJ1ZSwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ=="><meta http-equiv="origin-trial" content="A7vZI3v+Gz7JfuRolKNM4Aff6zaGuT7X0mf3wtoZTnKv6497cVMnhy03KDqX7kBz/q/iidW7srW31oQbBt4VhgoAAACUeyJvcmlnaW4iOiJodHRwczovL3d3dy5nb29nbGUuY29tOjQ0MyIsImZlYXR1cmUiOiJEaXNhYmxlVGhpcmRQYXJ0eVN0b3JhZ2VQYXJ0aXRpb25pbmczIiwiZXhwaXJ5IjoxNzU3OTgwODAwLCJpc1N1YmRvbWFpbiI6dHJ1ZSwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ=="><style type="text/css">[uib-typeahead-popup].dropdown-menu{display:block;}</style><style type="text/css">.uib-time input{width:50px;}</style><style type="text/css">[uib-tooltip-popup].tooltip.top-left > .tooltip-arrow,[uib-tooltip-popup].tooltip.top-right > .tooltip-arrow,[uib-tooltip-popup].tooltip.bottom-left > .tooltip-arrow,[uib-tooltip-popup].tooltip.bottom-right > .tooltip-arrow,[uib-tooltip-popup].tooltip.left-top > .tooltip-arrow,[uib-tooltip-popup].tooltip.left-bottom > .tooltip-arrow,[uib-tooltip-popup].tooltip.right-top > .tooltip-arrow,[uib-tooltip-popup].tooltip.right-bottom > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.top-left > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.top-right > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.bottom-left > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.bottom-right > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.left-top > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.left-bottom > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.right-top > .tooltip-arrow,[uib-tooltip-html-popup].tooltip.right-bottom > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.top-left > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.top-right > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.bottom-left > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.bottom-right > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.left-top > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.left-bottom > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.right-top > .tooltip-arrow,[uib-tooltip-template-popup].tooltip.right-bottom > .tooltip-arrow,[uib-popover-popup].popover.top-left > .arrow,[uib-popover-popup].popover.top-right > .arrow,[uib-popover-popup].popover.bottom-left > .arrow,[uib-popover-popup].popover.bottom-right > .arrow,[uib-popover-popup].popover.left-top > .arrow,[uib-popover-popup].popover.left-bottom > .arrow,[uib-popover-popup].popover.right-top > .arrow,[uib-popover-popup].popover.right-bottom > .arrow,[uib-popover-html-popup].popover.top-left > .arrow,[uib-popover-html-popup].popover.top-right > .arrow,[uib-popover-html-popup].popover.bottom-left > .arrow,[uib-popover-html-popup].popover.bottom-right > .arrow,[uib-popover-html-popup].popover.left-top > .arrow,[uib-popover-html-popup].popover.left-bottom > .arrow,[uib-popover-html-popup].popover.right-top > .arrow,[uib-popover-html-popup].popover.right-bottom > .arrow,[uib-popover-template-popup].popover.top-left > .arrow,[uib-popover-template-popup].popover.top-right > .arrow,[uib-popover-template-popup].popover.bottom-left > .arrow,[uib-popover-template-popup].popover.bottom-right > .arrow,[uib-popover-template-popup].popover.left-top > .arrow,[uib-popover-template-popup].popover.left-bottom > .arrow,[uib-popover-template-popup].popover.right-top > .arrow,[uib-popover-template-popup].popover.right-bottom > .arrow{top:auto;bottom:auto;left:auto;right:auto;margin:0;}[uib-popover-popup].popover,[uib-popover-html-popup].popover,[uib-popover-template-popup].popover{display:block !important;}</style><style type="text/css">.uib-datepicker-popup.dropdown-menu{display:block;float:none;margin:0;}.uib-button-bar{padding:10px 9px 2px;}</style><style type="text/css">.uib-position-measure{display:block !important;visibility:hidden !important;position:absolute !important;top:-9999px !important;left:-9999px !important;}.uib-position-scrollbar-measure{position:absolute !important;top:-9999px !important;width:50px !important;height:50px !important;overflow:scroll !important;}.uib-position-body-scrollbar-measure{overflow:scroll !important;}</style><style type="text/css">.uib-datepicker .uib-title{width:100%;}.uib-day button,.uib-month button,.uib-year button{min-width:100%;}.uib-left,.uib-right{width:100%}</style><style type="text/css">.ng-animate.item:not(.left):not(.right){-webkit-transition:0s ease-in-out left;transition:0s ease-in-out left}</style><style type="text/css">@charset "UTF-8";[ng\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">    
+    <meta name="dynamic" content="">
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="/images/mobile/appleTouch57.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/images/mobile/appleTouch72.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/images/mobile/appleTouch114.png">
+    <title>Pima County - A Z - Treasurer</title>    
+
+    <script type="text/javascript" async="" charset="utf-8" src="https://www.gstatic.com/recaptcha/releases/7gg7H51Q-naNfhmCP3_R47ho/recaptcha__en.js" crossorigin="anonymous" integrity="sha384-TnttG+UhZcM8I0YLwHFXmjuU0uVv/3X99Itc+0eiXTiqtrwYAZwNs8Q9WliKgfF8"></script><script type="text/javascript" async="" charset="utf-8" src="https://www.gstatic.com/recaptcha/releases/7gg7H51Q-naNfhmCP3_R47ho/recaptcha__en.js" crossorigin="anonymous" integrity="sha384-TnttG+UhZcM8I0YLwHFXmjuU0uVv/3X99Itc+0eiXTiqtrwYAZwNs8Q9WliKgfF8"></script><script type="text/javascript">
+        if(window.location.protocol!="https:"){var img=document.createElement("img");img.src="https://"+window.location.hostname+"/sniTest.gif";img.onload=function(){window.location.href=window.location.href.replace("http:", "https:")};img.style.display="none";document.body.appendChild(img)}
+    </script>
+
+    <script type="text/javascript">
+        var appInsights=window.appInsights||function(a){
+        function b(a){c[a]=function(){var b=arguments;c.queue.push(function(){c[a].apply(c,b)})}}var c={config:a},d=document,e=window;setTimeout(function(){var b=d.createElement("script");b.src=a.url||"https://az416426.vo.msecnd.net/scripts/a/ai.0.js",d.getElementsByTagName("script")[0].parentNode.appendChild(b)});try{c.cookie=d.cookie}catch(a){}c.queue=[];for(var f=["Event","Exception","Metric","PageView","Trace","Dependency"];f.length;)b("track"+f.pop());if(b("setAuthenticatedUserContext"),b("clearAuthenticatedUserContext"),b("startTrackEvent"),b("stopTrackEvent"),b("startTrackPage"),b("stopTrackPage"),b("flush"),!a.disableExceptionTracking){f="onerror",b("_"+f);var g=e[f];e[f]=function(a,b,d,e,h){var i=g&&g(a,b,d,e,h);return!0!==i&&c["_"+f](a,b,d,e,h),i}}return c
+        }({
+            instrumentationKey:"d021b713-5928-4e28-9cf9-72c496cd1d11"
+        });
+
+        window.appInsights=appInsights,appInsights.queue&&0===appInsights.queue.length&&appInsights.trackPageView();
+	</script>	
+
+    <link rel="stylesheet" href="//d1ebsyxxbc7tep.cloudfront.net/resources.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script><script src="https://az416426.vo.msecnd.net/scripts/a/ai.0.js"></script>
+    <link href="/css/styles.css" rel="stylesheet" type="text/css">
+
+    
+    <!--[if lte IE 9]>
+        <script src="//d1ebsyxxbc7tep.cloudfront.net/xdomain.min.js"></script>
+    <![endif]-->
+<script id="scriptreCaptcha" type="text/javascript" src="https://www.google.com/recaptcha/api.js?onload=reCaptchaLoad&amp;render=explicit"></script></head>
+<body class="modal-open"><div uib-modal-window="modal-window" class="modal fade ng-scope ng-isolate-scope in" role="dialog" index="0" animate="animate" ng-style="{'z-index': 1050 + $$topModalIndex*10, display: 'block'}" tabindex="-1" uib-modal-animation-class="fade" modal-in-class="in" modal-animation="true" aria-modal="true" aria-labelledby="firstTimeHereTitle" style="z-index: 1050; display: block;"><div class="modal-dialog "><div class="modal-content" uib-modal-transclude="">
+    <div class="modal-header ng-scope">
+        <h2 class="modal-title" id="firstTimeHereTitle">
+            <span aria-hidden="true"><i class="far fa-info-circle"></i></span> &nbsp;First time here?
+        </h2>
+</div>
+    <div class="modal-body searchTipsModal ng-scope">
+        
+        <h3><strong>What can I search for?</strong></h3>
+        <ul>
+
+    <li>Names <i>(Last name First name)</i></li>
+    <li>State Codes</li>
+    <li>Property Locations</li>
+
+        </ul>
+        <br>
+            <h3><strong>Search tips</strong></h3>
+            <ul>
+                <li>As you type, suggestions will appear below the search box</li>
+                <li>Click a suggestion to only receive those records</li>
+                
+            </ul>
+        <br>
+            <h3><strong>Once your search has returned</strong></h3>
+            <ul>
+                <li>Refine your results by checking the boxes to the left of the results</li>
+                <li>Use the page numbers to navigate your results</li>
+                
+            </ul>
+        
+    </div>
+    <div class="modal-footer ng-scope">
+        <button ng-click="neverShow()" type="button" class="btn btn-info" aria-label="Don't show this again">  <span aria-hidden="true"><i class="far fa-times"></i></span>&nbsp;Don't show this again</button>
+        <button ng-click="close()" type="button" class="btn btn-primary" aria-label="Close">  <span aria-hidden="true"><i class="far fa-check-square"></i></span>&nbsp;Close</button>
+    </div>
+</div></div>
+</div><div uib-modal-backdrop="modal-backdrop" class="modal-backdrop fade ng-scope in" ng-style="{'z-index': 1040 + (index &amp;&amp; 1 || 0) + index*10}" uib-modal-animation-class="fade" modal-in-class="in" modal-animation="true" data-bootstrap-modal-aria-hidden-count="1" aria-hidden="true" style="z-index: 1040;"></div>
+    <!-- ngInclude:  -->
+    <div class="fullWrapper" data-bootstrap-modal-aria-hidden-count="1" aria-hidden="true">
+    <div id="header" class="fullWrapper">
+        <a href="https://www.to.pima.gov/home/"><img src="/images/pima-logo.png"></a>
+        <div id="navLinks">
+                <a href="https://www.to.pima.gov/home/">Return to Treasurer’s Home Page</a>
+        </div>
+        <div class="clearfix"></div>
+    </div>
+    <div id="wrapper">
+        <div id="welcome" class="wrapper">
+            <div id="welcomeContent" section="Welcome">
+                <link rel="stylesheet" href="https://d1ebsyxxbc7tep.cloudfront.net/css/6a555c92-8300-4ce4-bc48-c0bac32fe96e/1.css"><div id="avalon" ng-controller="App.Ctrl" class="ng-scope"><!-- ngView:  --><div data-ng-view="" class="ng-scope">
+<script type="text/ng-template" id="typeaheadTemplate.html" class="ng-scope">
+    <a>
+        <span class="small">{{ match.model.Type }}</span>
+        <span ng-bind-html="match.model.Value | uibTypeaheadHighlight:query"></span>
+    </a>
+</script>
+<script type="text/ng-template" id="tipsModal.html" class="ng-scope">
+    <div class="modal-header">
+        <h2 class="modal-title" id="firstTimeHereTitle">
+            <span aria-hidden="true"><i class="far fa-info-circle"></i></span> &nbsp;First time here?
+        </h2>
+</div>
+    <div class="modal-body searchTipsModal">
+        
+        <h3><strong>What can I search for?</strong></h3>
+        <ul>
+
+    <li>Names <i>(Last name First name)</i></li>
+    <li>State Codes</li>
+    <li>Property Locations</li>
+
+        </ul>
+        <br />
+            <h3><strong>Search tips</strong></h3>
+            <ul>
+                <li>As you type, suggestions will appear below the search box</li>
+                <li>Click a suggestion to only receive those records</li>
+                
+            </ul>
+        <br />
+            <h3><strong>Once your search has returned</strong></h3>
+            <ul>
+                <li>Refine your results by checking the boxes to the left of the results</li>
+                <li>Use the page numbers to navigate your results</li>
+                
+            </ul>
+        
+    </div>
+    <div class="modal-footer">
+        <button ng-click="neverShow()" type="button" class="btn btn-info" aria-label="Don't show this again">  <span aria-hidden="true"><i class="far fa-times"></i></span>&nbsp;Don't show this again</button>
+        <button ng-click="close()" type="button" class="btn btn-primary" aria-label="Close">  <span aria-hidden="true"><i class="far fa-check-square"></i></span>&nbsp;Close</button>
+    </div>
+</script>
+
+<div id="floatingCheckout" class="well well-sm ng-scope ng-hide" ng-show="cart.num() &gt; 0" role="region" aria-label="Floating Checkout">
+    <button class="btn btn-default btn-sm btn-block ng-binding" ng-click="cart.show('Float')" aria-label="Cart 0"><span aria-hidden="true"><i class="far fa-shopping-cart"></i></span>&nbsp;Cart (0)</button>
+    <button class="btn btn-success btn-sm btn-block" ng-click="checkout('Float')" aria-label="Checkout"><span aria-hidden="true"><i class="far fa-lock"></i></span>&nbsp;Checkout</button>
+
+</div>
+<div class="row wildfire ng-scope" scroll="">
+    <div class="col-sm-5">
+        <form ng-submit="direct = null; submitForm();" class="form ng-pristine ng-valid ng-valid-required" id="searchForm" name="searchForm">
+            <div class="form-group has-feedback">
+                <button type="button" aria-label="Tips" class="btn btn-info pull-right visible-xs btn-xs" ng-click="showTipsModal()">
+                    <span aria-hidden="true"><i class="far fa-question-circle fa-lg"></i></span>&nbsp;Tips
+                </button>
+                <label id="lblSearch" for="searchBox">
+                    Search<span class="visible-print-inline">: <span style="font-weight: normal" class="ng-binding">10101001A</span></span>
+                </label>
+                <div class="input-group hidden-print">
+                    <input type="text" autocomplete="off" id="searchBox" autofocus="" ng-model="searchVal" uib-typeahead="s as s.Value for s in getSuggestions($viewValue)" typeahead-loading="loadingSuggestions" typeahead-template-url="typeaheadTemplate.html" typeahead-no-results="noResults" typeahead-focus-first="false" typeahead-on-select="searchSuggestionSelected($item, $model, $label)" class="form-control ng-pristine ng-valid ng-not-empty ng-valid-required ng-touched" placeholder="What are you looking for?" required="" aria-autocomplete="list" aria-expanded="false" aria-owns="typeahead-4-7165" style=""><ul class="dropdown-menu ng-isolate-scope ng-hide" ng-show="isOpen() &amp;&amp; !moveInProgress" ng-style="{top: position().top+'px', left: position().left+'px'}" role="listbox" aria-hidden="true" uib-typeahead-popup="" id="typeahead-4-7165" matches="matches" active="activeIdx" select="select(activeIdx, evt)" move-in-progress="moveInProgress" query="query" position="position" assign-is-open="assignIsOpen(isOpen)" debounce="debounceUpdate" template-url="typeaheadTemplate.html">
+    <!-- ngRepeat: match in matches track by $index -->
+</ul>
+                    <span class="input-group-btn">
+                        <span class="far fa-sync fa-spin form-control-feedback ng-hide" ng-show="loadingSuggestions"></span>
+                        <button type="submit" ng-disabled="loading || !searchVal" class="btn btn-primary" aria-label="Search">
+                            <span aria-hidden="true">
+                                <i class="far fa-fw fa-search" ng-class="{ 'fa-cog fa-spin': loading, 'fa-search': !loading }"></i>
+                            </span>
+                                <span class="hidden-xs ng-binding">&nbsp;&nbsp;&nbsp;Search&nbsp;&nbsp;</span>
+</button>
+
+                    </span>
+                </div>
+            </div>
+            <div class="form-group">
+                <!-- ngIf: result --><button type="button" id="btnClear" ng-if="result" ng-disabled="loading" ng-click="clear()" aria-label="Clear" class="btn btn-default ng-scope">
+                    <span aria-hidden="true">
+                        <i class="far fa-trash-alt"></i>
+                    </span>
+                    &nbsp;Clear
+                </button><!-- end ngIf: result -->
+            </div>
+        </form>
+        <div class="alert alert-danger ng-binding ng-hide" role="alert" ng-show="error"><span aria-hidden="true"><i class="far fa-exclamation-triangle"></i></span>&nbsp;</div>
+        <div class="alert alert-warning ng-hide" role="alert" ng-show="result.length == 0"><span aria-hidden="true"><i class="far fa-question-circle"></i></span>&nbsp;No Records Found</div>
+            <div class="alert alert-success ng-binding ng-hide" ng-show="result &amp;&amp; result.TotalRecords &gt; 0">
+                <div class="pull-right visible-print ng-binding">Page 1 of 0</div>
+                0 record<!-- ngIf: result.TotalRecords > 1 --> returned
+            </div>
+    </div>
+    <div class="col-sm-7 col-lg-6 col-lg-offset-1 hidden-print">
+        <div id="searchTips" class="well hidden-xs">
+            <button class="btn btn-info pull-right" style="margin: -12px -12px 0 0; padding: 5px 8px;" ng-click="showTipsModal()" uib-tooltip="More Information" tooltip-append-to-body="true" tooltip-placement="left" aria-label="Show search tips">
+                <span aria-hidden="true"> <i class="far fa-question-circle fa-lg"></i> </span>
+            </button>
+            <h3>
+                <span aria-hidden="true"><i class="far fa-thumbtack fa-rotate-45"></i></span>&nbsp;Search Tips
+            </h3>
+            
+    You can search for Owner Names, State Codes, and Property Locations.  Just start typing!
+
+
+    <h4>
+        <i class="far fa-user"></i>&nbsp;Create an Account
+    </h4>
+    <li>You can create a list of records to monitor, register for eAlerts for new bills and more. </li>
+        <li><b>To schedule payments on any record, please create an account.</b></li>
+    <li>Select the Login button below and then Signup.</li>
+        </div>
+        <div class="paginationAndCart">
+            <script id="paginationTemplate.html" type="text/ng-template">
+                <li ng-if="::directionLinks" ng-class="{disabled: noPrevious()||ngDisabled}" class="pagination-prev"><a title="Previous Page" href ng-click="selectPage(page - 1, $event)"><span class="far fa-chevron-circle-left fa-lg" aria-hidden="true"></span><span class="hidden-xs">&nbsp;Previous</span></a></li>
+                <li ng-repeat="page in pages track by $index" ng-class="{active: page.active, disabled: ngDisabled&&!page.active}" class="pagination-page"><a href ng-click="selectPage(page.number, $event)">{{page.text}}</a></li>
+                <li ng-if="::directionLinks" ng-class="{disabled: noNext()||ngDisabled}" class="pagination-next"><a title="Next Page" href ng-click="selectPage(page + 1, $event)"><span class="far fa-chevron-circle-right fa-lg" aria-hidden="true"></span><span class="hidden-xs">&nbsp;Next</span></a></li>
+            </script>
+            <ul uib-pagination="" ng-show="result.TotalRecords &gt; 20" class="pull-left ng-pristine ng-untouched ng-valid ng-isolate-scope pagination ng-not-empty ng-hide" total-items="result.TotalRecords" items-per-page="20" rotate="false" max-size="4" ng-model="page" template-url="paginationTemplate.html" ng-change="search()" style="font-size: 15px;" role="menu">
+                <!-- ngIf: ::directionLinks --><li ng-if="::directionLinks" ng-class="{disabled: noPrevious()||ngDisabled}" class="pagination-prev ng-scope disabled"><a title="Previous Page" href="" ng-click="selectPage(page - 1, $event)"><span class="far fa-chevron-circle-left fa-lg" aria-hidden="true"></span><span class="hidden-xs">&nbsp;Previous</span></a></li><!-- end ngIf: ::directionLinks -->
+                <!-- ngRepeat: page in pages track by $index --><li ng-repeat="page in pages track by $index" ng-class="{active: page.active, disabled: ngDisabled&amp;&amp;!page.active}" class="pagination-page ng-scope active"><a href="" ng-click="selectPage(page.number, $event)" class="ng-binding">1</a></li><!-- end ngRepeat: page in pages track by $index -->
+                <!-- ngIf: ::directionLinks --><li ng-if="::directionLinks" ng-class="{disabled: noNext()||ngDisabled}" class="pagination-next ng-scope disabled"><a title="Next Page" href="" ng-click="selectPage(page + 1, $event)"><span class="far fa-chevron-circle-right fa-lg" aria-hidden="true"></span><span class="hidden-xs">&nbsp;Next</span></a></li><!-- end ngIf: ::directionLinks -->
+            </ul>
+            <!-- ngInclude: 'https://d1ebsyxxbc7tep.cloudfront.net/views/6a555c92-8300-4ce4-bc48-c0bac32fe96e/User/btnUser' --><div class="pull-right ng-scope" style="margin: 0 0 5px 4px" ng-include="'https://d1ebsyxxbc7tep.cloudfront.net/views/6a555c92-8300-4ce4-bc48-c0bac32fe96e/User/btnUser'">
+
+
+    <!-- ngIf: user.watchlistUser -->
+    <button type="button" class="btn btn-default ng-scope" ng-hide="user" ng-click="login()" aria-label="Login"><span aria-hidden="true"><i class="fa fa-sign-in"></i></span>&nbsp;Login</button>
+</div>
+            <div class="pull-right">
+                
+                <button class="btn btn-default ng-binding ng-hide" ng-show="cart.num() &gt; 0" ng-click="cart.show('Top')"><span aria-hidden="true"><i class="far fa-shopping-cart"></i></span>&nbsp;View Cart (0)</button>
+                <button class="btn btn-success ng-hide" ng-show="cart.num() &gt; 0" ng-click="checkout('Top')"><span aria-hidden="true"><i class="far fa-lock"></i></span>&nbsp;<span ng-hide="user">Secure </span>Checkout</button>
+
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+</div>
+<div class="row wildfire stickyNavBox hidden-xs headStick ng-scope hidden" ng-class="{'growStickySearch':hideMenu,'hidden': !hideMenu}">
+    <div class="col-sm-5">
+        <div class="input-group hidden-print">
+            <input type="text" autocomplete="off" id="searchBox" ng-model="searchVal" uib-typeahead="s as s.Value for s in getSuggestions($viewValue)" typeahead-loading="loadingSuggestions" typeahead-template-url="typeaheadTemplate.html" typeahead-no-results="noResults" typeahead-focus-first="false" typeahead-append-to-body="true" typeahead-on-select="searchSuggestionSelected($item, $model, $label)" class="form-control ng-pristine ng-untouched ng-valid ng-not-empty ng-valid-required" placeholder="What are you looking for?" ng-enter="submitForm()" required="" aria-autocomplete="list" aria-expanded="false" aria-owns="typeahead-6-7571" style="">
+            <span class="input-group-btn">
+                <span class="far fa-sync fa-spin form-control-feedback ng-hide" ng-show="loadingSuggestions"></span>
+                <button type="submit" ng-disabled="loading || !searchVal" class="btn btn-primary" aria-label="Search" ng-click="submitForm();">
+                    <span aria-hidden="true">
+                        <i class="far fa-fw fa-search" ng-class="{ 'fa-cog fa-spin': loading, 'fa-search': !loading }"></i>
+                        </span>
+                        <span class="hidden-xs ng-binding">&nbsp;&nbsp;&nbsp;Search&nbsp;&nbsp;</span>
+</button>
+            </span>
+        </div>
+    </div>
+    <!-- ngInclude: 'https://d1ebsyxxbc7tep.cloudfront.net/views/6a555c92-8300-4ce4-bc48-c0bac32fe96e/User/btnUser' --><div class="col-sm-2 col-sm-offset-5 text-right ng-scope" ng-include="'https://d1ebsyxxbc7tep.cloudfront.net/views/6a555c92-8300-4ce4-bc48-c0bac32fe96e/User/btnUser'">
+
+
+    <!-- ngIf: user.watchlistUser -->
+    <button type="button" class="btn btn-default ng-scope" ng-hide="user" ng-click="login()" aria-label="Login"><span aria-hidden="true"><i class="fa fa-sign-in"></i></span>&nbsp;Login</button>
+</div>
+</div>
+<div class="row ng-scope">
+    <div class="col-md-2 _sideStick">
+        <!-- ngIf: facets --><div ng-class="{ 'panel panel-default': isMobile }" ng-if="facets" class="ng-scope">
+            <div id="filtersToggle" class="panel-heading visible-xs hidden-print" ng-click="filtersCollapsed = (!filtersCollapsed)">
+                <span aria-hidden="true"> <i class="far fa-bars"></i></span>&nbsp; Filters
+            </div>
+                <div class="panel-body hidden-print" id="filters" style="padding-top: 0px;" ng-hide="filtersCollapsed" role="region" aria-label="Filters">
+                    <!-- ngRepeat: (key, val) in facets --><div ng-repeat="(key, val) in facets" class="ng-scope">
+                        <fieldset style="margin-bottom: 20px;">
+                            <legend style="margin-bottom: 0px;" class="ng-binding">Status</legend>
+                            <!-- ngRepeat: f in val.facets | orderBy:'key':true -->
+                        </fieldset>
+                    </div><!-- end ngRepeat: (key, val) in facets --><div ng-repeat="(key, val) in facets" class="ng-scope">
+                        <fieldset style="margin-bottom: 20px;">
+                            <legend style="margin-bottom: 0px;" class="ng-binding">Type</legend>
+                            <!-- ngRepeat: f in val.facets | orderBy:'key':true -->
+                        </fieldset>
+                    </div><!-- end ngRepeat: (key, val) in facets --><div ng-repeat="(key, val) in facets" class="ng-scope">
+                        <fieldset style="margin-bottom: 20px;">
+                            <legend style="margin-bottom: 0px;" class="ng-binding">Years</legend>
+                            <!-- ngRepeat: f in val.facets | orderBy:'key':true -->
+                        </fieldset>
+                    </div><!-- end ngRepeat: (key, val) in facets -->
+                </div>
+        </div><!-- end ngIf: facets -->
+        <div class="visible-print" id="filtersPrint">
+            <!-- ngRepeat: (key, val) in selectedFacets --><span ng-repeat="(key, val) in selectedFacets" class="ng-scope"><!-- ngRepeat: (fKey, fVal) in val --></span><!-- end ngRepeat: (key, val) in selectedFacets --><span ng-repeat="(key, val) in selectedFacets" class="ng-scope"><!-- ngRepeat: (fKey, fVal) in val --></span><!-- end ngRepeat: (key, val) in selectedFacets --><span ng-repeat="(key, val) in selectedFacets" class="ng-scope"><!-- ngRepeat: (fKey, fVal) in val --></span><!-- end ngRepeat: (key, val) in selectedFacets -->
+        </div>
+    </div>
+        <div class="col-md-10 wildfireResults" ng-class="{ 'wildfireLoading': loading }">
+            
+    <table class="table searchResults">
+        <thead>
+            <tr>
+                <th>Owner Name</th>
+                <th class="hidden-xs">Type</th>
+                <th class="hidden-xs">Property Location</th>
+                <th>State Code</th>
+                <th>Tax Year</th>
+                <th class="hidden-xs">Status</th>
+                <th class="hidden-xs"></th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- ngRepeat: r in result.Records | orderBy:['ProperyID'] -->
+        </tbody>
+    </table>
+
+            <br>
+            <ul uib-pagination="" ng-show="result.TotalRecords &gt; 20" total-items="result.TotalRecords" items-per-page="20" rotate="false" max-size="isMobile ? 4 : 10" ng-model="page" template-url="paginationTemplate.html" ng-change="search()" style="font-size: 15px;" class="ng-pristine ng-untouched ng-valid ng-isolate-scope pagination ng-not-empty ng-hide" role="menu">
+                <!-- ngIf: ::directionLinks --><li ng-if="::directionLinks" ng-class="{disabled: noPrevious()||ngDisabled}" class="pagination-prev ng-scope disabled"><a title="Previous Page" href="" ng-click="selectPage(page - 1, $event)"><span class="far fa-chevron-circle-left fa-lg" aria-hidden="true"></span><span class="hidden-xs">&nbsp;Previous</span></a></li><!-- end ngIf: ::directionLinks -->
+                <!-- ngRepeat: page in pages track by $index --><li ng-repeat="page in pages track by $index" ng-class="{active: page.active, disabled: ngDisabled&amp;&amp;!page.active}" class="pagination-page ng-scope active"><a href="" ng-click="selectPage(page.number, $event)" class="ng-binding">1</a></li><!-- end ngRepeat: page in pages track by $index -->
+                <!-- ngIf: ::directionLinks --><li ng-if="::directionLinks" ng-class="{disabled: noNext()||ngDisabled}" class="pagination-next ng-scope disabled"><a title="Next Page" href="" ng-click="selectPage(page + 1, $event)"><span class="far fa-chevron-circle-right fa-lg" aria-hidden="true"></span><span class="hidden-xs">&nbsp;Next</span></a></li><!-- end ngIf: ::directionLinks -->
+            </ul>
+        </div>
+</div>
+</div></div>
+            </div>
+        </div>
+        <div class="clearfix"></div>
+    </div>
+    <div id="footer" class="fullWrapper">
+        <div id="footerContent" class="wrapper">
+            <p>
+            240 North Stone Avenue  Tucson, AZ    85701-1199 |  Phone: (520) 724-8341 |  Fax: (520) 724-4809
+            <br>
+            © 2021 Pima County Treasurer's Office
+            </p>
+
+        </div>
+    </div>
+</div>
+<!--AvalonEmbedJSHere-->    
+    <!--[if lte IE 9]>
+        <script type="text/javascript">
+            xdomain.slaves({ "https://d1ebsyxxbc7tep.cloudfront.net" : "/proxy.html?master=" + location.href });
+            xdomain.slaves({ "https://avalon.sturgiswebservices.com" : "/proxy.html?master=" + location.href });
+        </script>
+    <![endif]-->    
+    <script src="//d1ebsyxxbc7tep.cloudfront.net/resources.min.js" data-bootstrap-modal-aria-hidden-count="1" aria-hidden="true"></script>
+    <script src="/avalonCMS.js" data-bootstrap-modal-aria-hidden-count="1" aria-hidden="true"></script> 
+    <script src="https://www.google.com/recaptcha/api.js" async="" defer="" data-bootstrap-modal-aria-hidden-count="1" aria-hidden="true"></script>
+    <script type="text/javascript" src="//d1ebsyxxbc7tep.cloudfront.net/js/6a555c92-8300-4ce4-bc48-c0bac32fe96e/1.js" data-bootstrap-modal-aria-hidden-count="1" aria-hidden="true"></script>
+
+<ul class="dropdown-menu ng-isolate-scope ng-hide" ng-show="isOpen() &amp;&amp; !moveInProgress" ng-style="{top: position().top+'px', left: position().left+'px'}" role="listbox" aria-hidden="true" uib-typeahead-popup="" id="typeahead-6-7571" matches="matches" active="activeIdx" select="select(activeIdx, evt)" move-in-progress="moveInProgress" query="query" position="position" assign-is-open="assignIsOpen(isOpen)" debounce="debounceUpdate" template-url="typeaheadTemplate.html" data-bootstrap-modal-aria-hidden-count="1">
+    <!-- ngRepeat: match in matches track by $index -->
+</ul></body></html>

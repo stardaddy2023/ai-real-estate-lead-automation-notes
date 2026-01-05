@@ -16,3 +16,4 @@ playwright
 google-generativeai
 jinja2
 weasyprint
+homeharvest

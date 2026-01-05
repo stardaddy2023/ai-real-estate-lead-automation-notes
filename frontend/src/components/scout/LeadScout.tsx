@@ -64,7 +64,7 @@ export default function LeadScout() {
             const term = query.trim()
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const payload: any = {
-                property_types: selectedPropertyTypes.length > 0 ? selectedPropertyTypes : ["Single Family"],
+                property_types: selectedPropertyTypes,
                 distress_type: selectedDistressTypes, // Allow empty list for generic search
                 limit: limit,
                 bounds: newBounds // Include bounds in payload
@@ -82,9 +82,11 @@ export default function LeadScout() {
                 payload.city = term
             }
 
-            console.log("Sending Search Payload:", payload)
+            console.log("DEBUG: handleSearch called. Query:", term)
+            console.log("DEBUG: Payload prepared:", payload)
 
-            const res = await fetch('http://localhost:8000/scout/search', {
+            console.log("DEBUG: Initiating fetch to http://127.0.0.1:8000/scout/search (DIRECT)...")
+            const res = await fetch('http://127.0.0.1:8000/scout/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -133,7 +135,7 @@ export default function LeadScout() {
 
     const handleImport = async (lead: ScoutResult) => {
         try {
-            const res = await fetch('http://localhost:8000/leads/', {
+            const res = await fetch('/leads/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -276,6 +278,21 @@ export default function LeadScout() {
                             <option value={500} className="bg-white dark:bg-gray-900">500 Leads</option>
                         </select>
 
+                        {/* Filters Button (Next to Search Bar) */}
+                        <LeadFilters
+                            selectedPropertyTypes={selectedPropertyTypes}
+                            setSelectedPropertyTypes={(val) => setLeadScoutState({ selectedPropertyTypes: val })}
+                            selectedDistressTypes={selectedDistressTypes}
+                            setSelectedDistressTypes={(val) => setLeadScoutState({ selectedDistressTypes: val })}
+                            minBeds={minBeds}
+                            setMinBeds={(val) => setLeadScoutState({ minBeds: val })}
+                            minBaths={minBaths}
+                            setMinBaths={(val) => setLeadScoutState({ minBaths: val })}
+                            minSqft={minSqft}
+                            setMinSqft={(val) => setLeadScoutState({ minSqft: val })}
+                            onSearch={() => handleSearch(false)}
+                        />
+
                         {/* Bulk Import Button */}
                         {selectedLeadIds.size > 0 && (
                             <Button
@@ -309,22 +326,7 @@ export default function LeadScout() {
                 </div>
             </div>
 
-            {/* RIGHT SIDE CONTROLS (Filters) */}
-            <div className="absolute top-4 right-4 z-50 pointer-events-auto flex items-center gap-2">
-                <LeadFilters
-                    selectedPropertyTypes={selectedPropertyTypes}
-                    setSelectedPropertyTypes={(val) => setLeadScoutState({ selectedPropertyTypes: val })}
-                    selectedDistressTypes={selectedDistressTypes}
-                    setSelectedDistressTypes={(val) => setLeadScoutState({ selectedDistressTypes: val })}
-                    minBeds={minBeds}
-                    setMinBeds={(val) => setLeadScoutState({ minBeds: val })}
-                    minBaths={minBaths}
-                    setMinBaths={(val) => setLeadScoutState({ minBaths: val })}
-                    minSqft={minSqft}
-                    setMinSqft={(val) => setLeadScoutState({ minSqft: val })}
-                    onSearch={() => handleSearch(false)} // Keep bounds on filter update
-                />
-            </div>
+
 
             {/* MAIN CONTENT AREA */}
             <div className="flex-1 relative h-full">
@@ -402,7 +404,13 @@ export default function LeadScout() {
                                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-3 text-xs text-gray-500 pl-8">
                                         <div className="flex justify-between">
                                             <span>Est. Value</span>
-                                            <span className="text-white font-mono">{lead.arv ? `$${lead.arv.toLocaleString()}` : "N/A"}</span>
+                                            <span className="text-white font-mono">
+                                                {lead.estimated_value
+                                                    ? `$${lead.estimated_value.toLocaleString()}`
+                                                    : lead.arv
+                                                        ? `$${lead.arv.toLocaleString()}`
+                                                        : "N/A"}
+                                            </span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span>SqFt</span>
@@ -412,6 +420,15 @@ export default function LeadScout() {
                                             <span>Beds/Baths</span>
                                             <span className="text-white">{lead.beds || "-"}/{lead.baths || "-"}</span>
                                         </div>
+                                        {lead.last_sold_date && (
+                                            <div className="flex justify-between col-span-2">
+                                                <span>Last Sold</span>
+                                                <span className="text-white">
+                                                    {lead.last_sold_date}
+                                                    {lead.last_sold_price ? ` ($${lead.last_sold_price.toLocaleString()})` : ""}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="flex flex-wrap gap-1 mt-2 pl-8">
@@ -427,6 +444,28 @@ export default function LeadScout() {
                                                     : s}
                                             </Badge>
                                         ))}
+                                        {lead.zoning && (
+                                            <Badge variant="outline" className="text-[10px] border-blue-900 text-blue-400 bg-blue-950/30">
+                                                Zoning: {lead.zoning}
+                                            </Badge>
+                                        )}
+                                        {lead.flood_zone && (
+                                            <Badge variant="outline" className="text-[10px] border-yellow-900 text-yellow-400 bg-yellow-950/30">
+                                                Flood: {lead.flood_zone}
+                                            </Badge>
+                                        )}
+                                        {lead.school_district && (
+                                            <Badge variant="outline" className="text-[10px] border-purple-900 text-purple-400 bg-purple-950/30">
+                                                SD: {lead.school_district}
+                                            </Badge>
+                                        )}
+                                        {lead.tax_status && (
+                                            <a href={lead.tax_link} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                                                <Badge variant="outline" className={`text-[10px] ${lead.tax_status === 'Delinquent' ? 'border-red-900 text-red-400 bg-red-950/30' : 'border-green-900 text-green-400 bg-green-950/30'} hover:underline cursor-pointer`}>
+                                                    Tax: {lead.tax_status}
+                                                </Badge>
+                                            </a>
+                                        )}
                                     </div>
                                 </Card>
                             ))}

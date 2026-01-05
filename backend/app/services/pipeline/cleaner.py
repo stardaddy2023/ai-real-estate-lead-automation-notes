@@ -9,7 +9,7 @@ class CleanerService:
         """
         Standardizes addresses and removes duplicates within the batch.
         """
-        with open("debug_cleaner.log", "a") as f:
+        with open("debug_cleaner.log", "a", encoding="utf-8") as f:
             f.write(f"Cleaner received {len(raw_leads)} leads\n")
             
         cleaned = []
@@ -17,13 +17,13 @@ class CleanerService:
 
         for i, lead in enumerate(raw_leads):
             if i == 0:
-                with open("debug_cleaner.log", "a") as f:
+                with open("debug_cleaner.log", "a", encoding="utf-8") as f:
                     f.write(f"First lead: {lead}\n")
                     
             # 1. Normalize Address
             raw_addr = lead.get("address", "")
             if not raw_addr:
-                with open("debug_cleaner.log", "a") as f:
+                with open("debug_cleaner.log", "a", encoding="utf-8") as f:
                     f.write("Skipping lead with empty address\n")
                 continue
                 
@@ -47,7 +47,7 @@ class CleanerService:
 
             cleaned.append(lead)
             
-        with open("debug_cleaner.log", "a") as f:
+        with open("debug_cleaner.log", "a", encoding="utf-8") as f:
             f.write(f"Cleaner returning {len(cleaned)} leads\n")
             
         return cleaned

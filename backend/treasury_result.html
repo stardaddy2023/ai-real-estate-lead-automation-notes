@@ -1,0 +1,1527 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Pima County Treasurer's Office</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="Cache-Control" content="no-cache" />
+    <meta http-equiv="Pragma" content="no-cache" />
+
+    <!-- Global styles -->
+    <link href="/static/css/bootstrap4.1.3/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/plugins/font-awesome/font-awesome.min.css" rel="stylesheet">
+    <link href="/static/fonts/plugins/font-awesome-6.4.2/css/fontawesome.min.css" rel="stylesheet">
+    <link href="/static/fonts/plugins/font-awesome-6.4.2/css/solid.min.css" rel="stylesheet">
+    <link href="/static/fonts/plugins/font-awesome-6.4.2/css/brands.min.css" rel="stylesheet">
+    <link href="/static/css/plugins/datetimepicker/bootstrap-datetimepicker.min.css" rel="stylesheet">
+    <link href="/static/plugins/DataTables/dataTables.min.css" rel="stylesheet">
+    <link href="/static/css/plugins/animate/animate.css" rel="stylesheet">
+
+
+    <style type="text/css">
+    body {
+        padding-top: 60px !important; /* 60px to make the container go all the way to the bottom of the topbar */
+        overflow-x:hidden;
+    }
+
+    html, body{height:100%}
+    .modal-backdrop {
+        z-index: -100000;
+    }
+
+    body.modal-open div.modal-backdrop {
+    z-index: 0;
+}
+
+    
+    
+    
+
+    .navbar-collapse.in {
+        overflow: hidden;
+        max-height: none !important;
+        height: auto !important;
+    }
+
+     .dropdown-menu li:hover {
+        visibility: visible;
+    }
+     .navbar-fixed-bottom{
+         height: 70px;
+         color:#f5f5f5;}
+
+    .dropdown:hover .dropdown-menu {
+        display: block;
+    }
+    @media only screen and (max-width: 800px){
+        .navbar-fixed-bottom{ height:120px;}
+        #siteMapScroll{
+            max-height:200px;
+            overflow-y:scroll;
+            width:auto;
+            height:auto;
+        }
+    }
+    @media only screen and (max-height:800px) {
+        #siteMapScroll{
+            max-height:200px;
+            overflow-y:scroll;
+            width:auto;
+            height:auto;
+        }
+    }
+
+    @media only screen and (max-width: 1000px){
+
+        .hidden-fa{display:none;}
+    }
+
+    #PCTONav > ul > li > ul {
+        margin-top:-5px;
+    }
+
+     @media print{*
+         {
+            text-shadow:none !important;color: black !important; font-weight: bold !important; font-size:9px !important;
+         }
+        @page {
+            size: A4 landscape !important;
+            size: 287mm 210mm !important;
+        }
+
+    }
+
+</style>
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- Theme CSS include -->
+    
+        <link href="/static/css/themes/BootswatchV4.2.1/bootstrap_theme_yeti.min.css" rel="stylesheet">
+    
+
+    <!-- This file store project specific CSS -->
+    <link href="/static/css/pcto_project.css" rel="stylesheet">
+
+    <!-- Use this to quickly test CSS changes in a template,
+      then move to bootstrap.css -->
+    
+    <link href="/static/css/plugins/dataTables/jquery.dataTables.css" rel="stylesheet">
+    <link href="/static/css/plugins/dataTables/dataTables.bootstrap.css" rel="stylesheet">
+    <link href="/static/css/plugins/dataTables/dataTables.tableTools.css" rel="stylesheet">
+    <link href="/static/css/plugins/dataTables/responsive/dataTables.responsive.css" rel="stylesheet">
+    <link href="/static/css/propInq.css" rel="stylesheet">
+
+<!--Icons-->
+    <link rel="apple-touch-icon" href="/static/img/Dome.png">
+    <link rel="shortcut icon" href="/static/img/Dome.png" type="image/x-icon" />
+
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="/static/js/jquery/jquery-1.11.1.min.js"></script>
+    <script src="/static/js/plugins/popper/popper.min.js"></script>
+    <script src="/static/js/bootstrap4.1.3/bootstrap.min.js"></script>
+
+    <!-- Javascript Plugins -->
+    <script src="/static/js/plugins/moment/moment-with-locales.js"></script>
+    <script src="/static/js/plugins/accounting/accounting.min.js"></script>
+    <script src="/static/js/plugins/datetimepicker/bootstrap-datetimepicker.min.js"></script>
+    <script src="/static/plugins/DataTables/datatables.min.js"></script>
+
+
+    <script src="/static/js/plugins/moment/2.24.0/moment.min.js"></script>
+    <script src="/static/js/project.js"></script>
+
+
+    <!-- place project specific Javascript in this file -->
+
+
+    <!-- Use this to quickly test JS changes in a template, then move to bootstrap.js -->
+
+    <script src="/static/js/plugins/dataTables/jquery.dataTables.js"></script>
+    <script src="/static/js/plugins/dataTables/dataTables.bootstrap.js"></script>
+    <script src="/static/js/plugins/dataTables/dataTables.tableTools.js"></script>
+    <script src="/static/js/plugins/dataTables/responsive/dataTables.responsive.js"></script>
+    <script src="/static/js/propInquiry.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            //JS for pasting to field and jumps across to fill state code area
+            (function ($) {
+                jQuery.fn.pastehopacross = function(opts){
+                   if (!opts){ opts = {} }
+                    if (!opts.regexRemove){
+                        opts.regexRemove = false;
+                    }
+                    if (!opts.inputs){
+                       opts.inputs = [];
+                    }
+                    if (opts.inputs.length == 0){
+                        //return
+                        return $(this);
+                    }
+
+                    if (!opts.first_maxlength){
+                        opts.first_maxlength = $(this).attr('maxlength');
+                        if (!opts.first_maxlength){
+                            return $(this);
+                        }
+                    }
+
+                    $(this).on('paste', function(){
+
+                   //remove maxlength attribute
+                    $(this).removeAttr('maxlength');
+                    $(this).one("input.fromPaste", function(){
+                       var $firstBox = $(this);
+
+                        var pastedValue = $(this).val();
+                        if (opts.regexRemove){
+                             pastedValue = pastedValue.replace(opts.regexRemove, "");
+                        }
+
+                        var str_pv = pastedValue;
+                        $(opts.inputs).each(function(){
+                            var pv = str_pv.split('');
+                            var maxlength;
+                            if ($firstBox.get(0) == this){
+                               maxlength = opts.first_maxlength;
+                            }else{
+                               maxlength = $(this).attr('maxlength');
+                            }
+                            if (maxlength == undefined){
+                                //paste them all!
+                                maxlength = pv.length;
+                            }
+                            //clear the value
+                            $(this).val('');
+                            var nwval = '';
+                            for (var i = 0; i < maxlength; ++i){
+                                if (typeof(pv[i]) != 'undefined'){
+                                   nwval += pv[i];
+                                }
+                            }
+                            $(this).val(nwval);
+                            //remove everything from earlier
+                            str_pv = str_pv.substring(maxlength);
+                        });
+
+                        //restore maxlength attribute
+                        $(this).attr('maxlength', opts.first_maxlength);
+                    });
+                });
+                   return $(this);
+                }
+            })(jQuery);
+
+            $('input[name=form_statecodeb]').pastehopacross({regexRemove: /[^A-Za-z0-9]+/g, inputs: $('input[name^=form_statecode]')});
+        });
+    </script>
+
+</head>
+
+<body class="pr-0 pb-0 pl-0" data-target="#top" id="top" data-spy="top" >
+    <div class="container-fluid m-0 p-0" style="overflow-x:hidden; ">
+
+<!-- Nav menu -->
+        <nav class="navbar navbar-light fixed-top navbar-expand-lg bg-light flex-row"  style="border-bottom:solid; border-bottom-width: 0.5px; border-bottom-color: dimgray; >
+            <div class="container-fluid">
+    
+            <!-- Brand and toggle get grouped for better mobile display -->
+                <a class="navbar-brand" href="/home/">
+                    <div class="row pb-0 mb-0">
+
+                            <img class="d-none d-xs-none d-sm-none d-md-none d-lg-none d-xl-block mt-0 ml-4" src="/static/img/BJohnsonLogo2.png" height="80" alt=""/>
+                            <img  class="d-block d-xs-block d-sm-block d-md-block d-lg-block d-xl-none mt-0 ml-4" src="/static/img/BJohnsonLogo2.png" height="70" alt=""/>
+
+
+
+
+
+
+
+
+
+
+
+
+                    </div>
+                </a>
+                <div class="navbar-toggler border-0 pull-right">
+                <a class="p-2 m-2 text-cablue" href="/propertyInquiry/" title="Search"><i class="fa fa-search"></i></a>
+                <a class="p-2 m-2 text-cablue" data-toggle="modal" href="#mdlEvents" title="Event Calendar"><i class="fa fa-calendar"></i></a>
+                <a class="p-2 m-2 text-cablue" href="/home/"><i class="fa fa-home" title="Home"></i></a></div>
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#PCTONav" aria-controls="PCTONav" aria-expanded="false" aria-label="Toggle navigation" style="color:blue;">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="collapse navbar-collapse" id="PCTONav">
+                    <ul class="navbar-nav">
+
+            
+
+                        <li class="nav-item dropdown" data-hover="dropdown"><a id="propInfoDDL" class="nav-link" data-toggle="dropdown"  >WHAT DO I OWE?&nbsp;&nbsp;<i class="fa-solid fa-caret-down"></i>
+                        </a>
+                            <ul class="dropdown-menu" aria-labelledby="propInfoDDL">
+                                <a class="dropdown-item" href="/propertyInquiry/">TAX INQUIRY</a>
+                                <a class="dropdown-item" href="/taxStatement/">TAX STATEMENT</a>
+                                <a class="dropdown-item" href="https://www.pima.gov/650/Property-Tax-Statement-Explanation" target="_blank">UNDERSTANDING YOUR TAX STATEMENT</a>
+                                <a class="dropdown-item" href="/propertySearch/">PROPERTY SEARCH</a>
+
+                                <a class="dropdown-item" href="/eNoticesOnline/">eNotices Online</a>
+
+                                <a class="dropdown-item" href="/paymentHelp/">HAVING TROUBLE PAYING?</a>
+                                <a class="dropdown-item" href="/mortgageSatisfactionWaiver/">MORTGAGE SATISFACTION WAIVER</a>
+                            </ul>
+                        </li>
+                        <li class="nav-item"><a id="taxPayments" class="nav-link" href="/payment/" >PAY PROPERTY TAXES</a></li>
+                        <li class="nav-item dropdown"><a id="taxInfoDDL" class="nav-link" data-toggle="dropdown" data-hover="dropdown">TAX LIEN INVESTMENTS&nbsp;&nbsp;<i class="fa-solid fa-caret-down"></i></a>
+                            <ul class="dropdown-menu" aria-labelledby="taxInfoDDL">
+                                <a class="dropdown-item" href="/taxLienSale/"><i class=" fa fa-certificate pt-3 pb-0 mb-0" aria-hidden="true"></i>&nbsp;&nbsp;TAX LIEN SALE</a>
+                                <a class="dropdown-item" href="/pctoDocs/">TAX LIEN INFORMATION</a>
+                                <a class="dropdown-item" href="http://subscribe.to.pima.gov/accounts/login/" target="_blank">SUBSCRIBER SERVICES</a>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown"><a id="taxInfoDDL" class="nav-link" data-toggle="dropdown" data-hover="dropdown">GENERAL INFORMATION &nbsp;<i class="fa-solid fa-caret-down"></i></a>
+                            <ul class="dropdown-menu" aria-labelledby="taxInfoDDL">
+                                <a class="dropdown-item" href="/generalInfo/">MORE ABOUT TAXES</a>
+                                <a class="dropdown-item" href="https://www.azleg.gov/arsDetail/?title=42" target="_blank">ARIZONA REVISED STATUTES</a>
+                                <a class="dropdown-item" href="http://www.asr.pima.gov/" target="_blank">ASSESSOR'S OFFICE</a>
+                                <a class="dropdown-item" href="https://www.recorder.pima.gov/" target="_blank">RECORDER'S OFFICE</a>
+                                <a class="dropdown-item" href="http://webcms.pima.gov/" target="_blank">PIMA COUNTY</a>
+                                <a class="dropdown-item" href="https://www.pima.gov/2312/Clerk-of-the-Board" target="_blank">CLERK OF THE BOARD<BR>RECLASSIFICATION APPEALS</a>
+                                <a class="dropdown-item" href="/home/#faq">FREQUENTLY ASKED QUESTIONS</a>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown"><a id="addServDDL" class="nav-link" data-toggle="dropdown" data-hover="dropdown">ADDITIONAL SERVICES&nbsp;&nbsp;<i class="fa-solid fa-caret-down"></i></a>
+                            <ul class="dropdown-menu" aria-labeledby="addServDDL">
+
+                                <a class="dropdown-item" href="/reports/">TREASURER'S REPORTS</a>
+                                <a class="dropdown-item" href="/pctoDocs/">INVESTMENT INFORMATION</a>
+                                <a class="dropdown-item" href="/excessProceeds/">EXCESS PROCEEDS</a>
+                                <a class="dropdown-item" href="/pctoDocs/?activeTab=GPLET">GOVERNMENT PROPERTY LEASE EXCISE TAX</a>
+                                <a class="dropdown-item" href="/pctoDocs/?activeTab=FeeSchedule">TREASURER'S OFFICE FEE SCHEDULE</a>
+                                <a class="dropdown-item" href="/taxRates/">TAX RATES</a>
+
+                                <a class="dropdown-item" title="Pima County Assessor Change of Mailing Address Form" href="" data-toggle="modal" data-target="#modalAddressChange">ADDRESS CHANGE FORM</a>
+                                <a class="dropdown-item" title="Pima County Assessor First-Time Exemption Application" href="https://www.asr.pima.gov/Forms?tab=ValRelief" target="_blank">TAX EXEMPTION FORMS</a>
+                                <a class="dropdown-item" title="GovTech - A service for Lenders and Bulk Payers" href="https://www.govtechtaxpro.com/" target="_blank">GovTech</a></h6>
+                                <a class="dropdown-item" href="/pctoDocs/?activeTab=TaxLeviesAndRates">TAX LEVIES AND RATES</a>
+                                <a class="dropdown-item" title="Fraud Notify" href="https://www.recorder.pima.gov/FraudNotify" target="_blank">FRAUD NOTIFY</a>
+                            </ul>
+                        </li>
+            
+
+                    </ul>
+                    <ul class="nav navbar-nav ml-auto" style="margin-right:30px;">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        <li class="nav-item dropdown"><a id="aboutDDL" class="nav-link text-cablue" data-toggle="dropdown" data-hover="dropdown">&nbsp;ABOUT&nbsp;&nbsp;<i class="fa-solid fa-caret-down"></i></a>
+                            <div class="dropdown-menu" aria-labelledby="aboutDDL">
+                                <a class="dropdown-item" href="/home/#contactInfo">CONTACT INFORMATION</a>
+
+                                <a class="dropdown-item" href="/generalInfo/">GENERAL INFORMATION</a>
+                                <a class="dropdown-item sitemapclick" href="#siteMap" data-toggle="collapse" data-target="#siteMap" aria-expanded="true" aria-controls="siteMap">SITE MAP</a><!-- data-toggle="collapse" data-target="#siteMap" aria-expanded="true" aria-controls="siteMap"-->
+                            </div>
+                        </li>
+                        <li class="nav-item hidden-fa"><a class="nav-link text-primary" href="/propertyInquiry/" title="Search"><i class="fa fa-search fa-lg text-cablue"></i></a></li>
+                        <li class="nav-item hidden-fa"><a class="nav-link text-primary" data-toggle="modal" href="#mdlEvents" title="Event Calendar"><i class="fa-solid fa-calendar fa-lg text-cablue"></i></a></li>
+                        <li class="nav-item active hidden-fa"><a class="nav-link text-primary" href="/home/"><i class="fa fa-home fa-lg text-cablue" title="Home"></i></a></li>
+    
+    
+    
+    
+    
+                    </ul>
+                </div>
+            </div>
+
+
+        <!-- /.navbar-collapse -->
+
+
+    <!-- /.container -->
+
+
+        </nav>
+
+
+        
+
+        
+
+<!--Jumbotron / SEARCH-->
+<div class="landing-header d-print-none pt-3" tab-index="-1000">
+    <div class="jumbotron jumboA" >
+        <div class="row justify-content-center">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            <div class="col-md-2"></div>
+            <div class="col-md-8 pb-4">
+                <div class="well container-fluid transwell m-0">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4 class="font-weight-bold text-white m-0 text-center">Property Inquiry</h4>
+                            <div class="card border-0 text-center" style="background-color: transparent; margin:0px;" width="100%">
+                                <div class="card-body justify-content-center" style="padding: 0px;">
+
+
+
+
+
+
+
+                
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                     <form method="post" class="input-group input-group-sm" action="/propertyInquiry/" id="formsearch" style="margin-left:auto; margin-right:auto; display:block;">
+                                        <input type='hidden' name='csrfmiddlewaretoken' value='liLIxlrtpjbaN0Tp8Z43NIQUqxSm5XqA' />
+                                        <div class="accordion"  id="accordion">
+                                        <div class="form-row justify-content-center">
+                                            <div class="col-md-5">
+                                                <div class="row p-0 d-none d-sm-none d-xs-none d-md-block d-lg-block">&nbsp;</div>
+
+
+                
+
+
+
+                
+
+
+
+                                                    <label class="control-label input-sm text-white p-0" for="inputSC">STATE CODE / PARCEL SEARCH</label>
+                                                    <input class="input-sm form-control text-center" type="text" id="form_statecode" name="form_statecode" placeholder="000000000" maxlength="11" minlength="9" value="10101001A">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                </div>
+
+
+
+
+                                            <div class="col-md-4">
+                                                <div class="row p-0 d-none d-sm-none d-xs-none d-md-block d-lg-block">&nbsp;</div>
+                                                <label for="inputId" class="control-label text-white">AS OF DATE</label>
+                                                <input required="required" type="text" name="form_asofdate" class="form-control datepicker text-center aod" id="form_asofdate" placeholder="mm/dd/yyyy" value="01/03/2026" autocomplete="off">
+                                            </div>
+                                            <div class="col-md-3" style="padding-top:37px">
+                                                <div class="row p-0 d-none d-sm-none d-xs-none d-md-block d-lg-block">&nbsp;</div>
+                                                <button class="btn btn-info" type="submit" onclick="">SEARCH</button>
+                                                <button class="btn btn-light" onclick="$('#form_statecode').val(''); $('#form_asofdate').val('');" type="button">RESET</button>
+                                            </div>
+                                        </div>
+                                            <br><a id="btnSCSearch" href="/propertySearch/" class="text-white font-weight-bold p-0 m-0" style="font-size: 14px;" >DON'T KNOW YOUR STATE CODE / PARCEL NUMBER?</a>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row justify-content-center mt-1">
+                        <div id="warning_content" class="alert alert-dismissible alert-warning" role="alert" style="width: 50%; ">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">&times;</button>
+                            <h5 class="text-center">RECORD NOT FOUND</h5>
+                        </div>
+                    </div>
+                    
+
+
+
+
+
+
+
+
+                </div>
+            </div>
+            <div class="col"></div>
+        </div>
+    </div>
+</div>
+<!-------------------RESULT SET----------------------->
+    <div class="row ">
+<div class="col"></div>
+
+<div class="content-b col-md-10 p-0 invisible " style="padding-top:50px;" tab-index="-1000" data-content="#displayContent" id="displayContent" data-spy="displayContent">
+
+        <div class="row justify-content-center">
+            <div class="col-sm-6">
+            <div class="alert alert-secondary border-0 font-weight-bold text-center container-fluid" role="alert"> If you have any questions, please call our office at (520) 724-8341.</div>
+            </div>
+        </div>
+        
+                    
+
+                </div>
+            </div>
+            <div class="row justify-content-center d-print-none" style="padding-bottom: 80px;">
+                <a id="slowScroll" href="#top" style="color:white;">
+                    <i class="fa fa-chevron-up fa-3x" aria-hidden="true"></i>
+                    <h4 class="text-center">TOP</h4>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col"></div>
+    </div>
+
+
+<div class="modal fade" id="modalRedirectSC" tabindex="-1" role="dialog" aria-labelledby="modalRedirect" aria-hidden="true" style="margin-top:50px;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold">Redirect Notice!</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="font-size:14px;">
+                <p>The link you just clicked, will redirect to an outside webpage. If you would like to continue click Ok. Otherwise click Cancel to return.</p>
+
+
+
+
+
+
+            </div>
+            <div class="modal-footer">
+
+
+
+                <a id="btnReidrectSCOk" type="button" class="btn btn-primary"  href="https://paypimagov.com/#/WildfireSearch/10101001A" target="_blank" onclick="$('#modalRedirectSC').modal('hide');">Ok</a>
+                <button type="button" class="btn btn-info" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+    
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <div class="row d-print-none" style="height: 50px;">&nbsp;</div>
+    <!-- Footer -->
+        <footer>
+            <nav class="navbar bg-light fixed-bottom justify-content-center" style="border-top:solid; border-top-width: 1px; border-top-color: dimgray; " >
+                <div class="row bg-light container-fluid" width="100%" >
+                    <div class="container-fluid collapse" id="siteMap" aria-labelledby="siteMap">
+                        <div class="row justify-content-center"><h4 class="text-cablue">SITE MAP&nbsp;&nbsp;<a href="siteMap" title="Close Site Map" data-toggle="collapse" data-target="#siteMap" aria-expanded="true" aria-controls="siteMap"><i class="fa fa-caret-down fa-2x text-cablue"></i></a></h4></div>
+                        <div class="row justify-content-center" style="padding-bottom:10px;" id="siteMapScroll">
+                            <div class="col-md-2">
+                                <div class="card border-0 foot-nav" style="background-color: transparent">
+                                    <div class="card-body">
+                                        <div class="card-title h5 text-cablue">Property Tax</div>
+                                        <h6><a href="/propertyInquiry/">Tax Inquiry</a></h6>
+
+                                        <h6><a href="/taxStatement/">Tax Statement</a></h6>
+                                        <h6><a href="https://www.pima.gov/650/Property-Tax-Statement-Explanation" target="_blank">Understanding Your Tax Statement</a></h6>
+                                        <h6><a href="/propertySearch/">Property Search</a></h6>
+                                        <h6><a href="/eNoticesOnline/">eNotices Online</a></h6>
+
+                                        <h6><a href="/paymentHelp/">Having Trouble Paying?</a></h6>
+                                        <h6><a href="/mortgageSatisfactionWaiver/">Mortgage Satisfaction Waiver</a></h6>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="card border-0 foot-nav" style="background-color: transparent">
+                                    <div class="card-body">
+                                     <div class="card-title h5 text-cablue">Tax Lien Investments</div>
+                                        <h6><a href="/taxLienSale/">Tax Lien Sale</a></h6>
+                                        <h6><a href="/pctoDocs/">Tax Lien Information</a></h6>
+                                        <h6><a href="http://subscribe.to.pima.gov/accounts/login/" target="_blank">Subscriber Services</a></h6>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="card border-0 foot-nav" style="background-color: transparent">
+                                    <div class="card-body">
+                                     <div class="card-title h5 text-cablue">General Information</div>
+                                        <h6><a href="/generalInfo/">More About Taxes</a></h6>
+                                        <h6><a href="https://www.azleg.gov/arsDetail/?title=42" target="_blank">Arizona Revised Statutes</a></h6>
+                                        <h6><a href="http://www.asr.pima.gov/" target="_blank">Assessor's Office</a></h6>
+                                        <h6><a href="https://www.recorder.pima.gov/" target="_blank">Recorder's Office</a></h6>
+                                        <h6><a href="http://webcms.pima.gov/" target="_blank">Pima County</a></h6>
+                                        <h6><a href="https://www.pima.gov/2312/Clerk-of-the-Board" target="_blank">Clerk of the Board<BR>Reclassification Appeals</a></h6>
+                                        <h6><a href="/home/#faq">Frequently Asked Questions</a></h6>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="card border-0 foot-nav" style="background-color: transparent">
+                                    <div class="card-body">
+                                     <div class="card-title h5 text-cablue">Additional Services</div>
+
+                                        <h6><a href="/reports/">Treasurer's Reports</a></h6>
+                                        <h6><a href="/pctoDocs/#investmentInfo">Investment Information</a></h6>
+                                        <h6><a href="/excessProceeds/">Excess Proceeds</a></h6>
+                                        <h6><a href="/pctoDocs/#GPLET">Government Property Lease Excise Tax</a></h6>
+                                        <h6><a href="/pctoDocs/#feeSchedule">Treasurer's Office Fee Schedule</a></h6>
+                                        <h6><a href="/taxRates/">Tax Rates</a></h6>
+
+                                        <h6><a title="Pima County Assessor Change of Mailing Address" href="" data-toggle="modal" data-target="#modalAddressChange">Address Change</a></h6>
+                                        <h6><a title="Pima County Assessor First-Time Exemption Application" href="https://www.asr.pima.gov/Forms?tab=ValRelief" target="_blank">Tax Exemption Forms</a></h6>
+                                        <h6><a title="GovTech - A service for Lenders and Bulk Payers" href="https://www.govtechtaxpro.com/" target="_blank">GovTech</a></h6>
+                                        <h6><a href="/pctoDocs/#taxLeviesAndRates">Tax Levies and Rates</a></h6>
+                                        <h6><a title="Fraud Notify" href="https://www.recorder.pima.gov/FraudNotify" target="_blank">Fraud Notify</a></h6>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="card border-0 foot-nav" style="background-color: transparent">
+                                    <div class="card-body">
+                                     <div class="card-title h5 text-cablue">Pima County Treasurer</div>
+                                        <h6><a href="/generalInfo/">General Information</a></h6>
+                                        <h6><a href="/home/#contactInfo">Contact Information</a></h6>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row ">
+                    <div class="container text-center" >
+                    <span class="ca-navstyle">
+                        &nbsp;&nbsp;240 North Stone Avenue&nbsp;&nbsp;Tucson,&nbsp;AZ
+                        &nbsp;&nbsp;&nbsp;85701-1199&nbsp;| </span><span class="ca-navstyle">&nbsp;Phone: (520) 724-8341&nbsp;|</span>
+
+                        <span class="text-cablue">&nbsp;<a title="Facebook" href="https://www.facebook.com/PimaCountyTO/" target="_blank"><i class="fa-brands fa-facebook-f fa-2x"></i></a> &nbsp;|
+
+                        <a href="#siteMap" class="sitemapclick ca-navstyle" data-toggle="collapse" data-target="#siteMap" aria-expanded="true" aria-controls="siteMap">SITEMAP <i class="fa fa-caret-up"></i></a>
+                    </span>
+                    </div>
+                </div>
+                <div class="row container-fluid" >
+                    <span class="justify-content-center ca-navstyle" style="margin-left:auto; margin-right:auto;" >&copy; 2026 Pima County Treasurer's Office</span>
+                </div>
+            </nav>
+        </footer>
+ <!-- /container -->
+
+
+    </div>
+
+<div class="modal fade" id="modalLoading" tabindex="-1" role="dialog" aria-labelledby="modalLoading" aria-hidden="true" data-backdrop="static" data-keyboard="false" style="margin-top:50px;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold">Pima County Treasurer's Office</h5>
+
+
+
+            </div>
+            <div class="modal-body text-center">
+                <p class="h4 text-primary">PLEASE WAIT...<i class="fa fa-spinner fa-2x fa-spin text-primary"></i></p>
+            </div>
+
+
+
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalRedirect" tabindex="-1" role="dialog" aria-labelledby="modalRedirect" aria-hidden="true" style="margin-top:50px;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold">Redirect Notice!</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+
+                <p style="font-size:14px;">The link you just clicked, will redirect to an outside webpage. If you would like to continue to our online payment portal click Ok. Otherwise click Cancel to return.</p>
+
+
+
+
+
+
+            </div>
+            <div class="modal-footer">
+
+
+
+                <a id="btnReidrectOk" type="button" class="btn btn-primary"  href="https://paypimagov.com/#" target="_blank" onclick="$('#modalRedirect').modal('hide');">Ok</a>
+                <button type="button" class="btn btn-info" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalCertInfo" tabindex="-1" role="dialog" aria-labelledby="modalCertInfoLabel" aria-hidden="true" style="margin-top:50px;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold">Certificate Redemption Information</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="font-size:14px;">
+
+
+                <h6 class="font-weight-bold">Pursuant to Arizona Revised Statute <a href="https://www.azleg.gov/viewdocument/?docName=https://www.azleg.gov/ars/42/18151.htm" target="_blank">42-18151</a>:</h6>
+                <h6>
+                    <p>A. A real property tax lien that is sold under article 3 of this chapter may be redeemed by:</p>
+                    <p class="pl-3">1. The owner.</p>
+                    <p class="pl-3">2. Any person that wants to pay on behalf of the owner by making a charitable gift.</p>
+                    <p class="pl-3">3. The owner's agent, assignee or attorney.</p>
+                    <p class="pl-3">4. Any person who has a legal or equitable claim in the property, including a certificate of purchase of a different date.</p>
+                    <p>B. A person who owns an interest in real property less than the whole may redeem a tax lien against that interest as a percentage of the entire liability reported by the county assessor by paying the proportionate part of the whole amount due.</p>
+                </h6>
+                <div class="card card-body border-info p-1">
+                    <p>The link you just clicked, will redirect to an outside webpage. If you would like to continue, click Redeem Lien to make a payment. Otherwise click Cancel to return.</p>
+
+                <p><b>A convenience fee is charged for using the service.</b> All payments are processed immediately.
+                    eCheck transactions may be processed for a fee of $0.50 per transaction.
+                    A convenience fee of 1.95% ($1.95 minimum) of the tax payment amount is charged for all other payment methods.
+                    Accepted forms of payment online are: Visa, MasterCard, Discover credit and debit cards, PayPal, eChecks and other digital wallets for your convenience.
+                </p>
+
+
+                </div>
+
+
+            </div>
+            <div class="modal-footer container-fluid" style="font-size:14px;"> <!--New for 2022, Redemptions will be allowed using Sturgis payment portal-->
+
+
+
+
+
+
+                <a class="pull-left" style="font-size: 14px;" href="/paymentHelp/"><i class="fa fa-question-circle"></i>&nbsp;Having trouble paying?</a>
+                <a id="btnReidrectRedemPay" type="button" class="btn btn-warning pull-right"  href="https://paypimagov.com/#/WildfireSearch/10101001A" target="_blank" onclick="$('#modalCertInfo').modal('hide');">Redeem Lien</a>
+                    <button type="button" class="btn btn-info" data-dismiss="modal">Cancel</button>
+
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalAddressChange" tabindex="-1" role="dialog" aria-labelledby="modalAddressChange" aria-hidden="true" style="margin-top:50px;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <p class="modal-title h4 font-weight-bold"><strong>Pima County Mailing Address Change</strong></p>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+
+                <p class="h5 font-weight-bold text-center">The mailing address change for Pima County Property Owners is done through the <br/>Pima County Assessors Office</p>
+                <br/>
+                <p style="font-size:14px;"><strong>To submit the address change electronically online:</strong> If you know your state code/parcel number click <a class="text-primary font-weight-bold" href="https://www.asr.pima.gov/" target="_blank">HERE</a> to search for your parcel, and change your address under the Contact Information section of the Parcel Detail page. </p>
+                <p style="font-size:14px;">If you DO NOT know your state code, or would like to change your address in person, use the <a class="text-primary font-weight-bold" href="https://www.asr.pima.gov/Downloads/Forms/change-mailing-address-request.pdf" target="_blank"> CHANGE OF MAILING ADDRESS REQUEST FORM</a>. This may be submitted in person, mail, fax or email. <strong><br/>PLEASE NOTE: this form must be notarized</strong>.</p>
+                <p style="font-size:14px;">For further information about the Change of Mailing Address Request contact the <a class="text-primary font-weight-bold" href="https://www.asr.pima.gov/Contact" target="_blank">Assessor's Office</a>.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-info" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalDueDates" tabindex="1" role="dialog" aria-labelledby="modalDueDatesLabel" aria-hidden="true" style="margin-top:50px;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold">Due Date Information</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <h6>Payments must be timestamped by 5:00 p.m.</h6>
+                <table class="table border">
+                    <thead class="bg-info">
+                        <tr>
+                            <th>DESCRIPTION</th>
+                            <th>DATE</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+    <div class="modal fade" id="mdlEvents" tabindex="999" role="dialog" aria-labelledby="mdlEvents" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h4 class="modal-title text-center font-weight-bold"><i class="fa fa-calendar"></i>  Pima County Treasurer's Office Calendar of Events</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="close"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body container-fluid p-4 bg-dark border border-light h-80" >
+                <div class="accordion" id="accordionEvent">
+                    <div class="row">
+                        <a class="btn btn-link text-white bg-primary" data-target="#events" data-toggle="collapse" aria-controls="events" aria-expanded="true">Events</a>
+                        <a class="btn btn-link collapsed text-white bg-info" data-target="#paymentDetails" data-toggle="collapse" aria-controls="paymentDetails" aria-expanded="false">Payment Deadline Details</a>
+                    </div>
+
+
+
+
+
+
+
+
+
+
+                    <div class="collapse show" id="events" data-parent="#accordionEvent" aria-labelledby="eventsTab">
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+
+                                    <div class="row justify-content-right">
+                                        <div id="eventFH2025PaymentDue" class="alert alert-light show container-fluid border-dark" role="alert" style="font-size:16px;">
+                                            <div class="row m-0 p-0">
+                                            <div class="col-lg-3 p-1 pr-3 m-0">
+                                                <div class="badge badge-warning inline-block text-white" style="min-width:100%;"><h2 class="font-weight-bold m-0">1</h2><h5 class="pb-0 mb-0">October</h5><h6 class="m-0 p-0"></h6></div>
+                                            </div>
+                                            <div class="col-lg-9 p-1 m-0">
+                                            
+                                                <p>1st Half 2025 - Payment Due (Payments must be postmarked no later than Nov 3, 2025)
+<br/>
+<i class="fa fa-info-circle text-primary"></i><a class="alert-link text-primary" data-toggle="collapse" data-target="#paymentDetails" aria-expanded="true" aria-controls="paymentDetails">Payment Deadline Details</a></p>
+                                            
+                                            </div></div>
+                                        </div>
+                                    </div>
+
+                            
+                        
+                            
+
+                                    <div class="row justify-content-right">
+                                        <div id="eventFH2025PaymentDeadline" class="alert alert-light show container-fluid border-dark" role="alert" style="font-size:16px;">
+                                            <div class="row m-0 p-0">
+                                            <div class="col-lg-3 p-1 pr-3 m-0">
+                                                <div class="badge badge-danger inline-block text-white" style="min-width:100%;"><h2 class="font-weight-bold m-0">3</h2><h5 class="pb-0 mb-0">November</h5><h6 class="m-0 p-0"></h6></div>
+                                            </div>
+                                            <div class="col-lg-9 p-1 m-0">
+                                            
+                                                <p>1st Half 2025 - Payment Deadline (Payments must be postmarked no later than Nov 3, 2025)
+<br/>
+<i class="fa fa-info-circle text-primary"></i><a class="text-primary" data-toggle="collapse" href="#paymentDetails" aria-expanded="false" aria-controls="paymentDetails" style="font-size:14px;">Payment Deadline Details</a>
+                                           </p>
+                                            
+                                            </div></div>
+                                        </div>
+                                    </div>
+
+                            
+                        
+                            
+
+                                    <div class="row justify-content-right">
+                                        <div id="eventVeteransDay" class="alert alert-light show container-fluid border-dark" role="alert" style="font-size:16px;">
+                                            <div class="row m-0 p-0">
+                                            <div class="col-lg-3 p-1 pr-3 m-0">
+                                                <div class="badge badge-primary inline-block text-white" style="min-width:100%;"><h2 class="font-weight-bold m-0">11</h2><h5 class="pb-0 mb-0">November 2025</h5><h6 class="m-0 p-0"></h6></div>
+                                            </div>
+                                            <div class="col-lg-9 p-1 m-0">
+                                            
+                                                <p><b>Office Closed - Veterans Day</b> 
+<p>We will reopen Wednesday, November 12th, 2025, with our regular business hours.</p>
+ 
+</p>
+                                            
+                                            </div></div>
+                                        </div>
+                                    </div>
+
+                            
+                        
+                            
+
+                                    <div class="row justify-content-right">
+                                        <div id="eventThanksgiving" class="alert alert-light show container-fluid border-dark" role="alert" style="font-size:16px;">
+                                            <div class="row m-0 p-0">
+                                            <div class="col-lg-3 p-1 pr-3 m-0">
+                                                <div class="badge badge-primary inline-block text-white" style="min-width:100%;"><h2 class="font-weight-bold m-0">27-28</h2><h5 class="pb-0 mb-0">November</h5><h6 class="m-0 p-0"></h6></div>
+                                            </div>
+                                            <div class="col-lg-9 p-1 m-0">
+                                            
+                                                <p><b>Office Closed - Thanksgiving and Holiday (Resolution No. 2013 - 68)</b>
+
+
+<p>We will reopen Monday, December 1st, 2025, with our regular business hours.</p>
+ 
+</p>
+                                            
+                                            </div></div>
+                                        </div>
+                                    </div>
+
+                            
+                        
+                            
+
+                                    <div class="row justify-content-right">
+                                        <div id="eventChristmas2025" class="alert alert-light show container-fluid border-dark" role="alert" style="font-size:16px;">
+                                            <div class="row m-0 p-0">
+                                            <div class="col-lg-3 p-1 pr-3 m-0">
+                                                <div class="badge badge-primary inline-block text-white" style="min-width:100%;"><h2 class="font-weight-bold m-0">25</h2><h5 class="pb-0 mb-0">December</h5><h6 class="m-0 p-0"></h6></div>
+                                            </div>
+                                            <div class="col-lg-9 p-1 m-0">
+                                            
+                                                <p><b>Office Closed - Christmas Day</b>
+
+<p>We will reopen Friday, December 26th, 2025, with our regular business hours.<p></p>
+                                            
+                                            </div></div>
+                                        </div>
+                                    </div>
+
+                            
+                        
+                            
+
+                                    <div class="row justify-content-right">
+                                        <div id="eventFY2025DueDate" class="alert alert-light show container-fluid border-dark" role="alert" style="font-size:16px;">
+                                            <div class="row m-0 p-0">
+                                            <div class="col-lg-3 p-1 pr-3 m-0">
+                                                <div class="badge badge-warning inline-block text-white" style="min-width:100%;"><h2 class="font-weight-bold m-0">31</h2><h5 class="pb-0 mb-0">December 2025</h5><h6 class="m-0 p-0"></h6></div>
+                                            </div>
+                                            <div class="col-lg-9 p-1 m-0">
+                                            
+                                                <p><b>Full Year Tax Payment Due Date</b> <br/> <i class="fa fa-info-circle text-primary"></i><a class="text-primary" data-toggle="collapse" href="#paymentDetails" aria-expanded="false" aria-controls="paymentDetails" style="font-size:14px;">Payment Deadline Details</a> </p>
+                                            
+                                            </div></div>
+                                        </div>
+                                    </div>
+
+                            
+                        
+                            
+
+                                    <div class="row justify-content-right">
+                                        <div id="eventNewYear2026" class="alert alert-light show container-fluid border-dark" role="alert" style="font-size:16px;">
+                                            <div class="row m-0 p-0">
+                                            <div class="col-lg-3 p-1 pr-3 m-0">
+                                                <div class="badge badge-primary inline-block text-white" style="min-width:100%;"><h2 class="font-weight-bold m-0">1</h2><h5 class="pb-0 mb-0">January 2026</h5><h6 class="m-0 p-0"></h6></div>
+                                            </div>
+                                            <div class="col-lg-9 p-1 m-0">
+                                            
+                                                <p><b>Office Closed - New Year's Day</b> 
+
+<p>We will reopen Friday, January 2nd, 2026, with our regular business hours.</p></p>
+                                            
+                                            </div></div>
+                                        </div>
+                                    </div>
+
+                            
+                        
+                            
+
+                                    <div class="row justify-content-right">
+                                        <div id="eventMLK2026" class="alert alert-light show container-fluid border-dark" role="alert" style="font-size:16px;">
+                                            <div class="row m-0 p-0">
+                                            <div class="col-lg-3 p-1 pr-3 m-0">
+                                                <div class="badge badge-primary inline-block text-white" style="min-width:100%;"><h2 class="font-weight-bold m-0">19</h2><h5 class="pb-0 mb-0">January 2026</h5><h6 class="m-0 p-0"></h6></div>
+                                            </div>
+                                            <div class="col-lg-9 p-1 m-0">
+                                            
+                                                <p><b>Office Closed - Martin Luther King, Jr. Civil Rights Day</b> 
+
+<p>We will reopen, Tuesday, January 20th, 2026, with our regular office hours.</p></p>
+                                            
+                                            </div></div>
+                                        </div>
+                                    </div>
+
+                            
+                        
+                            
+
+                                    <div class="row justify-content-right">
+                                        <div id="eventOnlineTLS" class="alert alert-light show container-fluid border-dark" role="alert" style="font-size: 16px;">
+                                            <div class="row m-0 p-0">
+                                            <div class="col-lg-3 p-1 pr-3 m-0">
+                                                <div class="badge badge-success inline-block text-white" style="min-width:100%;"><h2 class="font-weight-bold m-0">2-26</h2><h5 class="pb-0 mb-0">February 2026</h5><h6 class="m-0 p-0">8:00 AM  - 3:00 PM</h6></div>
+                                            </div>
+                                            <div class="col-lg-9 p-1 m-0">
+                                            
+                                                <p><b>The 2026 Tax Lien Sale will be ONLINE ONLY.</b>
+
+<p>Registration is February 2nd, 2026 to February 20th, 2026.</p>
+<p>Bidding begins at time of registration.</p>
+<p>First sale group closes at 8:00 AM MST, last group closes at 12:00 PM MST on 2/26/2026 ONLY. </p>
+<p>Click <a class='text-primary font-weight-bold' href='/taxLienSale/'> HERE </a> for more details.</p></p>
+                                            
+                                            </div></div>
+                                        </div>
+                                    </div>
+
+                            
+                        
+                            
+
+                                    <div class="row justify-content-right">
+                                        <div id="eventPresidentsDay2026" class="alert alert-light show container-fluid border-dark" role="alert" style="font-size:16px;">
+                                            <div class="row m-0 p-0">
+                                            <div class="col-lg-3 p-1 pr-3 m-0">
+                                                <div class="badge badge-primary inline-block text-white" style="min-width:100%;"><h2 class="font-weight-bold m-0">16</h2><h5 class="pb-0 mb-0">February 2026</h5><h6 class="m-0 p-0"></h6></div>
+                                            </div>
+                                            <div class="col-lg-9 p-1 m-0">
+                                            
+                                                <p><b>Office Closed - Lincoln/Washington Presidents' Day</b> 
+
+<p>We will reopen Tuesday, February 17th, 2026, with our regular business hours.</p></p>
+                                            
+                                            </div></div>
+                                        </div>
+                                    </div>
+
+                            
+                        
+                            
+
+                                    <div class="row justify-content-right">
+                                        <div id="eventSH2025PaymentDue" class="alert alert-light show container-fluid border-dark" role="alert" style="font-size:16px;">
+                                            <div class="row m-0 p-0">
+                                            <div class="col-lg-3 p-1 pr-3 m-0">
+                                                <div class="badge badge-warning inline-block text-white" style="min-width:100%;"><h2 class="font-weight-bold m-0">2</h2><h5 class="pb-0 mb-0">March 2026</h5><h6 class="m-0 p-0"></h6></div>
+                                            </div>
+                                            <div class="col-lg-9 p-1 m-0">
+                                            
+                                                <p><b>2nd Half 2025 - Payment Due (Payments must be postmarked no later than May 1st, 2026)</b>
+<br>
+<i class="fa fa-info-circle text-primary"></i><a class="text-primary" data-toggle="collapse" href="#paymentDetails" aria-expanded="false" aria-controls="paymentDetails" style="font-size:14px;">Payment Deadline Details</a>
+                                           </p>
+                                            
+                                            </div></div>
+                                        </div>
+                                    </div>
+
+                            
+                        
+                            
+
+                                    <div class="row justify-content-right">
+                                        <div id="eventSH2025PaymentDeadline" class="alert alert-light show container-fluid border-dark" role="alert" style="font-size:16px;">
+                                            <div class="row m-0 p-0">
+                                            <div class="col-lg-3 p-1 pr-3 m-0">
+                                                <div class="badge badge-danger inline-block text-white" style="min-width:100%;"><h2 class="font-weight-bold m-0">1</h2><h5 class="pb-0 mb-0">May 2026</h5><h6 class="m-0 p-0"></h6></div>
+                                            </div>
+                                            <div class="col-lg-9 p-1 m-0">
+                                            
+                                                <p><b>2nd Half 2025 - Payment Deadline (Payments must be postmarked no later than May 1st, 2026)</b>
+<br>
+<i class="fa fa-info-circle text-primary"></i><a class="text-primary" data-toggle="collapse" href="#paymentDetails" aria-expanded="false" aria-controls="paymentDetails" style="font-size:14px;">Payment Deadline Details</a></p>
+                                            
+                                            </div></div>
+                                        </div>
+                                    </div>
+
+                            
+                        
+                            
+
+                                    <div class="row justify-content-right">
+                                        <div id="eventMemorialDay" class="alert alert-light show container-fluid border-dark" role="alert" style="font-size:16px;">
+                                            <div class="row m-0 p-0">
+                                            <div class="col-lg-3 p-1 pr-3 m-0">
+                                                <div class="badge badge-primary inline-block text-white" style="min-width:100%;"><h2 class="font-weight-bold m-0">25</h2><h5 class="pb-0 mb-0">May 2026</h5><h6 class="m-0 p-0"></h6></div>
+                                            </div>
+                                            <div class="col-lg-9 p-1 m-0">
+                                            
+                                                <p><b>Office Closed- Memorial Day</b> 
+
+<p>We will reopen Tuesday, May 26th, 2026, with our regular business hours.</p></p>
+                                            
+                                            </div></div>
+                                        </div>
+                                    </div>
+
+                            
+                        
+                            
+
+                                    <div class="row justify-content-right">
+                                        <div id="eventIndependenceDay" class="alert alert-light show container-fluid border-dark" role="alert" style="font-size:16px;">
+                                            <div class="row m-0 p-0">
+                                            <div class="col-lg-3 p-1 pr-3 m-0">
+                                                <div class="badge badge-primary inline-block text-white" style="min-width:100%;"><h2 class="font-weight-bold m-0">3</h2><h5 class="pb-0 mb-0">July 2026</h5><h6 class="m-0 p-0"></h6></div>
+                                            </div>
+                                            <div class="col-lg-9 p-1 m-0">
+                                            
+                                                <p><b>Office Closed - Independence Day</b>
+<p>We will reopen Monday, July 6th, 2026, with our regular business hours.</p></p>
+                                            
+                                            </div></div>
+                                        </div>
+                                    </div>
+
+                            
+                        
+                            
+
+                                    <div class="row justify-content-right">
+                                        <div id="eventLaborDay" class="alert alert-light show container-fluid border-dark" role="alert" style="font-size:16px;">
+                                            <div class="row m-0 p-0">
+                                            <div class="col-lg-3 p-1 pr-3 m-0">
+                                                <div class="badge badge-primary inline-block text-white" style="min-width:100%;"><h2 class="font-weight-bold m-0">7</h2><h5 class="pb-0 mb-0">September 2026</h5><h6 class="m-0 p-0"></h6></div>
+                                            </div>
+                                            <div class="col-lg-9 p-1 m-0">
+                                            
+                                                <p><b>Office Closed - Labor Day</b> <p>We will reopen Tuesday, September 8th, 2026, with our regular business hours.</p></p>
+                                            
+                                            </div></div>
+                                        </div>
+                                    </div>
+
+                            
+                        
+                    </div>
+                    <div class="collapse p-2" id="paymentDetails" data-parent="#accordionEvent" aria-labelledby="paymentDetails">
+                            <div class="card card-body bg-dark border-info">
+                                <h5 class="text-info">Payment Deadline Details</h5>
+                                <p class="text-white" style="font-size:14px;">Most property taxes are payable in two installments.
+                                The first installment is due October 1st and becomes delinquent
+                                November 1st at 5:00PM. The second installment is due March 1st and
+                                becomes delinquent May 1st at 5:00 PM. If your taxes are $100 or less,
+                                they become due and payable in full October 1st and delinquent
+                                November 1st at 5:00 PM. If you pay both installments by December 31st,
+                                any interest that may have accrued after November 1st is waived.
+                                However, the first installment is legally considered delinquent
+                                if it is made after November 1st. If any of the delinquency dates
+                                fall on a Saturday, Sunday or legal holiday, the time of
+                                delinquency is 5:00 PM the next business day.
+                                </p>
+                                <a class="text-success" data-toggle="collapse" href="#events" aria-expanded="false" aria-controls="events" style="font-size:14px;"><i class="fa fa-arrow-left"></i>  Back to Events</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+
+
+
+
+
+
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="documentModalAffRed" tabindex="-1" role="dialog" aria-labelledby="pdfModal" aria-hidden="true" width="100%">
+            <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title font-weight-bold" id="pdfModalTitle"></h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body bg-secondary" style="height:600px;">
+                        <embed src='/static/files/redeem_affidavit.pdf' id='audio_file' type='application/pdf' height='100%' width='100%' />
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-info" data-dismiss="modal">Close</button>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        <div class="modal fade" id="documentModalAgentRed" tabindex="-1" role="dialog" aria-labelledby="pdfModal" aria-hidden="true" width="100%">
+                <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title font-weight-bold" id="pdfModalTitle"></h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body bg-secondary" style="height:600px;">
+                            <embed src='/static/files/redeem_agent.pdf' id='audio_file' type='application/pdf' height='100%' width='100%' />
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-info" data-dismiss="modal">Close</button>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+    </div>
+
+</body>
+
+</html>

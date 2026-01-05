@@ -1,5 +1,7 @@
 import os
 import logging
+import sys
+import asyncio
 from typing import List, Optional, Union, Dict, Any
 from fastapi import FastAPI, Depends, HTTPException, Security
 from fastapi.security.api_key import APIKeyHeader
@@ -7,6 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import Base, engine, get_db
+
+# Fix for Windows asyncio compatibility - use Selector policy (NOT Proactor)
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 # New Models & Schemas
 from app.models.orm import LeadModel
@@ -48,11 +54,16 @@ app = FastAPI(title="ARELA API", version="0.2.0")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=["*"], # Allow all for debugging
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Root health check - single definition
+@app.get("/")
+async def root_health_check():
+    return {"status": "ok", "message": "ARELA Backend Running"}
 
 # Initialize DB Tables (Async)
 @app.on_event("startup")
@@ -60,12 +71,8 @@ async def startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-@app.get("/")
-async def read_root():
-    return {"message": "Welcome to ARELA API v0.2.0 (Architect Edition - Async)"}
-
 @app.get("/health")
-async def health_check():
+async def health_status():
     return {"status": "ok", "mode": "async"}
 
 # --- ROUTERS ---

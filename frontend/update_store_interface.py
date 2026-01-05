@@ -1,4 +1,8 @@
-import { create } from 'zustand';
+import os
+
+file_path = r"c:\Users\stard\Google Drive\AI Real Estate Lead Automation (ARELA)\frontend\src\lib\store.ts"
+
+new_content = """import { create } from 'zustand';
 
 export interface Property {
     id: string;
@@ -44,7 +48,6 @@ export interface ScoutResult {
     flood_zone?: string;
     school_district?: string;
     tax_status?: string;
-    tax_link?: string;
 }
 
 export interface AppState {
@@ -194,3 +197,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         set({ filteredLeads: filtered });
     }
 }));
+"""
+
+with open(file_path, "w", encoding="utf-8") as f:
+    f.write(new_content)
+print("Updated store.ts")

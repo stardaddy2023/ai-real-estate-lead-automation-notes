@@ -202,9 +202,23 @@
               "icon": "lucide-file",
               "title": "Data Sources Distressed Property Pima County"
             }
+          },
+          {
+            "id": "e9ea9a2e4b70a078",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "ARELA Notes/Property Use Code Pima County.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Property Use Code Pima County"
+            }
           }
         ],
-        "currentTab": 13
+        "currentTab": 14
       }
     ],
     "direction": "vertical"
@@ -366,23 +380,36 @@
       "bases:Create new base": false
     }
   },
-  "active": "639235e0b7d791bc",
+  "active": "259e50b8775258af",
   "lastOpenFiles": [
-    "backend/app/services/pipeline/__pycache__/scout.cpython-314.pyc.1852601027200",
-    "backend/app/services/pipeline/__pycache__/scout.cpython-314.pyc.2333161507984",
-    "backend/app/__pycache__/main.cpython-314.pyc.2332586282160",
-    "update_store_bounds.py",
-    "update_store.py",
-    "frontend/node_modules/@radix-ui/react-checkbox/dist/index.mjs.map",
-    "ARELA Notes/Old_ARELA Front End UI Design.md",
-    "frontend/src/components/scout/LeadFilters.tsx",
-    "frontend/node_modules/@radix-ui/react-accordion/LICENSE",
-    "frontend/node_modules/@radix-ui/react-accordion/README.md",
-    "frontend/node_modules/@radix-ui/react-accordion/package.json",
-    "frontend/node_modules/@radix-ui/react-accordion/dist/index.mjs.map",
-    "frontend/node_modules/@radix-ui/react-accordion/dist/index.mjs",
-    "frontend/node_modules/@radix-ui/react-radio-group/README.md",
+    "backend/app/services/pipeline/__pycache__/cleaner.cpython-314.pyc.2668191841984",
+    "backend/app/services/pipeline/__pycache__/scout.cpython-314.pyc.2580555319936",
+    "backend/app/services/pipeline/__pycache__/scout.cpython-314.pyc.2756730358400",
+    "backend/app/services/pipeline/__pycache__/scout.cpython-314.pyc.2608613080208",
+    "backend/app/services/pipeline/__pycache__/scout.cpython-314.pyc.1858585381504",
+    "backend/verify_vacant_land.py",
+    "backend/app/services/pipeline/__pycache__/scout.cpython-314.pyc.2379402185344",
+    "backend/app/services/pipeline/__pycache__/scout.cpython-314.pyc.1922055211648",
+    "frontend/node_modules/recharts/node_modules/react-is/umd/react-is.production.min.js",
+    "frontend/node_modules/recharts/node_modules/react-is/umd/react-is.development.js",
+    "frontend/node_modules/recharts/node_modules/react-is/umd",
     "ARELA Notes/Data Sources Distressed Property Pima County.md",
+    "ARELA Notes/Property Use Code Pima County.md",
+    "Build Docs/deal_detail_spec.md",
+    "backend/tax_debug.png",
+    "Build Docs/copilot_spec.md",
+    "Build Docs/lex_agent_spec.md",
+    "Build Docs/06_MIGRATION_ROADMAP.md.md",
+    "Build Docs/05_UI_COMPONENT_SPEC.md.md",
+    "Build Docs/03_DATABASE_SCHEMA.sql.md",
+    "Build Docs/02_WORKFLOW_LOGIC.mermaid.md",
+    "Build Docs/01_AGENT_ROSTER.md.md",
+    "Build Docs/00_SYSTEM_TOPOLOGY.md.md",
+    "Build Docs/Master Blueprint & Roadmap.md",
+    "ARELA Notes/Seller Script.md",
+    "ARELA Notes/Old_ARELA Front End UI Design.md",
+    "frontend/node_modules/@radix-ui/react-accordion/README.md",
+    "frontend/node_modules/@radix-ui/react-radio-group/README.md",
     "frontend/node_modules/@radix-ui/react-slider/README.md",
     "backend/mcp_servers/recorder/downloads/DOC415S311_temp/page_2.png",
     "backend/mcp_servers/recorder/downloads/DOC415S311_temp/page_1.png",
@@ -393,27 +420,14 @@
     "backend/mcp_servers/recorder/downloads/DOC419S345_temp/page_1.png",
     "backend/mcp_servers/recorder/downloads/DOC411S781_temp/page_5.png",
     "backend/mcp_servers/recorder/downloads/DOC411S781_temp/page_4.png",
-    "backend/mcp_servers/recorder/downloads/DOC411S781_temp/page_3.png",
     "backend/mcp_servers/recorder/README.md",
     "ARELA Notes/Wholesale KPI Leaders.md",
-    "Build Docs/03_DATABASE_SCHEMA.sql.md",
-    "Build Docs/02_WORKFLOW_LOGIC.mermaid.md",
-    "Build Docs/05_UI_COMPONENT_SPEC.md.md",
-    "Build Docs/Master Blueprint & Roadmap.md",
-    "Build Docs/06_MIGRATION_ROADMAP.md.md",
     "frontend/node_modules/date-fns/docs/webpack.md",
     "frontend/node_modules/date-fns/docs/unicodeTokens.md",
     "frontend/node_modules/date-fns/docs/timeZones.md",
     "frontend/node_modules/date-fns/docs/release.md",
     "frontend/node_modules/date-fns/docs/i18nContributionGuide.md",
     "frontend/node_modules/date-fns/docs/i18n.md",
-    "frontend/node_modules/date-fns/docs/fp.md",
-    "frontend/node_modules/date-fns/docs/gettingStarted.md",
-    "frontend/node_modules/date-fns/docs/cdn.md",
-    "frontend/node_modules/date-fns-jalali/docs/webpack.md",
-    "frontend/node_modules/date-fns-jalali/docs/unicodeTokens.md",
-    "frontend/node_modules/date-fns-jalali/docs/timeZones.md",
-    "frontend/node_modules/date-fns-jalali/docs/release.md",
     "ARELA Org Chart.canvas"
   ]
 }
