@@ -80,6 +80,17 @@ app.include_router(dispositions.router, prefix="/api/v1/dispositions", tags=["di
 app.include_router(scout.router, prefix="/api/v1/scout", tags=["scout"])
 app.include_router(recorder.router, prefix="/api/v1/recorder", tags=["recorder"])
 
+# --- SINGLETON SERVICES (for caching) ---
+_scout_service_instance: Optional[ScoutService] = None
+
+def _get_scout_service() -> ScoutService:
+    """Singleton factory for ScoutService to persist HomeHarvest cache across requests."""
+    global _scout_service_instance
+    if _scout_service_instance is None:
+        _scout_service_instance = ScoutService()
+        print("Created singleton ScoutService instance (HomeHarvest cache enabled)")
+    return _scout_service_instance
+
 # --- USERS ---
 @app.post("/api/v1/users/sync", response_model=User)
 async def sync_user(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
@@ -348,6 +359,7 @@ class SearchFilters(BaseModel):
     property_types: Optional[List[str]] = None
     limit: int = 100
     bounds: Optional[Dict[str, float]] = None # {xmin, ymin, xmax, ymax}
+    skip_homeharvest: bool = False # Fast mode - skip HomeHarvest enrichment
 
 @app.post("/scout/search")
 async def search_leads(filters: SearchFilters):
@@ -355,7 +367,8 @@ async def search_leads(filters: SearchFilters):
     with open("debug_cleaner.log", "a") as f:
         f.write(f"API RECEIVED SEARCH (RELOADED V2): {filters.dict()}\n")
     
-    scout = ScoutService()
+    # Use singleton ScoutService to persist HomeHarvest cache across requests
+    scout = _get_scout_service()
     cleaner = CleanerService()
     
     raw_leads = await scout.fetch_leads(filters.dict())

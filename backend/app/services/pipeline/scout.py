@@ -21,7 +21,7 @@ class ScoutService:
     ]
 
     def __init__(self):
-        print("SCOUT SERVICE V3 - WITH REQUESTS IMPORT (RELOADED)")
+        print("SCOUT SERVICE V4 - WITH COMPREHENSIVE LEAD CACHE")
         # Pima County GIS - Parcels - Regional (Verified Public URL)
         self.pima_parcels_url = "https://gisdata.pima.gov/arcgis1/rest/services/GISOpenData/LandRecords/MapServer/12/query"
         
@@ -30,14 +30,68 @@ class ScoutService:
         
         # Tucson Open Data - Code Violations (Verified Layer 94)
         self.tucson_violations_url = "https://gis.tucsonaz.gov/arcgis/rest/services/PDSD/pdsdMain_General5/MapServer/94/query"
+        
+        # HomeHarvest cache - keyed by normalized address (for HomeHarvest API)
+        self._homeharvest_cache: Dict[str, Optional[Dict]] = {}
+        
+        # Comprehensive lead cache - stores ALL enrichment data keyed by address
+        # This includes: parcel data, GIS layers, HomeHarvest data, assessor data, etc.
+        self._lead_cache: Dict[str, Dict] = {}
+        
+        # Property type cache - stores PARCEL_USE code by normalized address
+        # Allows skipping property type API calls on repeat searches
+        self._property_type_cache: Dict[str, str] = {}
+        
+        # Violations source cache - stores raw violations by location key with TTL
+        # Tuple: (violations_list, timestamp)
+        # Key format: "zip_{zip_code}" or "bounds_{hash}"
+        self._violations_cache: Dict[str, tuple] = {}
+        self._violations_cache_ttl = 600  # 10 minutes TTL
+
+        
+        # Fields that indicate a lead has been enriched
+        self._enrichment_fields = [
+            # Parcel/Assessor data
+            "owner", "owner_name", "mailing_address", "legal_desc", "land_value", 
+            "building_value", "total_value", "zoning", "use_desc",
+            # GIS layer data  
+            "flood_zone", "school_district", "supervisorial_district", "council_ward",
+            # HomeHarvest data
+            "beds", "baths", "sqft", "lot_sqft", "stories", "year_built",
+            "primary_photo", "neighborhoods", "estimated_value", "hoa_fee"
+        ]
 
     async def _fetch_code_violations(self, filters: Dict, limit: int) -> List[Dict]:
-        print("Fetching code violations from Tucson GIS...")
+        import time as time_module  # For TTL timestamp
         
         zip_code = filters.get("zip_code")
+        bounds = filters.get('bounds')
+        
+        # Build cache key based on location filter
+        cache_key = None
+        if bounds:
+            # Create hash of bounds for cache key
+            bounds_str = f"{bounds.get('west', bounds.get('xmin'))}_{bounds.get('south', bounds.get('ymin'))}_{bounds.get('east', bounds.get('xmax'))}_{bounds.get('north', bounds.get('ymax'))}"
+            cache_key = f"bounds_{hash(bounds_str)}"
+        elif zip_code:
+            cache_key = f"zip_{zip_code}"
+        
+        # Check cache first
+        if cache_key and cache_key in self._violations_cache:
+            cached_data, cached_time = self._violations_cache[cache_key]
+            age = time_module.time() - cached_time
+            if age < self._violations_cache_ttl:
+                print(f"Code violations from cache ({len(cached_data)} violations, {age:.0f}s old)")
+                return cached_data
+            else:
+                # Cache expired, remove it
+                del self._violations_cache[cache_key]
+        
+        print("Fetching code violations from Tucson GIS...")
         
         # Build WHERE clause
         where_parts = ["STATUS_1 NOT IN ('COMPLIAN', 'CLOSED', 'VOID')"]
+
         
         params = {
             "outFields": "*",
@@ -196,8 +250,13 @@ class ScoutService:
             
             print(f"Consolidated {len(leads)} violations into {len(consolidated)} unique properties.")
             
+            # Save to cache for future searches
+            result = list(consolidated.values())
+            if cache_key:
+                self._violations_cache[cache_key] = (result, time_module.time())
+            
             # Return ALL UNENRICHED leads - final limit applied in fetch_leads after property type filtering
-            return list(consolidated.values())
+            return result
         except Exception as e:
             print(f"Error fetching violations: {e}")
             return []
@@ -405,7 +464,7 @@ class ScoutService:
     async def _filter_violations_by_property_type(self, leads: List[Dict], property_types: List[str]) -> List[Dict]:
         """
         Filters code violation leads by property type using BATCH spatial query.
-        Only fetches PARCEL_USE field for performance.
+        Uses property type cache to skip API calls for known leads.
         Returns leads that match the selected property types.
         """
         if not leads or not property_types:
@@ -422,22 +481,52 @@ class ScoutService:
         
         import time
         start_time = time.time()
-        print(f"Filtering {len(leads)} violations by property type: {property_types}...")
         
-        base_url = "https://gisdata.pima.gov/arcgis1/rest/services/GISOpenData/LandRecords/MapServer/12/query"
+        # Helper to normalize address for cache key
+        def cache_key(lead):
+            addr = lead.get("address_street") or lead.get("address", "")
+            return " ".join(str(addr).upper().split()) if addr else None
         
-        # Build multipoint geometry for batch query
-        points = []
-        valid_leads = []
+        # Helper to check if PARCEL_USE code matches our property types
+        def matches_type(use_code):
+            return any(str(use_code).startswith(prefix) for prefix in prefixes)
+        
+        # Phase 1: Check cache for already-known property types
+        cached_passes = []  # Leads that passed from cache
+        needs_api = []  # Leads that need API lookup
+        
         for lead in leads:
             lat = lead.get("latitude")
             lon = lead.get("longitude")
-            if lat and lon:
-                points.append([lon, lat])
-                valid_leads.append(lead)
+            if not (lat and lon):
+                continue  # Skip leads without coords
+            
+            key = cache_key(lead)
+            if key and key in self._property_type_cache:
+                # We know this lead's property type from cache
+                use_code = self._property_type_cache[key]
+                if matches_type(use_code):
+                    cached_passes.append(lead)
+            else:
+                needs_api.append(lead)
         
-        if not points:
-            return leads
+        cached_count = len(cached_passes)
+        
+        # If all leads are cached, skip API call entirely
+        if not needs_api:
+            elapsed = time.time() - start_time
+            print(f"Property type filter: {cached_count}/{len(leads)} passed (all from cache, {elapsed:.2f}s)")
+            return cached_passes
+        
+        print(f"Filtering {len(leads)} violations by property type: {property_types}...")
+        print(f"  Cache: {cached_count} already known, {len(needs_api)} need API lookup")
+        
+        # Phase 2: Query API for uncached leads only
+        base_url = "https://gisdata.pima.gov/arcgis1/rest/services/GISOpenData/LandRecords/MapServer/12/query"
+        
+        points = []
+        for lead in needs_api:
+            points.append([lead["longitude"], lead["latitude"]])
         
         multipoint = {
             "points": points,
@@ -455,11 +544,12 @@ class ScoutService:
         }
         
         loop = asyncio.get_event_loop()
+        api_passes = []
         
         try:
             resp = await loop.run_in_executor(
                 None,
-                lambda: requests.post(base_url, data=params, timeout=15)
+                lambda: requests.post(base_url, data=params, timeout=30)
             )
             
             if resp.status_code == 200:
@@ -484,33 +574,37 @@ class ScoutService:
                 # Create spatial index for fast lookup
                 if parcels:
                     tree = STRtree(parcels)
-                else:
-                    return leads
-                
-                # Use spatial index to find matching parcel for each lead
-                filtered_leads = []
-                for lead in valid_leads:
-                    pt = Point(lead["longitude"], lead["latitude"])
-                    # Query the tree for parcels whose bounding box intersects the point
-                    # Then manually check actual containment (much faster than checking all parcels)
-                    result = tree.query(pt)
-                    for idx in result:
-                        if parcels[idx].contains(pt):
-                            parcel_use = parcel_use_map[id(parcels[idx])]
-                            use_code = str(parcel_use) if parcel_use else ""
-                            if any(use_code.startswith(prefix) for prefix in prefixes):
-                                filtered_leads.append(lead)
-                            break  # Found matching parcel for this lead
-                
-                elapsed = time.time() - start_time
-                print(f"Property type filter: {len(filtered_leads)}/{len(valid_leads)} passed ({elapsed:.2f}s)")
-                return filtered_leads
+                    
+                    # Use spatial index to find matching parcel for each lead
+                    for lead in needs_api:
+                        pt = Point(lead["longitude"], lead["latitude"])
+                        result = tree.query(pt)
+                        for idx in result:
+                            if parcels[idx].contains(pt):
+                                parcel_use = parcel_use_map[id(parcels[idx])]
+                                use_code = str(parcel_use) if parcel_use else ""
+                                
+                                # Save to cache for future searches
+                                key = cache_key(lead)
+                                if key:
+                                    self._property_type_cache[key] = use_code
+                                    lead["use_desc"] = use_code  # Also store on lead
+                                
+                                # Check if it matches our filter
+                                if matches_type(use_code):
+                                    api_passes.append(lead)
+                                break  # Found matching parcel for this lead
             else:
-                print(f"Property type filter failed: {resp.status_code}")
-                return leads
+                print(f"Property type filter API failed: {resp.status_code}")
         except Exception as e:
             print(f"Property type filter error: {e}")
-            return leads
+        
+        # Combine cached and API results
+        all_passes = cached_passes + api_passes
+        elapsed = time.time() - start_time
+        print(f"Property type filter: {len(all_passes)}/{len(leads)} passed ({cached_count} cached, {len(api_passes)} new, {elapsed:.2f}s)")
+        return all_passes
+
 
     async def _enrich_with_gis_layers(self, leads: List[Dict]):
         """
@@ -519,7 +613,27 @@ class ScoutService:
         if not leads:
             return
 
-        print(f"Enriching {len(leads)} leads with Advanced GIS Layers...")
+        # Check if leads already have GIS data from cache - skip entirely if so
+        # A lead needs GIS enrichment if it's NOT cache-enriched OR doesn't have any GIS data yet
+        gis_fields = ["flood_zone", "school_district", "zoning"]
+        
+        def needs_gis(lead):
+            """Returns True if lead needs GIS enrichment."""
+            # Only skip if lead has ALL GIS fields from cache (not just some)
+            if lead.get("_cache_enriched") and all(lead.get(f) for f in gis_fields):
+                return False  # Already has ALL GIS data from cache
+            return True
+        
+        needs_enrichment = [l for l in leads if needs_gis(l)]
+        
+        if not needs_enrichment:
+            print(f"GIS Layers: All {len(leads)} leads already have GIS data from cache (skipping)")
+            return
+        
+        if len(needs_enrichment) < len(leads):
+            print(f"GIS Layers: {len(leads) - len(needs_enrichment)}/{len(leads)} already enriched from cache")
+        
+        print(f"Enriching {len(needs_enrichment)} leads with Advanced GIS Layers...")
         
         # Define layers to query
         # Format: (Name, Service URL, Fields, Attribute Map, FetchAll)
@@ -742,11 +856,10 @@ class ScoutService:
             from homeharvest import scrape_property
             import pandas as pd
             
-            # Collect addresses
-            addresses = []
-            lead_map = {} # Map normalized address to lead object
+            # Collect addresses with indices for reliable matching
+            address_leads = []  # List of (index, address, lead) tuples
             
-            for lead in leads:
+            for i, lead in enumerate(leads):
                 # Construct search address
                 addr = lead.get("address")
                 if not addr:
@@ -758,89 +871,237 @@ class ScoutService:
                             addr += f" {zip_code}"
                 
                 if addr:
-                    addresses.append(addr)
-                    # Normalize for matching
-                    norm = addr.upper().split(",")[0].strip()
-                    lead_map[norm] = lead
+                    address_leads.append((i, addr, lead))
 
-            if not addresses:
+            if not address_leads:
                 return
 
             loop = asyncio.get_event_loop()
             
-            async def fetch_hh(address):
+            # Helper to normalize address for cache key
+            def normalize_addr(addr):
+                return addr.upper().split(",")[0].strip()
+            
+            # Check cache first and separate cached/uncached
+            uncached_leads = []
+            cache_hits = 0
+            
+            for idx, addr, lead_obj in address_leads:
+                cache_key = normalize_addr(addr)
+                if cache_key in self._homeharvest_cache:
+                    cached_data = self._homeharvest_cache[cache_key]
+                    if cached_data:
+                        # Apply cached data to lead
+                        self._apply_homeharvest_data(lead_obj, cached_data)
+                        cache_hits += 1
+                else:
+                    uncached_leads.append((idx, addr, lead_obj, cache_key))
+            
+            if cache_hits > 0:
+                print(f"  HomeHarvest: {cache_hits} from cache, {len(uncached_leads)} to fetch")
+            
+            if not uncached_leads:
+                print(f"HomeHarvest: {cache_hits} enriched from cache (0 API calls needed)")
+                return
+            
+            async def fetch_hh(address, cache_key):
                 try:
                     # Run in executor to avoid blocking
-                    # Add timeout of 3 seconds per property
                     df = await asyncio.wait_for(
                         loop.run_in_executor(
                             None,
                             lambda: scrape_property(
                                 location=address,
-                                listing_type="sold", # Look for past sales data too
-                                past_days=3650 # Look back 10 years to catch last sale
+                                listing_type="sold",
+                                past_days=365  # Reduced from 3650 - 10 years caused 30-70s response times
                             )
                         ),
-                        timeout=3.0
+                        timeout=10.0  # Increased from 5s - HomeHarvest can be slow
                     )
                     if not df.empty:
-                        return df.iloc[0].to_dict()
+                        data = df.iloc[0].to_dict()
+                        # Store in cache
+                        self._homeharvest_cache[cache_key] = data
+                        return data
                 except asyncio.TimeoutError:
-                    # print(f"HH Timeout for {address}")
                     pass
                 except Exception as e:
-                    # print(f"HH Error for {address}: {e}")
                     pass
+                # Cache the "not found" result too to avoid re-fetching
+                self._homeharvest_cache[cache_key] = None
                 return None
 
-            sem = asyncio.Semaphore(5) # Increased concurrency for speed
+            sem = asyncio.Semaphore(10) # Higher concurrency to get more results in time window
             
-            async def safe_fetch(addr):
+            async def safe_fetch(idx, addr, lead_obj, cache_key):
                 async with sem:
-                    return await fetch_hh(addr), addr
+                    data = await fetch_hh(addr, cache_key)
+                    return (idx, data, lead_obj)
 
-            tasks = [asyncio.create_task(safe_fetch(addr)) for addr in addresses]
+            tasks = [asyncio.create_task(safe_fetch(idx, addr, lead, cache_key)) for idx, addr, lead, cache_key in uncached_leads]
             
-            # Global timeout for all enrichment: 15 seconds
+            # Global timeout for all enrichment: 45 seconds
             # Use asyncio.wait to get partial results
-            done, pending = await asyncio.wait(tasks, timeout=15.0)
+            done, pending = await asyncio.wait(tasks, timeout=45.0)
             
             for task in pending:
                 task.cancel()
                 
-            results = []
+            enriched_count = 0
+            empty_count = 0
+            timeout_count = len(pending)
+            
             for task in done:
                 try:
-                    res = await task
-                    results.append(res)
+                    idx, data, lead = await task
+                    if data:
+                        # Apply data using shared helper
+                        self._apply_homeharvest_data(lead, data)
+                        enriched_count += 1
+                    else:
+                        empty_count += 1
                 except Exception:
                     pass
             
-            enriched_count = 0
-            for data, addr in results:
-                if data:
-                    # Match back to lead
-                    norm = addr.upper().split(",")[0].strip()
-                    lead = lead_map.get(norm)
-                    if lead:
-                        lead["beds"] = data.get("beds")
-                        lead["baths"] = data.get("full_baths")
-                        lead["sqft"] = data.get("sqft")
-                        lead["year_built"] = data.get("year_built")
-                        lead["estimated_value"] = data.get("estimate") 
-                        lead["last_sold_date"] = data.get("last_sold_date")
-                        lead["last_sold_price"] = data.get("sold_price")
-                        lead["property_url"] = data.get("property_url")
-                        lead["primary_photo"] = data.get("primary_photo")
-                        
-                        enriched_count += 1
-            
-            print(f"Enriched {enriched_count}/{len(leads)} leads with HomeHarvest data.")
+            total_enriched = enriched_count + cache_hits
+            print(f"HomeHarvest: {total_enriched} enriched ({cache_hits} cached, {enriched_count} new), {empty_count} empty, {timeout_count} timed out (of {len(leads)} leads)")
 
         except ImportError:
             print("HomeHarvest not installed. Skipping enrichment.")
         except Exception as e:
             print(f"HomeHarvest enrichment error: {e}")
+    
+    def _apply_homeharvest_data(self, lead: Dict, data: Dict):
+        """Apply HomeHarvest data to a lead object."""
+        # Basic property details
+        lead["beds"] = data.get("beds")
+        lead["baths"] = data.get("full_baths")
+        lead["half_baths"] = data.get("half_baths")
+        lead["sqft"] = data.get("sqft")
+        lead["year_built"] = data.get("year_built")
+        lead["lot_sqft"] = data.get("lot_sqft")
+        lead["stories"] = data.get("stories")
+        
+        # Value and sale info
+        lead["estimated_value"] = data.get("estimated_value") or data.get("estimate") or data.get("price")
+        lead["last_sold_date"] = data.get("last_sold_date")
+        lead["last_sold_price"] = data.get("sold_price")
+        lead["price_per_sqft"] = data.get("price_per_sqft")
+        lead["hoa_fee"] = data.get("hoa_fee")
+        
+        # Location and photos
+        lead["neighborhoods"] = data.get("neighborhoods")
+        lead["property_url"] = data.get("property_url")
+        lead["primary_photo"] = data.get("primary_photo")
+        lead["alt_photos"] = data.get("alt_photos")
+        
+        # Parking and description
+        lead["parking_garage"] = data.get("parking_garage")
+        lead["description"] = data.get("text")
+    
+    def _apply_homeharvest_from_cache(self, leads: List[Dict]) -> int:
+        """Apply cached HomeHarvest data to leads without making any API calls.
+        Returns the number of leads enriched from cache."""
+        if not leads:
+            return 0
+        
+        applied_count = 0
+        
+        def normalize_addr(addr):
+            return addr.upper().split(",")[0].strip() if addr else ""
+        
+        for lead in leads:
+            # Skip leads already enriched (e.g., from previous full enrichment this session)
+            if lead.get("beds") or lead.get("sqft") or lead.get("primary_photo"):
+                continue
+                
+            address = lead.get("address") or lead.get("full_address") or ""
+            if not address:
+                continue
+            
+            cache_key = normalize_addr(address)
+            if cache_key in self._homeharvest_cache:
+                cached_data = self._homeharvest_cache[cache_key]
+                if cached_data:
+                    self._apply_homeharvest_data(lead, cached_data)
+                    applied_count += 1
+        
+        return applied_count
+    
+    def _apply_cached_enrichment(self, leads: List[Dict]) -> int:
+        """Apply ALL cached enrichment data (parcel, GIS, HomeHarvest) to leads.
+        Returns number of leads enriched from cache.
+        Uses normalized street address as cache key (consistent before/after enrichment)."""
+        if not leads:
+            return 0
+        
+        applied_count = 0
+        leads_with_addr = 0
+        
+        for lead in leads:
+            # Use normalized street address as cache key (consistent before/after parcel enrichment)
+            addr = lead.get("address_street") or lead.get("address", "")
+            if not addr:
+                continue
+            
+            leads_with_addr += 1
+            # Normalize: uppercase, remove extra spaces
+            cache_key = " ".join(str(addr).upper().split())
+            if cache_key in self._lead_cache:
+                cached = self._lead_cache[cache_key]
+                # Apply all cached enrichment fields
+                for field in self._enrichment_fields:
+                    if field in cached and cached[field] is not None:
+                        lead[field] = cached[field]
+                # Mark as cache-enriched for debug
+                lead["_cache_enriched"] = True
+                applied_count += 1
+        
+        # Debug: show cache stats
+        if len(leads) > 0:
+            sample = leads[0]
+            sample_addr = sample.get("address_street") or sample.get("address", "")
+            print(f"  Cache debug: {leads_with_addr}/{len(leads)} have addresses, cache has {len(self._lead_cache)} entries, matched {applied_count}")
+            if sample_addr and applied_count == 0 and len(self._lead_cache) > 0:
+                sample_key = " ".join(str(sample_addr).upper().split())
+                print(f"  Sample addr: '{sample_key}', in cache: {sample_key in self._lead_cache}")
+        
+        return applied_count
+    
+    def _save_to_lead_cache(self, leads: List[Dict]) -> int:
+        """Save enriched leads to cache for future searches.
+        Uses normalized street address as cache key (consistent before/after enrichment).
+        Returns number of leads saved to cache."""
+        if not leads:
+            return 0
+        
+        saved_count = 0
+        
+        for lead in leads:
+            # Use normalized street address as cache key
+            addr = lead.get("address_street") or lead.get("address", "")
+            if not addr:
+                continue
+            
+            # Normalize: uppercase, remove extra spaces
+            cache_key = " ".join(str(addr).upper().split())
+            
+            # Check if lead has any enrichment data worth caching
+            has_enrichment = any(lead.get(field) for field in self._enrichment_fields)
+            if not has_enrichment:
+                continue
+            
+            # Update or create cache entry with all enrichment fields
+            if cache_key not in self._lead_cache:
+                self._lead_cache[cache_key] = {}
+            
+            for field in self._enrichment_fields:
+                if field in lead and lead[field] is not None:
+                    self._lead_cache[cache_key][field] = lead[field]
+            
+            saved_count += 1
+        
+        return saved_count
 
     async def _check_tax_delinquency(self, leads: List[Dict]):
         """
@@ -1268,8 +1529,22 @@ class ScoutService:
             # Step 1.75: Early parcel enrichment if Absentee Owner is a secondary filter
             # (Absentee check needs mailing_address which comes from parcel data)
             if "Absentee Owner" in selected[1:] and primary == "Code Violations":
-                print(f"AND-Logic: Early parcel enrichment for Absentee Owner check ({len(candidates)} candidates)...")
-                await self._enrich_violations_with_parcel_data(candidates)
+                # OPTIMIZATION: Apply cache FIRST to avoid redundant parcel API calls
+                early_cache_hits = self._apply_cached_enrichment(candidates)
+                if early_cache_hits > 0:
+                    print(f"AND-Logic: Applied cache to {early_cache_hits}/{len(candidates)} candidates (before Absentee check)")
+                
+                # Only enrich candidates that don't have mailing_address from cache
+                needs_parcel = [c for c in candidates if not c.get("mailing_address")]
+                if needs_parcel:
+                    print(f"AND-Logic: Early parcel enrichment for {len(needs_parcel)}/{len(candidates)} candidates...")
+                    await self._enrich_violations_with_parcel_data(needs_parcel)
+                    
+                    # CRITICAL: Save enriched candidates to cache for faster subsequent searches
+                    saved = self._save_to_lead_cache(candidates)
+                    print(f"AND-Logic: Saved {saved} candidates to cache (for faster future searches)")
+                else:
+                    print(f"AND-Logic: Skipping early parcel enrichment ({early_cache_hits} have mailing_address from cache)")
             
             # Step 2: Verify against SECONDARY filters (AND logic)
             for secondary in selected[1:]:
@@ -1290,35 +1565,64 @@ class ScoutService:
             skip_enrichment = filters.get("skip_enrichment", False)
             
             if not skip_enrichment:
+                # Step 0: Apply cached enrichment data FIRST (parcel, GIS, HomeHarvest)
+                # This prevents redundant API calls for already-enriched leads
+                cache_hits = self._apply_cached_enrichment(final_results)
+                if cache_hits > 0:
+                    print(f"Applied cached enrichment to {cache_hits} leads (skipping redundant API calls)")
+                
                 # Step 3a: Enrich Code Violations with parcel data (owner info)
-                # Skip leads already enriched during early parcel check (Absentee Owner)
+                # Skip leads already enriched during early parcel check OR from cache
                 if primary == "Code Violations":
-                    unenriched = [l for l in final_results if not l.get("_parcel_enriched")]
+                    unenriched = [l for l in final_results if not l.get("_parcel_enriched") and not l.get("_cache_enriched")]
                     if unenriched:
                         await self._enrich_violations_with_parcel_data(unenriched)
+                        print(f"Parcel enrichment: {len(unenriched)} leads enriched, {len(final_results) - len(unenriched)} skipped (cached/already done)")
                     else:
-                        print(f"Skipping duplicate parcel enrichment ({len(final_results)} already enriched)")
+                        print(f"Skipping parcel enrichment ({len(final_results)} already enriched from cache)")
                     await self._enrich_violations_with_zip_codes(final_results)
                 
                 # Step 3b: Run HomeHarvest and GIS enrichment IN PARALLEL for speed
-                hh_task = asyncio.create_task(self._enrich_with_homeharvest(final_results))
+                # HomeHarvest can be skipped for faster response (adds ~45s when enabled)
+                skip_hh = filters.get("skip_homeharvest", False)
+                
                 gis_task = asyncio.create_task(self._enrich_with_gis_layers(final_results))
                 
-                # Wait for both with a global timeout
-                try:
-                    await asyncio.wait_for(
-                        asyncio.gather(hh_task, gis_task, return_exceptions=True),
-                        timeout=90.0  # Increased from 45s for slower property types
-                    )
-                except asyncio.TimeoutError:
-                    print("Enrichment timed out, returning partial results")
-                    hh_task.cancel()
-                    gis_task.cancel()
+                if skip_hh:
+                    # Fast mode - apply cached HomeHarvest data (no new API calls) + GIS enrichment
+                    print("Fast mode: applying cached HomeHarvest data (no new API calls)")
+                    cache_applied = self._apply_homeharvest_from_cache(final_results)
+                    if cache_applied > 0:
+                        print(f"  Applied cached HomeHarvest data to {cache_applied} leads")
+                    try:
+                        await asyncio.wait_for(gis_task, timeout=30.0)
+                    except asyncio.TimeoutError:
+                        print("GIS enrichment timed out")
+                        gis_task.cancel()
+                else:
+                    # Full enrichment with HomeHarvest (~45s)
+                    hh_task = asyncio.create_task(self._enrich_with_homeharvest(final_results))
+                    
+                    # Wait for both with a global timeout
+                    try:
+                        await asyncio.wait_for(
+                            asyncio.gather(hh_task, gis_task, return_exceptions=True),
+                            timeout=90.0  # Increased from 45s for slower property types
+                        )
+                    except asyncio.TimeoutError:
+                        print("Enrichment timed out, returning partial results")
+                        hh_task.cancel()
+                        gis_task.cancel()
 
                 # Tax delinquency check is the slowest (uses Playwright) - skip by default
                 # Only run if explicitly requested or if lead count is small
                 if len(final_results) <= 10 and not filters.get("skip_tax_check", True):
                     await self._check_tax_delinquency(final_results)
+                
+                # Step FINAL: Save all enriched leads to cache for future searches
+                saved = self._save_to_lead_cache(final_results)
+                if saved > 0:
+                    print(f"Saved {saved} enriched leads to cache (total cached: {len(self._lead_cache)})")
 
             return final_results
             
@@ -2431,7 +2735,7 @@ class ScoutService:
         return {
             "id": activity_num,  # Unique ID for React keys
             "source": "tucson_code_enforcement",
-            "parcel_id": activity_num,  # Will be overwritten with real parcel during enrichment
+            "parcel_id": None,  # Will be set from real parcel data during enrichment
             "owner_name": None, # Not available from Code Enforcement data
             "address": address_full,
             "address_street": address_street,

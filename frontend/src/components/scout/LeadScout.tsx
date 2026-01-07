@@ -37,6 +37,7 @@ export default function LeadScout() {
     const [selectedLead, setSelectedLead] = useState<ScoutResult | null>(null)
     const [isDetailOpen, setIsDetailOpen] = useState(false)
     const [hoveredLeadId, setHoveredLeadId] = useState<string | null>(null)
+    const [includePropertyDetails, setIncludePropertyDetails] = useState(false) // Default OFF for fast mode
 
     // Refs
     const listRef = useRef<HTMLDivElement>(null)
@@ -67,7 +68,8 @@ export default function LeadScout() {
                 property_types: selectedPropertyTypes,
                 distress_type: selectedDistressTypes, // Allow empty list for generic search
                 limit: limit,
-                bounds: newBounds // Include bounds in payload
+                bounds: newBounds, // Include bounds in payload
+                skip_homeharvest: !includePropertyDetails // Fast mode when toggle is OFF
             }
 
             // Smart Classification
@@ -278,6 +280,19 @@ export default function LeadScout() {
                             <option value={500} className="bg-white dark:bg-gray-900">500 Leads</option>
                         </select>
 
+                        <div className="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1 hidden md:block" />
+
+                        {/* Property Details Toggle */}
+                        <label className="flex items-center gap-1.5 cursor-pointer" title="When enabled, fetches detailed property info (beds, baths, sqft, photos) - adds ~45s to search">
+                            <input
+                                type="checkbox"
+                                checked={includePropertyDetails}
+                                onChange={(e) => setIncludePropertyDetails(e.target.checked)}
+                                className="w-3.5 h-3.5 rounded border-gray-400 text-green-600 focus:ring-green-500 focus:ring-1"
+                            />
+                            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Details</span>
+                        </label>
+
                         {/* Filters Button (Next to Search Bar) */}
                         <LeadFilters
                             selectedPropertyTypes={selectedPropertyTypes}
@@ -388,17 +403,34 @@ export default function LeadScout() {
                                         />
                                     </div>
 
-                                    <div className="flex justify-between items-start pl-8">
-                                        <div>
-                                            <h3 className="font-bold text-white group-hover:text-green-400 transition-colors text-sm">{lead.address}</h3>
-                                            <p className="text-xs text-gray-400">APN: {lead.parcel_id || "Unknown"}</p>
+                                    <div className="flex gap-3 pl-8">
+                                        {/* Property Thumbnail */}
+                                        {(lead as any).primary_photo ? (
+                                            <img
+                                                src={(lead as any).primary_photo}
+                                                alt=""
+                                                className="w-16 h-16 object-cover rounded-md border border-gray-600 flex-shrink-0"
+                                            />
+                                        ) : (
+                                            <div className="w-16 h-16 bg-gray-700 rounded-md border border-gray-600 flex items-center justify-center flex-shrink-0">
+                                                <MapIcon className="w-6 h-6 text-gray-500" />
+                                            </div>
+                                        )}
+
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex justify-between items-start">
+                                                <div className="min-w-0 flex-1">
+                                                    <h3 className="font-bold text-white group-hover:text-green-400 transition-colors text-sm truncate">{lead.address}</h3>
+                                                    <p className="text-xs text-gray-400">APN: {lead.parcel_id || "Unknown"}</p>
+                                                </div>
+                                                <Button size="icon" variant="ghost" className="h-6 w-6 text-gray-400 hover:text-green-400 flex-shrink-0" onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    handleImport(lead)
+                                                }}>
+                                                    <Download className="w-3 h-3" />
+                                                </Button>
+                                            </div>
                                         </div>
-                                        <Button size="icon" variant="ghost" className="h-6 w-6 text-gray-400 hover:text-green-400" onClick={(e) => {
-                                            e.stopPropagation()
-                                            handleImport(lead)
-                                        }}>
-                                            <Download className="w-3 h-3" />
-                                        </Button>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-3 text-xs text-gray-500 pl-8">

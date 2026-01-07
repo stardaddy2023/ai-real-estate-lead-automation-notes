@@ -34,6 +34,19 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
         email?: string
         pool?: boolean
         garage?: boolean
+        // HomeHarvest fields
+        half_baths?: number
+        stories?: number
+        neighborhoods?: string
+        hoa_fee?: number
+        price_per_sqft?: number
+        description?: string
+        primary_photo?: string
+        alt_photos?: string
+        property_url?: string
+        estimated_value?: number
+        lot_sqft?: number
+        parking_garage?: string
     }
 
     // Check if location section has data
@@ -45,12 +58,25 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
                 {/* Header */}
                 <DialogHeader className="pb-4 border-b border-gray-700">
                     <div className="flex items-start justify-between gap-4">
+                        {/* Property Photo Thumbnail */}
+                        {extLead.primary_photo && (
+                            <div className="flex-shrink-0">
+                                <img
+                                    src={extLead.primary_photo}
+                                    alt={lead.address}
+                                    className="w-24 h-24 object-cover rounded-lg border border-gray-600"
+                                />
+                            </div>
+                        )}
                         <div className="flex-1">
                             <DialogTitle className="text-xl font-bold text-white flex items-center gap-3 flex-wrap">
                                 <Home className="h-5 w-5 text-green-400" />
                                 {lead.address}
                             </DialogTitle>
                             <p className="text-sm text-gray-400 mt-1">APN: {lead.parcel_id || "Unknown"}</p>
+                            {extLead.neighborhoods && (
+                                <p className="text-xs text-gray-500 mt-1">{extLead.neighborhoods}</p>
+                            )}
                         </div>
                         <div className="flex flex-wrap gap-1 max-w-[200px]">
                             {lead.distress_signals?.slice(0, 3).map((signal, i) => (
@@ -63,22 +89,28 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
                 </DialogHeader>
 
                 {/* Quick Stats Bar */}
-                <div className="grid grid-cols-4 gap-2 py-4 border-b border-gray-700">
+                <div className="grid grid-cols-5 gap-2 py-4 border-b border-gray-700">
                     <div className="text-center">
                         <div className="text-2xl font-bold text-white">{lead.beds || "—"}</div>
                         <div className="text-xs text-gray-400">Beds</div>
                     </div>
                     <div className="text-center">
-                        <div className="text-2xl font-bold text-white">{lead.baths || "—"}</div>
-                        <div className="text-xs text-gray-400">Baths</div>
+                        <div className="text-xl font-bold text-white">
+                            {lead.baths || "—"}{extLead.half_baths ? <span className="text-sm text-gray-400">/{extLead.half_baths}</span> : ""}
+                        </div>
+                        <div className="text-xs text-gray-400">Full/Half</div>
                     </div>
                     <div className="text-center">
                         <div className="text-2xl font-bold text-white">{lead.sqft ? lead.sqft.toLocaleString() : "—"}</div>
                         <div className="text-xs text-gray-400">Sqft</div>
                     </div>
                     <div className="text-center">
-                        <div className="text-2xl font-bold text-green-400">{formatCurrency(lead.assessed_value)}</div>
-                        <div className="text-xs text-gray-400">Assessed</div>
+                        <div className="text-xl font-bold text-white">{extLead.stories || "—"}</div>
+                        <div className="text-xs text-gray-400">Stories</div>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-lg font-bold text-green-400">{formatCurrency(extLead.estimated_value || lead.assessed_value)}</div>
+                        <div className="text-xs text-gray-400">{extLead.estimated_value ? "Est. Value" : "Assessed"}</div>
                     </div>
                 </div>
 
@@ -224,6 +256,18 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
                                 <div className="flex justify-between items-center p-3 bg-gray-800/50 rounded-lg">
                                     <span className="text-gray-400">Assessed Value</span>
                                     <span className="font-bold text-white">{formatCurrency(lead.assessed_value)}</span>
+                                </div>
+                                <div className="flex justify-between items-center p-3 bg-gray-800/50 rounded-lg">
+                                    <span className="text-gray-400">Estimated Value</span>
+                                    <span className="font-bold text-green-400">{formatCurrency(extLead.estimated_value)}</span>
+                                </div>
+                                <div className="flex justify-between items-center p-3 bg-gray-800/50 rounded-lg">
+                                    <span className="text-gray-400">Price per Sqft</span>
+                                    <span className="font-medium text-white">{extLead.price_per_sqft ? `$${extLead.price_per_sqft}/sqft` : "N/A"}</span>
+                                </div>
+                                <div className="flex justify-between items-center p-3 bg-gray-800/50 rounded-lg">
+                                    <span className="text-gray-400">HOA Fee</span>
+                                    <span className="font-medium text-white">{extLead.hoa_fee !== undefined && extLead.hoa_fee !== null ? (extLead.hoa_fee === 0 ? "None" : `$${extLead.hoa_fee}/mo`) : "N/A"}</span>
                                 </div>
                                 <div className="flex justify-between items-center p-3 bg-gray-800/50 rounded-lg">
                                     <span className="text-gray-400">Estimated ARV</span>
