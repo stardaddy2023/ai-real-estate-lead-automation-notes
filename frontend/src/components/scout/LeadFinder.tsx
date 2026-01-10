@@ -33,7 +33,7 @@ interface LeadFinderProps {
 }
 
 export function LeadFinder({ defaultView = 'map' }: LeadFinderProps) {
-    const { setSelectedProperty, toggleDetailPanel, fetchLeads, scoutedLeads, fetchScoutedLeads, viewMode, setViewMode } = useAppStore();
+    const { setSelectedProperty, toggleDetailPanel, fetchLeads, scoutedLeads, viewMode, setViewMode } = useAppStore();
     const [isLoading, setIsLoading] = useState(false);
     const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
     const [importStatus, setImportStatus] = useState<{ imported: number; updated: number } | null>(null);

@@ -73,32 +73,41 @@ const DrawingManager = ({ onSelection, isDrawing, setIsDrawing, initialBounds }:
     const [drawingManager, setDrawingManager] = useState<google.maps.drawing.DrawingManager | null>(null)
     const rectangleRef = useRef<google.maps.Rectangle | null>(null)
 
-    // Effect to restore bounds on mount or update
+    // Effect to restore bounds on mount or update, OR clear when null
     useEffect(() => {
-        if (!map || !initialBounds || rectangleRef.current) return
+        if (!map) return
 
-        const rectangle = new google.maps.Rectangle({
-            bounds: initialBounds,
-            fillColor: '#22c55e',
-            fillOpacity: 0.2,
-            strokeWeight: 2,
-            strokeColor: '#22c55e',
-            editable: true,
-            draggable: true,
-            map: map
-        })
+        // If initialBounds is null, clear the existing rectangle
+        if (!initialBounds && rectangleRef.current) {
+            rectangleRef.current.setMap(null)
+            rectangleRef.current = null
+            return
+        }
 
-        rectangleRef.current = rectangle
+        // If initialBounds exists and we don't have a rectangle, create one
+        if (initialBounds && !rectangleRef.current) {
+            const rectangle = new google.maps.Rectangle({
+                bounds: initialBounds,
+                fillColor: '#22c55e',
+                fillOpacity: 0.2,
+                strokeWeight: 2,
+                strokeColor: '#22c55e',
+                editable: true,
+                draggable: true,
+                map: map
+            })
 
-        // Add listeners to existing rectangle
-        google.maps.event.addListener(rectangle, 'bounds_changed', () => {
-            const newBounds = rectangle.getBounds()
-            if (newBounds) {
-                onSelection(newBounds.toJSON())
-            }
-        })
+            rectangleRef.current = rectangle
 
-    }, [map, initialBounds]) // Only run if map or initialBounds change (and no rect exists)
+            // Add listeners to existing rectangle
+            google.maps.event.addListener(rectangle, 'bounds_changed', () => {
+                const newBounds = rectangle.getBounds()
+                if (newBounds) {
+                    onSelection(newBounds.toJSON())
+                }
+            })
+        }
+    }, [map, initialBounds]) // Runs when map or initialBounds change
 
     useEffect(() => {
         if (!map || !drawingLib) return
@@ -248,15 +257,26 @@ export function GoogleScoutMap({ leads, highlightedLeadId, panToLeadId, onMarker
 
                         {/* Search Area Button - Only visible when bounds exist and not drawing */}
                         {selectedBounds && !isDrawing && onSearchArea && (
-                            <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => onSearchArea(selectedBounds)}
-                                className="shadow-md bg-green-600 hover:bg-green-700 text-white animate-in fade-in slide-in-from-left-2"
-                            >
-                                <Search className="w-4 h-4 mr-2" />
-                                Search Area
-                            </Button>
+                            <>
+                                <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => onSearchArea(selectedBounds)}
+                                    className="shadow-md bg-green-600 hover:bg-green-700 text-white animate-in fade-in slide-in-from-left-2"
+                                >
+                                    <Search className="w-4 h-4 mr-2" />
+                                    Search Area
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleClearSelection}
+                                    className="shadow-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                >
+                                    <X className="w-4 h-4 mr-2" />
+                                    Clear Selection
+                                </Button>
+                            </>
                         )}
                     </div>
                 )}

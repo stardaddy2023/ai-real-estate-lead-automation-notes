@@ -14,8 +14,21 @@ interface LeadDetailDialogProps {
 
 // Helper to format currency
 const formatCurrency = (value: number | undefined | null) => {
-    if (!value) return "N/A"
-    return `$${value.toLocaleString()}`
+    if (!value && value !== 0) return "N/A"
+    return `$${value?.toLocaleString()}`
+}
+
+// Helper to get human-readable flood zone description
+const getFloodZoneDescription = (zone: string | undefined) => {
+    if (!zone) return "Unknown"
+    const z = zone.toUpperCase()
+    if (z.includes("X")) return "Minimal Risk (Zone X)"
+    if (z.includes("AE")) return "High Risk (1% Annual Chance)"
+    if (z.includes("A")) return "High Risk (No BFE)"
+    if (z.includes("AH")) return "High Risk (Shallow Flooding)"
+    if (z.includes("AO")) return "High Risk (Sheet Flow)"
+    if (z.includes("D")) return "Undetermined Risk"
+    return `Zone ${zone}`
 }
 
 export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogProps) {
@@ -47,6 +60,7 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
         estimated_value?: number
         lot_sqft?: number
         parking_garage?: string
+        assessor_url?: string
     }
 
     // Check if location section has data
@@ -161,6 +175,16 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
                                         <p className="font-medium text-white">{lead.sqft ? `${lead.sqft.toLocaleString()} sqft` : "N/A"}</p>
                                     </div>
                                 </div>
+
+                                {/* Assessor Link */}
+                                {extLead.assessor_url && (
+                                    <div className="mt-3 pt-3 border-t border-gray-700">
+                                        <a href={extLead.assessor_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full p-2 bg-blue-900/20 border border-blue-500/30 rounded-lg text-blue-400 hover:bg-blue-900/40 transition-colors text-sm gap-2">
+                                            <FileText className="h-4 w-4" />
+                                            View Official Assessor Record
+                                        </a>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Location & Zoning Row */}
@@ -177,13 +201,20 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
                                         {extLead.municipality && (
                                             <p className="text-xs text-gray-500 mt-1">{extLead.municipality}</p>
                                         )}
+
+                                    </div>
+                                    <div className="p-3 bg-gray-800/50 rounded-lg">
+                                        <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
+                                            <MapPin className="h-3 w-3" /> Neighborhood
+                                        </div>
+                                        <p className="font-medium text-white">{extLead.neighborhoods || "Unknown"}</p>
                                     </div>
                                     <div className="p-3 bg-gray-800/50 rounded-lg">
                                         <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
                                             <Droplets className="h-3 w-3" /> Flood Zone
                                         </div>
-                                        <p className={`font-medium ${extLead.flood_zone ? 'text-yellow-400' : 'text-white'}`}>
-                                            {extLead.flood_zone || "None Detected"}
+                                        <p className={`font-medium ${extLead.flood_zone && !extLead.flood_zone.includes('X') ? 'text-yellow-400' : 'text-white'}`}>
+                                            {getFloodZoneDescription(extLead.flood_zone)}
                                         </p>
                                     </div>
                                     <div className="p-3 bg-gray-800/50 rounded-lg">

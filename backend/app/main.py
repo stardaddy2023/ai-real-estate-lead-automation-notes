@@ -33,7 +33,15 @@ from app.services.vision_service import VisionService, PropertyConditionReport
 from app.services.lex_service import LexService, LegalReviewResponse
 from app.services.scribe_service import ScribeService
 from app.services.matchmaker_service import MatchmakerService, BuyerMatch
-from app.api.endpoints import dispositions, scout, recorder
+from app.api.endpoints import dispositions, scout
+
+# Conditional import for recorder (requires mcp_servers which is local-only)
+try:
+    from app.api.endpoints import recorder
+    RECORDER_AVAILABLE = True
+except ImportError:
+    RECORDER_AVAILABLE = False
+    print("WARNING: Recorder module not available (mcp_servers not found)")
 from pydantic import BaseModel
 
 print("LOADING MAIN APP - DEBUG MODE")
@@ -78,7 +86,8 @@ async def health_status():
 # --- ROUTERS ---
 app.include_router(dispositions.router, prefix="/api/v1/dispositions", tags=["dispositions"])
 app.include_router(scout.router, prefix="/api/v1/scout", tags=["scout"])
-app.include_router(recorder.router, prefix="/api/v1/recorder", tags=["recorder"])
+if RECORDER_AVAILABLE:
+    app.include_router(recorder.router, prefix="/api/v1/recorder", tags=["recorder"])
 
 # --- SINGLETON SERVICES (for caching) ---
 _scout_service_instance: Optional[ScoutService] = None
@@ -360,6 +369,7 @@ class SearchFilters(BaseModel):
     limit: int = 100
     bounds: Optional[Dict[str, float]] = None # {xmin, ymin, xmax, ymax}
     skip_homeharvest: bool = False # Fast mode - skip HomeHarvest enrichment
+    neighborhood: Optional[str] = None # Search by subdivision/neighborhood name
 
 @app.post("/scout/search")
 async def search_leads(filters: SearchFilters):

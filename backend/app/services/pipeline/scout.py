@@ -2,6 +2,7 @@ import requests
 import json
 import math
 import asyncio
+import numpy as np
 from typing import List, Dict, Optional, Any
 from shapely.geometry import Polygon, Point
 from shapely.prepared import prep
@@ -51,9 +52,12 @@ class ScoutService:
         
         # Fields that indicate a lead has been enriched
         self._enrichment_fields = [
+            # Address fields
+            "address", "address_zip", "address_street",
             # Parcel/Assessor data
             "owner", "owner_name", "mailing_address", "legal_desc", "land_value", 
             "building_value", "total_value", "zoning", "use_desc",
+            "parcel_id", "parcel_use_code", "property_type", "assessed_value", "lot_size",
             # GIS layer data  
             "flood_zone", "school_district", "supervisorial_district", "council_ward",
             # HomeHarvest data
@@ -75,17 +79,20 @@ class ScoutService:
             cache_key = f"bounds_{hash(bounds_str)}"
         elif zip_code:
             cache_key = f"zip_{zip_code}"
+        elif filters.get("neighborhood"):
+            cache_key = f"hood_{filters.get('neighborhood').replace(' ', '_')}"
         
         # Check cache first
-        if cache_key and cache_key in self._violations_cache:
-            cached_data, cached_time = self._violations_cache[cache_key]
-            age = time_module.time() - cached_time
-            if age < self._violations_cache_ttl:
-                print(f"Code violations from cache ({len(cached_data)} violations, {age:.0f}s old)")
-                return cached_data
-            else:
-                # Cache expired, remove it
-                del self._violations_cache[cache_key]
+        # DEBUG: DISABLE CACHE TO FIX MAP SEARCH
+        # if cache_key and cache_key in self._violations_cache:
+        #     cached_data, cached_time = self._violations_cache[cache_key]
+        #     age = time_module.time() - cached_time
+        #     if age < self._violations_cache_ttl:
+        #         print(f"Code violations from cache ({len(cached_data)} violations, {age:.0f}s old)")
+        #         return cached_data
+        #     else:
+        #         # Cache expired, remove it
+        #         del self._violations_cache[cache_key]
         
         print("Fetching code violations from Tucson GIS...")
         
@@ -107,6 +114,7 @@ class ScoutService:
         bounds = filters.get('bounds')
         
         if bounds:
+            print(f"DEBUG: _fetch_code_violations received bounds: {bounds}")
             # Handle Bounds Filter (Map Selection) - Priority over Zip
             # Construct envelope from bounds
             # Expected format: {xmin, ymin, xmax, ymax} or {south, west, north, east}
@@ -128,9 +136,12 @@ class ScoutService:
                      "spatialReference": {"wkid": 4326}
                  }
             
+            print(f"DEBUG: Constructed envelope: {envelope}")
+
             # Create Shapely Polygon for client-side filtering
             from shapely.geometry import box
             zip_polygon = prep(box(envelope['xmin'], envelope['ymin'], envelope['xmax'], envelope['ymax']))
+            print("DEBUG: Created zip_polygon for filtering")
             
             # Add envelope to spatial query for server-side pre-filtering
             params["geometry"] = json.dumps(envelope)
@@ -147,7 +158,35 @@ class ScoutService:
                     params["geometry"] = json.dumps(zip_metadata["envelope"])
                     params["geometryType"] = "esriGeometryEnvelope"
                     params["spatialRel"] = "esriSpatialRelIntersects"
+                    params["spatialRel"] = "esriSpatialRelIntersects"
                     params["inSR"] = "2868"
+        
+        elif filters.get("neighborhood"):
+            # Resolve neighborhood to bounds
+            hood_bounds = await self._resolve_neighborhood_to_bounds(filters.get("neighborhood"))
+            if hood_bounds:
+                # Create envelope from bounds
+                envelope = {
+                    "xmin": hood_bounds[0],
+                    "ymin": hood_bounds[1],
+                    "xmax": hood_bounds[2],
+                    "ymax": hood_bounds[3],
+                    "spatialReference": {"wkid": 4326}
+                }
+                
+                # Create Shapely Polygon for client-side filtering
+                from shapely.geometry import box
+                zip_polygon = prep(box(hood_bounds[0], hood_bounds[1], hood_bounds[2], hood_bounds[3]))
+                
+                # Add envelope to spatial query
+                params["geometry"] = json.dumps(envelope)
+                params["geometryType"] = "esriGeometryEnvelope"
+                params["spatialRel"] = "esriSpatialRelIntersects"
+                params["inSR"] = "4326"
+                print(f"Filtering by neighborhood: {filters.get('neighborhood')} (Bounds: {hood_bounds})")
+            else:
+                print(f"Warning: Could not resolve neighborhood '{filters.get('neighborhood')}'. Returning empty results.")
+                return []
         
         params["where"] = " AND ".join(where_parts)
         
@@ -338,9 +377,15 @@ class ScoutService:
                     # Check each lead against parcels
                     for lead in valid_leads:
                         pt = Point(lead["longitude"], lead["latitude"])
+                        # Create a small buffer around the point (approx 11 meters) to catch leads near the boundary
+                        pt_buffer = pt.buffer(0.0001) 
+                        
                         for poly, attr in parcels:
-                            if poly.contains(pt):
+                            if poly.intersects(pt_buffer):
                                 # Match! Enrich.
+                                print(f"  MATCHED PARCEL: {attr.get('PARCEL')} for lead {lead.get('address_street')}")
+                                print(f"  PARCEL ATTRIBUTES: {json.dumps(attr, default=str)}")
+                                
                                 # Build mailing address
                                 mail_parts = []
                                 for k in range(1, 6):
@@ -359,6 +404,10 @@ class ScoutService:
                                 lead["zoning"] = attr.get("CURZONE_OL")
                                 lead["lot_size"] = attr.get("GISAREA")
                                 lead["assessed_value"] = attr.get("FCV")
+                                
+                                # NOTE: Do NOT use m_zip (attr["ZIP"]) for address_zip here!
+                                # That's the OWNER's mailing zip, not the property's physical zip.
+                                # Property zip is set by _enrich_violations_with_zip_codes using GIS Layer 6.
                                 
                                 # Map PARCEL_USE to human-readable property type
                                 parcel_use = str(attr.get("PARCEL_USE", "")) if attr.get("PARCEL_USE") else ""
@@ -384,80 +433,164 @@ class ScoutService:
 
     async def _enrich_violations_with_zip_codes(self, leads: List[Dict]):
         """
-        Enriches code violation leads with proper zip codes using BATCH spatial queries.
+        Enriches code violation leads with proper zip codes using spatial queries.
+        Uses bounding box of all leads to fetch ALL zip polygons in the area,
+        then matches each lead point to the containing polygon.
         """
+        print(f"[Scout] Starting zip code enrichment for {len(leads)} code violations...", flush=True)
         if not leads:
             return
             
         zip_layer_url = "https://gisdata.pima.gov/arcgis1/rest/services/GISOpenData/Addresses/MapServer/6/query"
         loop = asyncio.get_event_loop()
         
-        batch_size = 50
+        # Calculate bounding box of all leads
+        valid_leads = []
+        min_lon, max_lon = float('inf'), float('-inf')
+        min_lat, max_lat = float('inf'), float('-inf')
+        
+        for lead in leads:
+            # Handle both coordinate formats
+            lat = lead.get("latitude")
+            lon = lead.get("longitude")
+            
+            # Fallback to geometry object if present
+            if (lat is None or lon is None) and lead.get("geometry"):
+                geom = lead.get("geometry")
+                if isinstance(geom, dict):
+                    lon = geom.get("x")
+                    lat = geom.get("y")
+            
+            if lat and lon:
+                # Ensure we have float values
+                try:
+                    lat = float(lat)
+                    lon = float(lon)
+                    # Store normalized coords on lead for easier access later
+                    lead["_enrich_lat"] = lat
+                    lead["_enrich_lon"] = lon
+                    
+                    valid_leads.append(lead)
+                    min_lon = min(min_lon, lon)
+                    max_lon = max(max_lon, lon)
+                    min_lat = min(min_lat, lat)
+                    max_lat = max(max_lat, lat)
+                except (ValueError, TypeError):
+                    pass
+        
+        if not valid_leads:
+            print(f"[Scout] No valid leads with coordinates for zip enrichment")
+            return
+            
+        # Build envelope with small buffer
+        buffer = 0.01  # ~1km buffer
+        envelope = {
+            "xmin": min_lon - buffer,
+            "ymin": min_lat - buffer,
+            "xmax": max_lon + buffer,
+            "ymax": max_lat + buffer,
+            "spatialReference": {"wkid": 4326}
+        }
+        
+        print(f"[Scout] Querying zip polygons for envelope: {min_lat:.4f},{min_lon:.4f} to {max_lat:.4f},{max_lon:.4f}")
+        
+        params = {
+            "geometry": json.dumps(envelope),
+            "geometryType": "esriGeometryEnvelope",
+            "spatialRel": "esriSpatialRelIntersects",
+            "outFields": "ZIPCODE",
+            "returnGeometry": "true",
+            "outSR": "4326",  # Force WGS84 output
+            "f": "json"
+        }
+        
         enriched_count = 0
         
-        for i in range(0, len(leads), batch_size):
-            batch = leads[i:i + batch_size]
+        try:
+            resp = await loop.run_in_executor(
+                None,
+                lambda: requests.post(zip_layer_url, data=params, timeout=15)
+            )
+            print(f"[Scout] Zip layer response status: {resp.status_code}")
             
-            points = []
-            valid_leads = []
-            for lead in batch:
-                # Skip if already has zip
-                if lead.get("address_zip"):
-                    continue
-                    
-                lat = lead.get("latitude")
-                lon = lead.get("longitude")
-                if lat and lon:
-                    points.append([lon, lat])
-                    valid_leads.append(lead)
-            
-            if not points:
-                continue
+            if resp.status_code == 200:
+                data = resp.json()
+                features = data.get("features", [])
+                print(f"[Scout] Zip layer returned {len(features)} zip polygons for {len(valid_leads)} leads")
                 
-            multipoint = {
-                "points": points,
-                "spatialReference": {"wkid": 4326}
-            }
-            
-            params = {
-                "geometry": json.dumps(multipoint),
-                "geometryType": "esriGeometryMultipoint",
-                "spatialRel": "esriSpatialRelIntersects",
-                "outFields": "ZIPCODE",
-                "returnGeometry": "true",
-                "f": "json"
-            }
-            
-            try:
-                resp = await loop.run_in_executor(
-                    None,
-                    lambda: requests.post(zip_layer_url, data=params, timeout=10)
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    features = data.get("features", [])
+                if "error" in data:
+                    print(f"[Scout] Zip layer error: {data['error']}")
+                    return
+                
+                # Build list of (polygon, zipcode) tuples
+                zip_polygons = []
+                for f in features:
+                    zipcode = f.get("attributes", {}).get("ZIPCODE")
+                    geom = f.get("geometry")
+                    if zipcode and geom and "rings" in geom:
+                        try:
+                            poly = Polygon(geom["rings"][0])
+                            zip_polygons.append((poly, str(zipcode)[:5]))
+                        except Exception as poly_err:
+                            print(f"[Scout] Polygon creation error: {poly_err}")
+                
+                print(f"[Scout] Built {len(zip_polygons)} valid zip polygons: {[z[1] for z in zip_polygons]}")
+                
+                # Build spatial index for faster matching
+                prepared_polys = [(zipcode, prep(poly), poly) for poly, zipcode in zip_polygons]
+                
+                enriched_count = 0
+                debug_first_match = True
+                
+                for lead in valid_leads:
+                    # Use the normalized coords we stored earlier
+                    lat = lead.get("_enrich_lat")
+                    lon = lead.get("_enrich_lon")
                     
-                    zips = []
-                    for f in features:
-                        zipcode = f.get("attributes", {}).get("ZIPCODE")
-                        geom = f.get("geometry")
-                        if zipcode and geom and "rings" in geom:
-                            try:
-                                poly = Polygon(geom["rings"][0])
-                                zips.append((poly, zipcode))
-                            except:
-                                pass
-                                
-                    for lead in valid_leads:
-                        pt = Point(lead["longitude"], lead["latitude"])
-                        for poly, zipcode in zips:
-                            if poly.contains(pt):
-                                lead["address_zip"] = str(zipcode)[:5]
-                                lead["address"] = f"{lead.get('address_street', '')}, Tucson, AZ {lead['address_zip']}"
-                                enriched_count += 1
-                                break
-            except Exception:
-                pass
+                    if lat is None or lon is None:
+                        continue
+                        
+                    pt = Point(lon, lat)
+                    
+                    # Debug first lead coordinates
+                    if debug_first_match:
+                        print(f"[Scout] Debug 1st lead: {lead.get('address', 'Unknown')} at {pt.x}, {pt.y}", flush=True)
+                        # Log first polygon ring sample
+                        if zip_polygons:
+                            first_poly, first_zip = zip_polygons[0]
+                            print(f"[Scout] Debug 1st poly ({first_zip}) bounds: {first_poly.bounds}", flush=True)
+                    
+                    match_found = False
+                    for zipcode, prepared, poly in prepared_polys:
+                        if prepared.contains(pt):
+                            lead["address_zip"] = zipcode
+                            # Reconstruct address with new zip
+                            if lead.get("address_street") and lead.get("address_city") and lead.get("address_state"):
+                                lead["address"] = f"{lead['address_street']}, {lead['address_city']}, {lead['address_state']} {zipcode}"
+                            elif lead.get("address_street"):
+                                # Fallback if city/state missing (common in violations)
+                                lead["address"] = f"{lead['address_street']}, Tucson, AZ {zipcode}"
+                            
+                            enriched_count += 1
+                            match_found = True
+                            if debug_first_match:
+                                print(f"[Scout] MATCHED! Lead at {pt.x},{pt.y} inside {zipcode}", flush=True)
+                                debug_first_match = False
+                            break
+                    
+                    if debug_first_match and not match_found:
+                         print(f"[Scout] NO MATCH for 1st lead at {pt.x},{pt.y}. Checked {len(zip_polygons)} polys.", flush=True)
+                         debug_first_match = False
+                    
+                    # Cleanup temporary fields
+                    lead.pop("_enrich_lat", None)
+                    lead.pop("_enrich_lon", None)
+            else:
+                print(f"[Scout] Zip layer HTTP error: {resp.status_code} - {resp.text[:200]}")
+        except Exception as e:
+            print(f"[Scout] Zip code enrichment error: {e}")
+            import traceback
+            traceback.print_exc()
         
         print(f"Enriched {enriched_count}/{len(leads)} code violations with zip codes.")
 
@@ -666,6 +799,13 @@ class ScoutService:
                 "PLAT_NAME,STATUS",
                 {"nearby_development": "PLAT_NAME", "development_status": "STATUS"},
                 False  # Use multipoint intersection
+            ),
+            (
+                "Neighborhoods",
+                "https://gisdata.pima.gov/arcgis1/rest/services/GISOpenData/LandRecords/MapServer/15/query",
+                "SUB_NAME",
+                {"neighborhoods": "SUB_NAME"},
+                False  # Use multipoint intersection
             )
         ]
         
@@ -870,6 +1010,14 @@ class ScoutService:
                         if zip_code:
                             addr += f" {zip_code}"
                 
+                # Ensure City/State is present for GIS addresses (which are usually just street)
+                if addr and "AZ" not in addr.upper() and "ARIZONA" not in addr.upper():
+                    addr = f"{addr}, Tucson, AZ"
+                
+                # Normalize AV -> Ave for better matching
+                if addr:
+                    addr = addr.replace(" AV,", " Ave,").replace(" ST,", " St,").replace(" RD,", " Rd,").replace(" DR,", " Dr,")
+
                 if addr:
                     address_leads.append((i, addr, lead))
 
@@ -906,6 +1054,7 @@ class ScoutService:
             
             async def fetch_hh(address, cache_key):
                 try:
+                    print(f"  Fetching HomeHarvest for: '{address}'")
                     # Run in executor to avoid blocking
                     df = await asyncio.wait_for(
                         loop.run_in_executor(
@@ -913,12 +1062,14 @@ class ScoutService:
                             lambda: scrape_property(
                                 location=address,
                                 listing_type="sold",
-                                past_days=365  # Reduced from 3650 - 10 years caused 30-70s response times
+                                past_days=365
                             )
                         ),
-                        timeout=10.0  # Increased from 5s - HomeHarvest can be slow
+                        timeout=30.0  # Increased to 30s
                     )
                     if not df.empty:
+                        # Sanitize DataFrame: Replace NaN/Inf with None
+                        df = df.replace({np.nan: None, np.inf: None, -np.inf: None})
                         data = df.iloc[0].to_dict()
                         # Store in cache
                         self._homeharvest_cache[cache_key] = data
@@ -926,7 +1077,8 @@ class ScoutService:
                 except asyncio.TimeoutError:
                     pass
                 except Exception as e:
-                    pass
+                    print(f"  HomeHarvest Error for '{address}': {e}")
+                
                 # Cache the "not found" result too to avoid re-fetching
                 self._homeharvest_cache[cache_key] = None
                 return None
@@ -940,13 +1092,13 @@ class ScoutService:
 
             tasks = [asyncio.create_task(safe_fetch(idx, addr, lead, cache_key)) for idx, addr, lead, cache_key in uncached_leads]
             
-            # Global timeout for all enrichment: 45 seconds
+            # Global timeout for all enrichment: 60 seconds
             # Use asyncio.wait to get partial results
-            done, pending = await asyncio.wait(tasks, timeout=45.0)
+            done, pending = await asyncio.wait(tasks, timeout=60.0)
             
             for task in pending:
                 task.cancel()
-                
+            
             enriched_count = 0
             empty_count = 0
             timeout_count = len(pending)
@@ -969,8 +1121,8 @@ class ScoutService:
         except ImportError:
             print("HomeHarvest not installed. Skipping enrichment.")
         except Exception as e:
-            print(f"HomeHarvest enrichment error: {e}")
-    
+            print(f"HomeHarvest Error: {e}")
+
     def _apply_homeharvest_data(self, lead: Dict, data: Dict):
         """Apply HomeHarvest data to a lead object."""
         # Basic property details
@@ -998,6 +1150,63 @@ class ScoutService:
         # Parking and description
         lead["parking_garage"] = data.get("parking_garage")
         lead["description"] = data.get("text")
+
+    async def fetch_comps(self, address: str, radius: float = 1.0, past_days: int = 180) -> List[Dict]:
+        """
+        Fetches comparable sales (comps) using Redfin (best for sold data).
+        """
+        print(f"Fetching comps for {address} via Redfin...")
+        try:
+            from homeharvest import scrape_property
+            
+            loop = asyncio.get_event_loop()
+            df = await loop.run_in_executor(
+                None,
+                lambda: scrape_property(
+                    location=address,
+                    radius=radius,
+                    listing_type="sold",
+                    past_days=past_days
+                )
+            )
+            
+            if df.empty:
+                return []
+                
+            return df.to_dict("records")
+            
+        except Exception as e:
+            print(f"Error fetching comps: {e}")
+            return []
+
+    async def fetch_fsbo(self, location: str) -> List[Dict]:
+        """
+        Searches for FSBO (For Sale By Owner) listings using Zillow (best for off-market).
+        """
+        print(f"Searching FSBO in {location} via Zillow...")
+        try:
+            from homeharvest import scrape_property
+            
+            loop = asyncio.get_event_loop()
+            df = await loop.run_in_executor(
+                None,
+                lambda: scrape_property(
+                    location=location,
+                    listing_type="for_sale"  # We want active FSBOs
+                )
+            )
+            
+            if df.empty:
+                return []
+                
+            # Filter for likely FSBOs if possible, or just return all found
+            # HomeHarvest might not explicitly flag FSBO in all versions, 
+            # but Zillow source is the best bet.
+            return df.to_dict("records")
+            
+        except Exception as e:
+            print(f"Error fetching FSBO: {e}")
+            return []
     
     def _apply_homeharvest_from_cache(self, leads: List[Dict]) -> int:
         """Apply cached HomeHarvest data to leads without making any API calls.
@@ -1467,95 +1676,133 @@ class ScoutService:
             if isinstance(distress_types, str):
                 distress_types = [distress_types]
             
+            candidates = []
+            selected = []  # Initialize to avoid UnboundLocalError for generic searches
+            primary = None  # Initialize to avoid UnboundLocalError for generic searches
+            
             # If "all" or empty, use generic parcel search
             if not distress_types or "all" in distress_types:
                 target_raw = int(limit * 1.5)
                 if county and county.lower() == "pinal":
-                    return await self._fetch_pinal_parcels(filters, 200, 0)
+                    candidates = await self._fetch_pinal_parcels(filters, 200, 0)
                 else:
-                    return await self._fetch_pima_parcels(filters, limit=target_raw, offset=0)
-
-            # ========== AND-LOGIC ARCHITECTURE ==========
-            # Sort selected filters by priority (most restrictive first)
-            selected = [f for f in self.FILTER_PRIORITY if f in distress_types]
-            
-            if not selected:
-                # Fallback to generic search if no recognized filters
-                return await self._fetch_pima_parcels(filters, limit=limit, offset=0)
-            
-            print(f"AND-Logic: Selected filters: {selected}")
-            
-            # Step 1: Fetch from PRIMARY (most restrictive) source
-            primary = selected[0]
-            
-            # HYBRID FETCH STRATEGY: Dynamic multiplier + Progressive fetch
-            property_types = filters.get("property_types") or []
-            base_multiplier = self._estimate_fetch_multiplier(property_types)
-            fetch_limit = limit * base_multiplier
-            max_fetch_limit = 2000  # Safety cap
-            
-            print(f"AND-Logic: Fetching from primary source '{primary}' with initial limit {fetch_limit} (multiplier: {base_multiplier}x)")
-            
-            candidates = await self._fetch_primary(primary, filters, min(fetch_limit, max_fetch_limit))
-            print(f"AND-Logic: Got {len(candidates)} candidates from primary source")
-            
-            # Step 1.5: Apply Property Type Filter (for Code Violations)
-            if property_types and primary == "Code Violations":
-                # Code Violations come unenriched, filter by property type first
-                filtered_candidates = await self._filter_violations_by_property_type(candidates, property_types)
-                print(f"AND-Logic: After property type filter: {len(filtered_candidates)} candidates")
+                    candidates = await self._fetch_pima_parcels(filters, limit=target_raw, offset=0)
                 
-                # PROGRESSIVE FETCH: If not enough results, fetch more and try again
-                fetch_attempts = 0
-                while len(filtered_candidates) < limit and fetch_attempts < 3:
-                    current_count = len(candidates)
-                    additional_needed = (limit - len(filtered_candidates)) * base_multiplier
-                    new_fetch_limit = min(current_count + int(additional_needed), max_fetch_limit)
-                    
-                    if new_fetch_limit <= current_count:
-                        print(f"AND-Logic: Reached max fetch limit, cannot fetch more")
-                        break
-                    
-                    fetch_attempts += 1
-                    print(f"AND-Logic: Progressive fetch #{fetch_attempts}: need {limit - len(filtered_candidates)} more, fetching up to {new_fetch_limit}")
-                    
-                    # Fetch more candidates
-                    candidates = await self._fetch_primary(primary, filters, new_fetch_limit)
-                    filtered_candidates = await self._filter_violations_by_property_type(candidates, property_types)
-                    print(f"AND-Logic: After progressive fetch: {len(filtered_candidates)} candidates")
-                
-                candidates = filtered_candidates
-            
-            # Step 1.75: Early parcel enrichment if Absentee Owner is a secondary filter
-            # (Absentee check needs mailing_address which comes from parcel data)
-            if "Absentee Owner" in selected[1:] and primary == "Code Violations":
-                # OPTIMIZATION: Apply cache FIRST to avoid redundant parcel API calls
-                early_cache_hits = self._apply_cached_enrichment(candidates)
-                if early_cache_hits > 0:
-                    print(f"AND-Logic: Applied cache to {early_cache_hits}/{len(candidates)} candidates (before Absentee check)")
-                
-                # Only enrich candidates that don't have mailing_address from cache
-                needs_parcel = [c for c in candidates if not c.get("mailing_address")]
-                if needs_parcel:
-                    print(f"AND-Logic: Early parcel enrichment for {len(needs_parcel)}/{len(candidates)} candidates...")
-                    await self._enrich_violations_with_parcel_data(needs_parcel)
-                    
-                    # CRITICAL: Save enriched candidates to cache for faster subsequent searches
-                    saved = self._save_to_lead_cache(candidates)
-                    print(f"AND-Logic: Saved {saved} candidates to cache (for faster future searches)")
-                else:
-                    print(f"AND-Logic: Skipping early parcel enrichment ({early_cache_hits} have mailing_address from cache)")
-            
-            # Step 2: Verify against SECONDARY filters (AND logic)
-            for secondary in selected[1:]:
-                print(f"AND-Logic: Verifying against secondary filter '{secondary}'")
-                candidates = await self._verify_filter(candidates, secondary, filters)
-                
-                # Early exit if no candidates left
+                # Verify we have candidates
                 if not candidates:
-                    print(f"AND-Logic: No candidates passed '{secondary}' filter")
-                    break
+                    print("Generic search returned no candidates.")
+                    return []
+
+            else:
+                # ========== AND-LOGIC ARCHITECTURE ==========
+                # Sort selected filters by priority (most restrictive first)
+                selected = [f for f in self.FILTER_PRIORITY if f in distress_types]
+                
+                if not selected:
+                    # Fallback to generic search if no recognized filters
+                    candidates = await self._fetch_pima_parcels(filters, limit=limit, offset=0)
+                else:
+                    print(f"AND-Logic: Selected filters: {selected}")
             
+            if selected:
+                # Step 1: Fetch from PRIMARY (most restrictive) source
+                primary = selected[0]
+                
+                # HYBRID FETCH STRATEGY: Dynamic multiplier + Progressive fetch
+                property_types = filters.get("property_types") or []
+                base_multiplier = self._estimate_fetch_multiplier(property_types)
+                fetch_limit = limit * base_multiplier
+                max_fetch_limit = 2000  # Safety cap
+                
+                print(f"AND-Logic: Fetching from primary source '{primary}' with initial limit {fetch_limit} (multiplier: {base_multiplier}x)")
+                
+                candidates = await self._fetch_primary(primary, filters, min(fetch_limit, max_fetch_limit))
+                print(f"AND-Logic: Got {len(candidates)} candidates from primary source")
+                
+                # Step 1.5: Apply Property Type Filter (for Code Violations)
+                if property_types and primary == "Code Violations":
+                    # Code Violations come unenriched, filter by property type first
+                    filtered_candidates = await self._filter_violations_by_property_type(candidates, property_types)
+                    print(f"AND-Logic: After property type filter: {len(filtered_candidates)} candidates")
+                    
+                    # PROGRESSIVE FETCH: If not enough results, fetch more and try again
+                    fetch_attempts = 0
+                    while len(filtered_candidates) < limit and fetch_attempts < 3:
+                        current_count = len(candidates)
+                        additional_needed = (limit - len(filtered_candidates)) * base_multiplier
+                        new_fetch_limit = min(current_count + int(additional_needed), max_fetch_limit)
+                        
+                        if new_fetch_limit <= current_count:
+                            print(f"AND-Logic: Reached max fetch limit, cannot fetch more")
+                            break
+                        
+                        fetch_attempts += 1
+                        print(f"AND-Logic: Progressive fetch #{fetch_attempts}: need {limit - len(filtered_candidates)} more, fetching up to {new_fetch_limit}")
+                        
+                        # Fetch more candidates
+                        candidates = await self._fetch_primary(primary, filters, new_fetch_limit)
+                        filtered_candidates = await self._filter_violations_by_property_type(candidates, property_types)
+                        print(f"AND-Logic: After progressive fetch: {len(filtered_candidates)} candidates")
+                    
+                    candidates = filtered_candidates
+                
+                # Step 1.75: Early parcel enrichment if Absentee Owner is a secondary filter
+                # (Absentee check needs mailing_address which comes from parcel data)
+                if "Absentee Owner" in selected[1:] and primary == "Code Violations":
+                    # OPTIMIZATION: Apply cache FIRST to avoid redundant parcel API calls
+                    early_cache_hits = self._apply_cached_enrichment(candidates)
+                    if early_cache_hits > 0:
+                        print(f"AND-Logic: Applied cache to {early_cache_hits}/{len(candidates)} candidates (before Absentee check)")
+                    
+                    # Only enrich candidates that don't have mailing_address from cache
+                    needs_parcel = [c for c in candidates if not c.get("mailing_address")]
+                    if needs_parcel:
+                        print(f"AND-Logic: Early parcel enrichment for {len(needs_parcel)}/{len(candidates)} candidates...")
+                        await self._enrich_violations_with_parcel_data(needs_parcel)
+                        
+                        # CRITICAL: Save enriched candidates to cache for faster subsequent searches
+                        saved = self._save_to_lead_cache(candidates)
+                        print(f"AND-Logic: Saved {saved} candidates to cache (for faster future searches)")
+                    else:
+                        print(f"AND-Logic: Skipping early parcel enrichment ({early_cache_hits} have mailing_address from cache)")
+                
+                # Step 2: Verify against SECONDARY filters (AND logic)
+                for secondary in selected[1:]:
+                    print(f"AND-Logic: Verifying against secondary filter '{secondary}'")
+                    candidates = await self._verify_filter(candidates, secondary, filters)
+                    
+                    # Early exit if no candidates left
+                    if not candidates:
+                        print(f"AND-Logic: No candidates passed '{secondary}' filter")
+                        break
+            
+            # SAFETY NET: Enforce Map Bounds (Client-Side)
+            # This catches any results that slipped through due to strategy fallbacks or missing spatial filters
+            # (Fixes Absentee Owner and other strategies ignoring bounds)
+            if bounds and candidates:
+                print(f"Applying safety net spatial filter to {len(candidates)} candidates...")
+                from shapely.geometry import box
+                
+                # Construct envelope
+                xmin = bounds.get('west', bounds.get('xmin'))
+                ymin = bounds.get('south', bounds.get('ymin'))
+                xmax = bounds.get('east', bounds.get('xmax'))
+                ymax = bounds.get('north', bounds.get('ymax'))
+                
+                if xmin and ymin and xmax and ymax:
+                    search_box = prep(box(xmin, ymin, xmax, ymax))
+                    filtered = []
+                    for c in candidates:
+                        lat = c.get("latitude")
+                        lon = c.get("longitude")
+                        if lat and lon:
+                            if search_box.contains(Point(lon, lat)):
+                                filtered.append(c)
+                    
+                    if len(filtered) < len(candidates):
+                        print(f"Safety net removed {len(candidates) - len(filtered)} out-of-bounds leads.")
+                    candidates = filtered
+
             print(f"AND-Logic: Final result count: {len(candidates[:limit])}")
             
             final_results = candidates[:limit]
@@ -1573,14 +1820,24 @@ class ScoutService:
                 
                 # Step 3a: Enrich Code Violations with parcel data (owner info)
                 # Skip leads already enriched during early parcel check OR from cache
+                print(f"[Scout] DEBUG: primary = {primary}, checking for Code Violations enrichment", flush=True)
                 if primary == "Code Violations":
                     unenriched = [l for l in final_results if not l.get("_parcel_enriched") and not l.get("_cache_enriched")]
                     if unenriched:
                         await self._enrich_violations_with_parcel_data(unenriched)
-                        print(f"Parcel enrichment: {len(unenriched)} leads enriched, {len(final_results) - len(unenriched)} skipped (cached/already done)")
+                        print(f"Parcel enrichment: {len(unenriched)} leads enriched, {len(final_results) - len(unenriched)} skipped (cached/already done)", flush=True)
                     else:
-                        print(f"Skipping parcel enrichment ({len(final_results)} already enriched from cache)")
-                    await self._enrich_violations_with_zip_codes(final_results)
+                        print(f"Skipping parcel enrichment ({len(final_results)} already enriched from cache)", flush=True)
+                    
+                # Step 3b: Enrich Zip Codes (for ALL leads that miss it, e.g. Violations or Parcels)
+                # This is fast (spatial query) so we do it for all leads missing zip
+                leads_needing_zip = [l for l in final_results if not l.get("address_zip")]
+                if leads_needing_zip:
+                    try:
+                        await self._enrich_violations_with_zip_codes(leads_needing_zip)
+                    except Exception as zip_err:
+                        print(f"[Scout] ERROR in zip code enrichment: {zip_err}", flush=True)
+
                 
                 # Step 3b: Run HomeHarvest and GIS enrichment IN PARALLEL for speed
                 # HomeHarvest can be skipped for faster response (adds ~45s when enabled)
@@ -1619,10 +1876,25 @@ class ScoutService:
                 if len(final_results) <= 10 and not filters.get("skip_tax_check", True):
                     await self._check_tax_delinquency(final_results)
                 
+
                 # Step FINAL: Save all enriched leads to cache for future searches
                 saved = self._save_to_lead_cache(final_results)
                 if saved > 0:
                     print(f"Saved {saved} enriched leads to cache (total cached: {len(self._lead_cache)})")
+
+            # Sanitize results to replace NaN with None (JSON compliance)
+            # Recursive function to handle nested dicts/lists
+            def sanitize(obj):
+                if isinstance(obj, float) and math.isnan(obj):
+                    return None
+                if isinstance(obj, dict):
+                    return {k: sanitize(v) for k, v in obj.items()}
+                if isinstance(obj, list):
+                    return [sanitize(x) for x in obj]
+                return obj
+
+            import math
+            final_results = sanitize(final_results)
 
             return final_results
             
@@ -1632,8 +1904,8 @@ class ScoutService:
             return []
 
     def _log(self, msg: str):
-        """Stub method for legacy logging calls. Does nothing."""
-        pass
+        """Legacy logging wrapper."""
+        print(f"[Scout] {msg}")
 
 
 
@@ -1812,6 +2084,7 @@ class ScoutService:
 
 
     async def _fetch_pima_parcels(self, filters: Dict, limit: int, offset: int = 0) -> List[Dict]:
+        print(f"DEBUG: Entered _fetch_pima_parcels with filters keys: {list(filters.keys())}")
         self._log(f"Fetching parcels with filters: {filters}")
         """
         Fetches parcels from Pima County GIS (Layer 12).
@@ -1824,6 +2097,7 @@ class ScoutService:
         
         # 1. Location Filters
         zip_metadata = None
+        envelope = None # Initialize to None for scope visibility
         zip_code = filters.get('zip_code')
         
         if zip_code:
@@ -1834,6 +2108,8 @@ class ScoutService:
             where_parts.append(f"ZIP LIKE '{filters['zip_code']}%'")
         
         bounds = filters.get('bounds')
+        print(f"DEBUG: Processing bounds: {bounds} (Type: {type(bounds)})")
+        
         if bounds:
             # Construct envelope from bounds
             # Expected format: {xmin, ymin, xmax, ymax} or {south, west, north, east}
@@ -1861,6 +2137,28 @@ class ScoutService:
                      },
                      "polygon": None
                  }
+                 self._log(f"Using Direct Envelope Bounds: {zip_metadata['envelope']}")
+            else:
+                 self._log(f"DEBUG: Bounds present but missing keys. Keys: {bounds.keys()}")
+        
+        elif filters.get('neighborhood'):
+             # Resolve neighborhood to bounds
+             hood_bounds = await self._resolve_neighborhood_to_bounds(filters.get('neighborhood'))
+             if hood_bounds:
+                 zip_metadata = {
+                     "envelope": {
+                         "xmin": hood_bounds[0],
+                         "ymin": hood_bounds[1],
+                         "xmax": hood_bounds[2],
+                         "ymax": hood_bounds[3],
+                         "spatialReference": {"wkid": 4326}
+                     },
+                     "polygon": None
+                 }
+                 self._log(f"Using Neighborhood Bounds: {zip_metadata['envelope']}")
+             else:
+                 print(f"Warning: Could not resolve neighborhood '{filters.get('neighborhood')}'. Returning empty results.")
+                 return []
                 
         if filters.get('city'):
             where_parts.append(f"JURIS_OL = '{filters['city'].upper()}'")
@@ -1900,14 +2198,23 @@ class ScoutService:
             
             start_total = time.time()
             object_ids = []
+            loop = asyncio.get_event_loop()
             
             # STRATEGY A: Spatial Query (Two-Step + Filter)
             # Attempt this first, but fallback to B if it fails/times out
             strategy_a_success = False
             
             if zip_metadata:
+                envelope = zip_metadata["envelope"]
+            elif envelope:
+                # Fallback: Use the envelope passed directly to the function (e.g. from scout_area)
+                self._log(f"Using Direct Envelope: {envelope}")
+                # Ensure it has spatialReference if missing (default to 4326 for safety if coming from frontend)
+                if "spatialReference" not in envelope:
+                    envelope["spatialReference"] = {"wkid": 4326}
+            
+            if envelope:
                 try:
-                    envelope = zip_metadata["envelope"]
                     
                     # Step 1: Fetch IDs using Envelope (Native SR)
                     self._log(f"Fetching IDs for Zip Envelope...")
@@ -1925,52 +2232,105 @@ class ScoutService:
                         "resultOffset": offset
                     }
                     
-                    # Run Step 1 in thread with strict timeout
-                    loop = asyncio.get_event_loop()
-                    # Reduced timeout to 10s for Step 1 to fail fast
-                    resp1 = await asyncio.wait_for(
-                        loop.run_in_executor(None, lambda: requests.post(base_url, data=params_step1, headers=headers, timeout=10)),
-                        timeout=12.0
-                    )
+                    # Pagination Loop to fetch ALL IDs using OBJECTID > last_max (more robust than resultOffset)
+                    all_object_ids = set() # Use set to avoid duplicates
+                    last_max_id = -1
+                    max_id_fetch = 15000 # Safety cap
                     
-                    object_ids = []
-                    if resp1.status_code == 200:
-                        data1 = resp1.json()
-                        if "features" in data1:
-                            object_ids = [f["attributes"]["OBJECTID"] for f in data1["features"]]
-                            self._log(f"Found {len(object_ids)} IDs in envelope. Took {time.time() - t0:.2f}s")
+                    while len(all_object_ids) < max_id_fetch:
+                        # Append OBJECTID filter if we have a previous page
+                        current_where = where_clause
+                        if last_max_id > 0:
+                            current_where = f"({where_clause}) AND OBJECTID > {last_max_id}"
+                            
+                        params_ids = {
+                            "where": current_where,
+                            "geometry": json.dumps(envelope),
+                            "geometryType": "esriGeometryEnvelope",
+                            "spatialRel": "esriSpatialRelIntersects",
+                            "inSR": str(envelope.get("spatialReference", {}).get("wkid", "2868")),
+                            "outFields": "OBJECTID",
+                            "returnGeometry": "false",
+                            "f": "json",
+                            "resultRecordCount": 2000,
+                            "orderByFields": "OBJECTID ASC" # Critical for pagination
+                        }
+                        
+                        # self._log(f"Fetching IDs with last_max_id {last_max_id}...")
+                        resp = await loop.run_in_executor(None, lambda: requests.post(base_url, data=params_ids, headers=headers, timeout=15))
+                        
+                        if resp.status_code != 200:
+                            self._log(f"ID Fetch failed with status {resp.status_code}")
+                            break
+                            
+                        data = resp.json()
+                        ids = []
+                        if "features" in data:
+                            ids = [f["attributes"]["OBJECTID"] for f in data["features"]]
+                        elif "objectIds" in data:
+                            ids = data["objectIds"]
+                        
+                        self._log(f"Fetched {len(ids)} IDs. Last Max: {last_max_id}")
+                        
+                        if not ids:
+                            break
+                        
+                        # Update last_max_id
+                        new_max = max(ids)
+                        if new_max <= last_max_id:
+                            # Should not happen with > filter, but safety check
+                            break
+                        last_max_id = new_max
+                        
+                        all_object_ids.update(ids)
+                        
+                        if len(ids) < 1000: # Heuristic: if less than 1000 returned, likely end of list
+                             break
+                    
+                    object_ids = list(all_object_ids)
+                    self._log(f"Total Unique IDs found in area: {len(object_ids)}")
+                    
+                    if object_ids:
+                        self._log(f"ID Range: {min(object_ids)} - {max(object_ids)}")
                     
                     if object_ids:
                         # Step 2: Connection Pooling & Smart Concurrency
                         leads = []
                         batch_size = 50
-                        
-                        # self._log(f"Found {len(object_ids)} IDs. Fetching details...")
-                        
-                        async def fetch_batch(batch_ids):
-                            batch_where = f"OBJECTID IN ({','.join(map(str, batch_ids))})"
-                            params_batch = {
-                                "where": batch_where,
-                                "outFields": "*", 
-                                "returnGeometry": "true",
-                                "outSR": "4326",
-                                "f": "json"
-                            }
+
+                        # Define fetch_batch_safe helper
+                        async def fetch_batch_safe(batch_ids):
+                            """Fetch parcel details for a batch of IDs."""
                             try:
-                                resp = await loop.run_in_executor(None, lambda: requests.post(base_url, data=params_batch, headers=headers, timeout=10))
+                                id_list = ",".join(str(oid) for oid in batch_ids)
+                                params = {
+                                    "where": f"OBJECTID IN ({id_list})",
+                                    "outFields": "*",
+                                    "returnGeometry": "true",
+                                    "outSR": "4326",
+                                    "f": "json"
+                                }
+                                resp = await loop.run_in_executor(
+                                    None,
+                                    lambda: requests.post(base_url, data=params, headers=headers, timeout=15)
+                                )
                                 if resp.status_code == 200:
-                                    b_data = resp.json()
-                                    return [self._map_pima_parcel(f) for f in b_data.get("features", [])]
+                                    data = resp.json()
+                                    features = data.get("features", [])
+                                    return [self._map_pima_parcel(f) for f in features]
                             except Exception as e:
-                                pass # Silent fail on batch
+                                self._log(f"Batch fetch error: {e}")
                             return []
 
-                        # Limit concurrency to 5 to prevent server/API overload
-                        sem = asyncio.Semaphore(5)
-
-                        async def fetch_batch_safe(batch_ids):
-                            async with sem:
-                                return await fetch_batch(batch_ids)
+                        # Randomize IDs to ensure we don't just process the first N spatially clustered IDs
+                        import random
+                        random.shuffle(object_ids)
+                        
+                        # Limit total detail fetches to avoid timeout if area is huge (e.g. max 500)
+                        # We only need 'limit' leads eventually, but we fetch more to account for filtering.
+                        # If user wants 100, fetching 500 random candidates is usually enough.
+                        max_detail_fetch = max(limit * 5, 500)
+                        object_ids = object_ids[:max_detail_fetch]
 
                         tasks = []
                         for i in range(0, len(object_ids), batch_size):
@@ -2014,6 +2374,10 @@ class ScoutService:
                             # Do not return [], fall through
                         else:
                             strategy_a_success = True
+                            # Randomize leads to avoid clustering when limit is hit
+                            import random
+                            random.shuffle(leads)
+                            
                             # Enrich with correct Zip Codes before returning
                             final_leads = leads[:limit]
                             await self._enrich_with_zip_codes(final_leads)
@@ -2024,7 +2388,9 @@ class ScoutService:
                     # Fall through to Strategy B
 
             # STRATEGY B: Standard Attribute Query (Fallback)
-            if not strategy_a_success:
+            # Only run if Strategy A failed AND we are not in strict spatial mode (i.e. no bounds)
+            # If we had an envelope (Map Search), we should NOT fall back to global search.
+            if not strategy_a_success and not envelope:
                 with open("debug_scout_trace.log", "a") as f:
                     f.write("Starting Strategy B...\n")
                 
@@ -2274,9 +2640,17 @@ class ScoutService:
         if is_absentee:
             distress_signals.append("Absentee Owner")
             
+        # Use Pima County GIS Detail Page as the primary link
+        # The direct Assessor URL (asr.pima.gov) does not support reliable deep linking.
+        # The GIS page (gis.pima.gov) accepts the raw parcel ID (no dashes) and provides a stable landing page.
+        parcel_id = attr.get("PARCEL") or str(attr.get("OBJECTID"))
+        
+        # Ensure we use the raw format for GIS URL (e.g. 117023950)
+        raw_parcel_id = parcel_id.replace("-", "") if parcel_id else None
+
         return {
             "source": "pima_county_gis",
-            "parcel_id": attr.get("PARCEL") or str(attr.get("OBJECTID")), # Use PARCEL for joining
+            "parcel_id": parcel_id, # Use PARCEL for joining
             "owner_name": owner,
             "address": full_address,
             "address_street": address,
@@ -2298,7 +2672,11 @@ class ScoutService:
             "strategy": "Wholesale",
             "distress_score": len(distress_signals),
             "distress_signals": distress_signals,
-            # New Fields (Placeholders until data source found)
+            "assessor_url": f"http://gis.pima.gov/maps/detail.cfm?p={raw_parcel_id}" if raw_parcel_id else None,
+            # Placeholders for enrichment
+            "flood_zone": None, 
+            "school_district": None,
+            "nearby_development": None,
             "beds": None,
             "baths": None,
             "pool": None,
@@ -2732,6 +3110,12 @@ class ScoutService:
         # Activity Number is unique per violation - use as ID
         activity_num = attr.get("ACT_NUM", "")
         
+        # Ensure address has City/State for HomeHarvest accuracy
+        if "TUCSON" not in address_full.upper():
+            address_full = f"{address_street}, Tucson, AZ"
+            if address_zip:
+                address_full += f" {address_zip}"
+
         return {
             "id": activity_num,  # Unique ID for React keys
             "source": "tucson_code_enforcement",
@@ -2795,6 +3179,151 @@ class ScoutService:
                 addresses = [f["attributes"]["ADDRESS_OL"] for f in features if f.get("attributes", {}).get("ADDRESS_OL")]
                 return list(set(addresses)) # Ensure uniqueness
             return []
+        except Exception as e:
+            print(f"Error fetching autocomplete suggestions: {e}")
+            return []
+
+    async def _resolve_neighborhood_to_bounds(self, neighborhood: str) -> Optional[tuple]:
+        """
+        Resolves a neighborhood/subdivision name to a bounding box (xmin, ymin, xmax, ymax).
+        Queries the Parcel layer for matching SUBDIV_NAME and calculates extent.
+        """
+        if not neighborhood:
+            return None
+            
+        print(f"Resolving neighborhood bounds for: {neighborhood}")
+        
+        # Query for parcels in this subdivision - USE LAYER 15 (Subdivisions)
+        # Field is SUB_NAME
+        url = "https://gisdata.pima.gov/arcgis1/rest/services/GISOpenData/LandRecords/MapServer/15/query"
+        where_clause = f"SUB_NAME LIKE '%{neighborhood.upper()}%'"
+        
+        params = {
+            "where": where_clause,
+            "outFields": "SUB_NAME",
+            "returnGeometry": "true",
+            "returnExtentOnly": "false", # Get features if extent is NaN
+            "outSR": "4326",
+            "f": "json"
+        }
+        
+        try:
+            loop = asyncio.get_event_loop()
+            resp = await loop.run_in_executor(
+                None,
+                lambda: requests.get(url, params=params, timeout=10)
+            )
+            
+            if resp.status_code == 200:
+                data = resp.json()
+                extent = data.get("extent")
+                
+                # Check if extent is valid (not NaN)
+                is_valid_extent = False
+                if extent:
+                    try:
+                        if not math.isnan(float(extent["xmin"])):
+                            is_valid_extent = True
+                    except:
+                        pass
+                
+                if is_valid_extent:
+                    print(f"DEBUG: Using API Extent: {extent}")
+                    buffer = 0.001
+                    return (
+                        float(extent["xmin"]) - buffer,
+                        float(extent["ymin"]) - buffer,
+                        float(extent["xmax"]) + buffer,
+                        float(extent["ymax"]) + buffer
+                    )
+                
+                # Fallback: Calculate from features
+                features = data.get("features", [])
+                if features:
+                    print(f"DEBUG: Calculating bounds from {len(features)} features")
+                    min_x, min_y = float('inf'), float('inf')
+                    max_x, max_y = float('-inf'), float('-inf')
+                    
+                    found_geom = False
+                    for f in features:
+                        geom = f.get("geometry")
+                        if geom and "rings" in geom:
+                            for ring in geom["rings"]:
+                                for pt in ring:
+                                    x, y = pt[0], pt[1]
+                                    min_x = min(min_x, x)
+                                    min_y = min(min_y, y)
+                                    max_x = max(max_x, x)
+                                    max_y = max(max_y, y)
+                                    found_geom = True
+                    
+                    if found_geom:
+                        buffer = 0.001
+                        return (min_x - buffer, min_y - buffer, max_x + buffer, max_y + buffer)
+                        
+            return None
+        except Exception as e:
+            print(f"Error resolving neighborhood: {e}")
+            return None
+
+    async def autocomplete_address(self, query: str, limit: int = 5) -> List[str]:
+        """
+        Fetches address AND neighborhood suggestions from Pima County GIS.
+        """
+        if not query or len(query) < 3:
+            return []
+
+        # 1. Search Addresses
+        addr_where = f"ADDRESS_OL LIKE '%{query.upper()}%'"
+        addr_params = {
+            "where": addr_where,
+            "outFields": "ADDRESS_OL",
+            "returnGeometry": "false",
+            "returnDistinctValues": "true",
+            "f": "json",
+            "resultRecordCount": limit,
+            "orderByFields": "ADDRESS_OL ASC"
+        }
+        
+        # 2. Search Subdivisions (Neighborhoods) - USE LAYER 15
+        sub_url = "https://gisdata.pima.gov/arcgis1/rest/services/GISOpenData/LandRecords/MapServer/15/query"
+        sub_where = f"SUB_NAME LIKE '%{query.upper()}%'"
+        sub_params = {
+            "where": sub_where,
+            "outFields": "SUB_NAME",
+            "returnGeometry": "false",
+            "returnDistinctValues": "true",
+            "f": "json",
+            "resultRecordCount": limit,
+            "orderByFields": "SUB_NAME ASC"
+        }
+        
+        suggestions = []
+        
+        try:
+            loop = asyncio.get_event_loop()
+            
+            # Run both queries in parallel
+            f1 = loop.run_in_executor(None, lambda: requests.get(self.pima_parcels_url, params=addr_params, timeout=5))
+            f2 = loop.run_in_executor(None, lambda: requests.get(sub_url, params=sub_params, timeout=5))
+            
+            r1, r2 = await asyncio.gather(f1, f2, return_exceptions=True)
+            
+            # Process Addresses
+            if isinstance(r1, requests.Response) and r1.status_code == 200:
+                data = r1.json()
+                features = data.get("features", [])
+                suggestions.extend([f["attributes"]["ADDRESS_OL"] for f in features if f.get("attributes", {}).get("ADDRESS_OL")])
+                
+            # Process Subdivisions
+            if isinstance(r2, requests.Response) and r2.status_code == 200:
+                data = r2.json()
+                features = data.get("features", [])
+                suggestions.extend([f["attributes"]["SUB_NAME"] for f in features if f.get("attributes", {}).get("SUB_NAME")])
+            
+            # Deduplicate and sort
+            return sorted(list(set(suggestions)))[:limit]
+            
         except Exception as e:
             print(f"Error fetching autocomplete suggestions: {e}")
             return []

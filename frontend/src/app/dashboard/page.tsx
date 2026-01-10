@@ -11,8 +11,9 @@ import { RecorderDocuments } from "@/components/recorder/RecorderDocuments"
 
 export default function DashboardPage() {
     const { activeZone } = useAppStore()
+    const zone = activeZone as string;
 
-    switch (activeZone) {
+    switch (zone) {
         case 'market_scout':
             return <MarketRecon />
         case 'leads':

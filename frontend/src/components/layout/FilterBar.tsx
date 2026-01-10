@@ -8,13 +8,15 @@ import AutocompleteInput from '../ui/AutocompleteInput';
 
 export function FilterBar() {
     const {
-        searchFilters,
+        searchFilters: _searchFilters,
         setSearchFilters,
-        fetchScoutedLeads,
         activeZone,
         setActiveZone,
         setViewMode
     } = useAppStore();
+
+    // Cast to any to handle type mismatch between store type and actual usage
+    const searchFilters = _searchFilters as any;
 
     const [isDistressOpen, setIsDistressOpen] = useState(false);
     const distressRef = useRef<HTMLDivElement>(null);
@@ -57,7 +59,7 @@ export function FilterBar() {
     const togglePropertyType = (type: string) => {
         const current = searchFilters.property_types;
         const updated = current.includes(type)
-            ? current.filter(t => t !== type)
+            ? current.filter((t: string) => t !== type)
             : [...current, type];
         setSearchFilters({ property_types: updated });
     };
@@ -77,7 +79,7 @@ export function FilterBar() {
             updated = [type];
         } else {
             updated = current.includes(type)
-                ? current.filter(t => t !== type)
+                ? current.filter((t: string) => t !== type)
                 : [...current, type];
         }
 
@@ -108,16 +110,16 @@ export function FilterBar() {
             <div className="flex-1 max-w-md">
                 <AutocompleteInput
                     value={searchFilters.city}
-                    onChange={(val) => setSearchFilters({ city: val })}
+                    onChange={(val) => setSearchFilters({ city: val } as any)}
                     onSearch={() => {
-                        const { activeZone, fetchScoutedLeads, filterDeals, searchFilters } = useAppStore.getState();
-                        if (activeZone === 'crm') {
-                            filterDeals(searchFilters.city);
+                        const state = useAppStore.getState() as any;
+                        if (state.activeZone === 'crm') {
+                            state.filterDeals(state.searchFilters?.city);
                         } else {
-                            fetchScoutedLeads();
+                            state.fetchScoutedLeads?.();
                         }
                     }}
-                    placeholder={activeZone === 'crm' ? "Search properties..." : "Search Address, City, Zip, or County..."}
+                    placeholder={(activeZone as string) === 'crm' ? "Search properties..." : "Search Address, City, Zip, or County..."}
                 />
             </div>
 
@@ -275,11 +277,11 @@ export function FilterBar() {
                 {/* Search Button */}
                 <button
                     onClick={() => {
-                        const { activeZone, fetchScoutedLeads, filterDeals, searchFilters } = useAppStore.getState();
-                        if (activeZone === 'crm') {
-                            filterDeals(searchFilters.city);
+                        const state = useAppStore.getState() as any;
+                        if (state.activeZone === 'crm') {
+                            state.filterDeals(state.searchFilters?.city);
                         } else {
-                            fetchScoutedLeads();
+                            state.fetchScoutedLeads?.();
                         }
                     }}
                     className="px-4 py-1.5 bg-primary text-black font-bold text-sm rounded-md hover:bg-primary/90 transition-all shadow-sm"

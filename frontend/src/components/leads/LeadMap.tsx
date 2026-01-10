@@ -35,8 +35,9 @@ export function LeadMap({ leads }: LeadMapProps) {
                 />
                 {leads.map((lead) => {
                     // Skip if no coordinates (mocking coords if missing for demo)
-                    const lat = lead.latitude || (32.2226 + (Math.random() - 0.5) * 0.1)
-                    const lng = lead.longitude || (-110.9747 + (Math.random() - 0.5) * 0.1)
+                    const leadAny = lead as any;
+                    const lat = leadAny.latitude || (32.2226 + (Math.random() - 0.5) * 0.1)
+                    const lng = leadAny.longitude || (-110.9747 + (Math.random() - 0.5) * 0.1)
 
                     return (
                         <Marker

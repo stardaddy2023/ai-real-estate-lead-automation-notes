@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+npm-debug.log
+
+# Build output (will be created during build)
+.next/
+
+# Environment files (will be set in Cloud Run)
+.env*
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+frontend-design-*.md
+
+# Python scripts (not needed)
+*.py
+
+# OS files
+.DS_Store
+Thumbs.db

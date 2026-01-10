@@ -14,6 +14,19 @@ import { LeadDetailDialog } from './LeadDetailDialog'
 import { LeadFilters, PROPERTY_TYPES, DISTRESS_TYPES, DISABLED_DISTRESS_TYPES } from './LeadFilters'
 import { useAppStore, ScoutResult } from '@/lib/store'
 
+// Helper to get human-readable flood zone description
+const getFloodZoneDescription = (zone: string | undefined) => {
+    if (!zone) return "Unknown"
+    const z = zone.toUpperCase()
+    if (z.includes("X")) return "Minimal Risk (Zone X)"
+    if (z.includes("AE")) return "High Risk (1% Annual Chance)"
+    if (z.includes("A")) return "High Risk (No BFE)"
+    if (z.includes("AH")) return "High Risk (Shallow Flooding)"
+    if (z.includes("AO")) return "High Risk (Sheet Flow)"
+    if (z.includes("D")) return "Undetermined Risk"
+    return `Zone ${zone}`
+}
+
 // Dynamic import for Map to avoid SSR issues
 const GoogleScoutMap = dynamic(() => import('./GoogleScoutMap').then(mod => mod.GoogleScoutMap), {
     ssr: false,
@@ -44,7 +57,7 @@ export default function LeadScout() {
     const abortControllerRef = useRef<AbortController | null>(null)
 
     // Search Handler
-    const handleSearch = async (clearBounds = true, explicitBounds: any = null) => {
+    const handleSearch = async (clearBounds = true, explicitBounds: any = null, ignoreQuery = false) => {
         // Cancel previous search if running
         if (abortControllerRef.current) {
             abortControllerRef.current.abort()
@@ -59,10 +72,15 @@ export default function LeadScout() {
         // Otherwise use current state bounds (Filter update)
         const newBounds = explicitBounds || (clearBounds ? null : bounds)
 
+        // If ignoring query (e.g. Map Search), clear it from state too
+        if (ignoreQuery) {
+            setLeadScoutState({ query: "" })
+        }
+
         setLeadScoutState({ loading: true, results: [], panToLeadId: null, bounds: newBounds })
 
         try {
-            const term = query.trim()
+            const term = ignoreQuery ? "" : query.trim()
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const payload: any = {
                 property_types: selectedPropertyTypes,
@@ -73,22 +91,31 @@ export default function LeadScout() {
             }
 
             // Smart Classification
-            if (/^\d{5}(-\d{4})?$/.test(term)) {
-                payload.zip_code = term
-            } else if (/county$/i.test(term)) {
-                payload.county = term.replace(/ county$/i, "").trim()
-            } else if (/^\d/.test(term)) {
-                payload.address = term
-            } else {
-                // Assume City if not starting with number
-                payload.city = term
+            if (term) {
+                if (/^\d{5}(-\d{4})?$/.test(term)) {
+                    payload.zip_code = term
+                } else if (/county$/i.test(term)) {
+                    payload.county = term.replace(/ county$/i, "").trim()
+                } else if (/^\d/.test(term)) {
+                    payload.address = term
+                } else {
+                    // Check if it's a known city, otherwise treat as Neighborhood
+                    const KNOWN_CITIES = ["TUCSON", "MARANA", "ORO VALLEY", "VAIL", "SAHUARITA", "SOUTH TUCSON", "CATALINA FOOTHILLS", "CASAS ADOBES", "DREXEL HEIGHTS", "FLOWING WELLS", "TANQUE VERDE", "TUCSON ESTATES"]
+                    if (KNOWN_CITIES.some(city => term.toUpperCase() === city)) {
+                        payload.city = term
+                    } else {
+                        // Assume Neighborhood/Subdivision
+                        payload.neighborhood = term
+                    }
+                }
             }
 
             console.log("DEBUG: handleSearch called. Query:", term)
             console.log("DEBUG: Payload prepared:", payload)
 
-            console.log("DEBUG: Initiating fetch to http://127.0.0.1:8000/scout/search (DIRECT)...")
-            const res = await fetch('http://127.0.0.1:8000/scout/search', {
+            const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000'
+            console.log(`DEBUG: Initiating fetch to ${API_BASE_URL}/scout/search...`)
+            const res = await fetch(`${API_BASE_URL}/scout/search`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -238,14 +265,14 @@ export default function LeadScout() {
 
     // Explicit handler for "Search Area" button
     const handleSearchArea = (searchBounds: any) => {
-        handleSearch(false, searchBounds)
+        handleSearch(false, searchBounds, true)
     }
 
     return (
         <div className="flex h-screen w-full bg-black text-white overflow-hidden relative">
 
             {/* SEARCH BAR (Floating & Dynamic Position) */}
-            <div className={`absolute top-4 z-50 w-full max-w-2xl px-4 transition-all duration-300 ease-in-out ${viewMode === 'list' ? 'left-[calc(50%-12rem)]' : 'left-1/2'} -translate-x-1/2 transform pointer-events-none`}>
+            <div className={`absolute top-4 z-50 w-[calc(100%-1rem)] md:w-full max-w-2xl px-0 md:px-4 transition-all duration-300 ease-in-out ${viewMode === 'list' ? 'left-1/2 md:left-[calc(50%-12rem)]' : 'left-1/2'} -translate-x-1/2 transform pointer-events-none`}>
                 <div className="pointer-events-auto flex flex-col items-center w-full">
                     <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-md shadow-lg flex items-center px-3 h-10 gap-2 w-full">
 
@@ -279,6 +306,26 @@ export default function LeadScout() {
                             <option value={100} className="bg-white dark:bg-gray-900">100 Leads</option>
                             <option value={500} className="bg-white dark:bg-gray-900">500 Leads</option>
                         </select>
+
+                        {/* Search Button (Mobile/Desktop) */}
+                        <Button
+                            size="sm"
+                            className="ml-2 h-8 bg-green-600 hover:bg-green-700 text-white px-3"
+                            onClick={() => {
+                                // If query is present, prioritize text search (which clears bounds)
+                                if (query) {
+                                    handleSearch(true)
+                                } else if (bounds) {
+                                    // If no query but bounds exist, search bounds
+                                    handleSearch(false, null, true)
+                                } else {
+                                    // Fallback
+                                    handleSearch(true)
+                                }
+                            }}
+                        >
+                            Search
+                        </Button>
 
                         <div className="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1 hidden md:block" />
 
@@ -347,8 +394,8 @@ export default function LeadScout() {
             <div className="flex-1 relative h-full">
 
                 {/* LIST VIEW OVERLAY (Visible when viewMode is 'list') */}
-                <div className={`absolute top-0 right-0 bottom-0 w-96 bg-gray-950/90 backdrop-blur-md border-l border-gray-800 z-10 transition-transform duration-300 ease-in-out ${viewMode === 'list' ? 'translate-x-0' : 'translate-x-full'} pt-0`}>
-                    <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 backdrop-blur-sm">
+                <div className={`absolute top-0 bottom-0 right-0 left-16 md:left-auto md:w-[450px] bg-gray-950/95 backdrop-blur-md border-l border-gray-800 z-10 ${viewMode === 'list' ? 'flex' : 'hidden'} pt-0 shadow-2xl flex-col`}>
+                    <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 backdrop-blur-sm flex-shrink-0">
                         <div className="flex items-center gap-3">
                             <h2 className="font-semibold text-gray-200">RESULTS ({results.length})</h2>
                             {results.length > 0 && (
@@ -372,13 +419,22 @@ export default function LeadScout() {
                             </Button>
                         </div>
                     </div>
-                    <ScrollArea className="h-[calc(100vh-160px)]" ref={listRef}>
+
+                    {/* Mobile Map FAB */}
+                    <Button
+                        className="md:hidden fixed bottom-20 right-6 z-50 rounded-full shadow-xl h-14 w-14 p-0 bg-green-600 hover:bg-green-700 text-white flex items-center justify-center"
+                        onClick={() => setLeadScoutState({ viewMode: 'map' })}
+                    >
+                        <MapIcon className="h-6 w-6" />
+                    </Button>
+
+                    <ScrollArea className="flex-1" ref={listRef}>
                         <div className="p-4 space-y-3">
                             {results.map(lead => (
                                 <Card
                                     key={lead.id}
                                     id={`lead-card-${lead.id}`}
-                                    className={`p-4 bg-gray-800/50 border border-gray-700/50 rounded-lg hover:border-green-500/50 transition-all cursor-pointer group relative ${highlightedLeadId === lead.id ? 'ring-2 ring-green-500 bg-gray-800' : ''}`}
+                                    className={`p-3 md:p-4 bg-gray-800/50 border border-gray-700/50 rounded-lg hover:border-green-500/50 transition-all cursor-pointer group relative ${highlightedLeadId === lead.id ? 'ring-2 ring-green-500 bg-gray-800' : ''}`}
                                     onMouseEnter={() => {
                                         setHoveredLeadId(lead.id)
                                         setLeadScoutState({ highlightedLeadId: lead.id })
@@ -434,8 +490,8 @@ export default function LeadScout() {
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-3 text-xs text-gray-500 pl-8">
-                                        <div className="flex justify-between">
-                                            <span>Est. Value</span>
+                                        <div className="flex justify-start gap-2">
+                                            <span>Est. Value:</span>
                                             <span className="text-white font-mono">
                                                 {lead.estimated_value
                                                     ? `$${lead.estimated_value.toLocaleString()}`
@@ -444,20 +500,20 @@ export default function LeadScout() {
                                                         : "N/A"}
                                             </span>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span>SqFt</span>
-                                            <span className="text-white">{lead.sqft ? lead.sqft.toLocaleString() : "-"}</span>
+                                        <div className="flex justify-start gap-2">
+                                            <span>SqFt:</span>
+                                            <span className="text-white">{(lead as any).sqft ? (lead as any).sqft.toLocaleString() : "-"}</span>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span>Beds/Baths</span>
+                                        <div className="flex justify-start gap-2">
+                                            <span>Beds/Baths:</span>
                                             <span className="text-white">{lead.beds || "-"}/{lead.baths || "-"}</span>
                                         </div>
                                         {lead.last_sold_date && (
-                                            <div className="flex justify-between col-span-2">
-                                                <span>Last Sold</span>
-                                                <span className="text-white">
-                                                    {lead.last_sold_date}
-                                                    {lead.last_sold_price ? ` ($${lead.last_sold_price.toLocaleString()})` : ""}
+                                            <div className="flex justify-start gap-2 col-span-2 items-center">
+                                                <span>Last Sold:</span>
+                                                <span className="text-white truncate">
+                                                    {(lead as any).last_sold_date}
+                                                    {(lead as any).last_sold_price ? ` ($${(lead as any).last_sold_price.toLocaleString()})` : ""}
                                                 </span>
                                             </div>
                                         )}
@@ -481,9 +537,9 @@ export default function LeadScout() {
                                                 Zoning: {lead.zoning}
                                             </Badge>
                                         )}
-                                        {lead.flood_zone && (
+                                        {(lead as any).flood_zone && (
                                             <Badge variant="outline" className="text-[10px] border-yellow-900 text-yellow-400 bg-yellow-950/30">
-                                                Flood: {lead.flood_zone}
+                                                Flood: {getFloodZoneDescription((lead as any).flood_zone)}
                                             </Badge>
                                         )}
                                         {lead.school_district && (
@@ -495,6 +551,13 @@ export default function LeadScout() {
                                             <a href={lead.tax_link} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
                                                 <Badge variant="outline" className={`text-[10px] ${lead.tax_status === 'Delinquent' ? 'border-red-900 text-red-400 bg-red-950/30' : 'border-green-900 text-green-400 bg-green-950/30'} hover:underline cursor-pointer`}>
                                                     Tax: {lead.tax_status}
+                                                </Badge>
+                                            </a>
+                                        )}
+                                        {(lead as any).assessor_url && (
+                                            <a href={(lead as any).assessor_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                                                <Badge variant="outline" className="text-[10px] border-blue-900 text-blue-400 bg-blue-950/30 hover:underline cursor-pointer">
+                                                    Assessor Record
                                                 </Badge>
                                             </a>
                                         )}

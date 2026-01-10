@@ -9,8 +9,8 @@ class Settings(BaseSettings):
     GOOGLE_CLOUD_PROJECT: str = os.getenv("GOOGLE_CLOUD_PROJECT", "arela-project")
     GOOGLE_APPLICATION_CREDENTIALS: str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
     
-    # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/arela_db")
+    # Database - default to SQLite for Cloud Run (use env var for PostgreSQL in production)
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./data/arela.db")
     
     # APIs
     GOOGLE_MAPS_API_KEY: str = os.getenv("GOOGLE_MAPS_API_KEY", "")

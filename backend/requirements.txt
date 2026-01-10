@@ -17,3 +17,4 @@ google-generativeai
 jinja2
 weasyprint
 homeharvest
+shapely

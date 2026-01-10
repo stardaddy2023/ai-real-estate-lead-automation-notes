@@ -130,6 +130,15 @@ export function Sidebar() {
                                 {item.label}
                             </span>
 
+                            {/* Tooltip for Collapsed State */}
+                            {isCollapsed && (
+                                <div className="absolute left-14 z-50 hidden group-hover:block">
+                                    <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap border border-gray-700">
+                                        {item.label}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Hover Glow Effect */}
                             {!isCollapsed && (
                                 <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />

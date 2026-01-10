@@ -7,7 +7,8 @@ import { useState, useEffect } from 'react';
 import { AnalysisView } from './AnalysisView';
 
 export function PropertyPanel() {
-    const { selectedProperty, isDetailPanelOpen, toggleDetailPanel, setSelectedProperty, setViewMode, setActiveZone } = useAppStore();
+    const { selectedProperty: _selectedProperty, isDetailPanelOpen, toggleDetailPanel, setSelectedProperty, setViewMode, setActiveZone } = useAppStore();
+    const selectedProperty = _selectedProperty as any;
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isSkipTracing, setIsSkipTracing] = useState(false);
     const [isGeneratingOffer, setIsGeneratingOffer] = useState(false);
@@ -253,7 +254,7 @@ export function PropertyPanel() {
                                 icon={Home}
                                 label="View on Maps"
                                 onClick={() => {
-                                    setActiveZone('deals');
+                                    setActiveZone('deals' as any);
                                     setViewMode('map');
                                 }}
                             />

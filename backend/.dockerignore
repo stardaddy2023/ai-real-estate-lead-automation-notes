@@ -1,0 +1,47 @@
+# Ignore Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Ignore virtual environment
+.venv/
+venv/
+ENV/
+
+# Ignore environment files (will be set in Cloud Run)
+.env
+.env.*
+
+# Ignore logs and debug files
+*.log
+*.html
+*.png
+debug_*.log
+startup_log*.txt
+
+# Ignore test files
+test_*.py
+verify_*.py
+debug_*.py
+explore_*.py
+probe_*.py
+
+# Ignore database files (will use Cloud SQL or ephemeral)
+*.db
+
+# Ignore IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore git
+.git/
+.gitignore
+
+# Ignore MCP servers (not needed for deployment)
+mcp_servers/
+
+# Ignore credentials (will use Cloud Run service account)
+credentials.json
