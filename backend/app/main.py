@@ -401,7 +401,31 @@ async def search_leads(filters: SearchFilters):
         with open("debug_cleaner.log", "a") as f:
             f.write(f"Serialization FAILED: {e}\n")
             
-    return cleaned_leads[:filters.limit]
+    # Check for Code Violation Warning
+    warning = None
+    distress = filters.distress_type
+    # Normalize distress to list
+    distress_list = distress if isinstance(distress, list) else ([distress] if distress else [])
+    
+    if "Code Violations" in distress_list:
+        # Check if any leads actually have Code Violations
+        has_violations = any("Code Violation" in (lead.get("distress_signals") or []) for lead in cleaned_leads)
+        
+        if not has_violations:
+            city = filters.city.upper() if filters.city else None
+            if city and city != "TUCSON":
+                warning = f"Code Violations are only available in Tucson. Showing available property records for '{city}'."
+            elif filters.zip_code and len(cleaned_leads) == 0:
+                 # Only show warning if NO results found at all (implies search failed or truly empty)
+                 # But don't say "Only available in Tucson" for zips, as that's confusing for Tucson zips
+                 warning = f"No Code Violations found in {filters.zip_code}."
+            elif len(cleaned_leads) == 0:
+                 warning = "No Code Violations found matching your criteria."
+
+    return {
+        "leads": cleaned_leads[:filters.limit],
+        "warning": warning
+    }
 
 @app.post("/scout/import")
 async def import_leads(leads: List[Dict[str, Any]], db: AsyncSession = Depends(get_db)):

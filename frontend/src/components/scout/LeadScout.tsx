@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Map as MapIcon, List as ListIcon, Download, Search, X } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import { LeadDetailDialog } from './LeadDetailDialog'
-import { LeadFilters, PROPERTY_TYPES, DISTRESS_TYPES, DISABLED_DISTRESS_TYPES } from './LeadFilters'
+import { LeadFilters, PROPERTY_TYPES, DISTRESS_TYPES, DISABLED_DISTRESS_TYPES, HOT_LIST_TYPES } from './LeadFilters'
 import { useAppStore, ScoutResult } from '@/lib/store'
 
 // Helper to get human-readable flood zone description
@@ -51,6 +51,7 @@ export default function LeadScout() {
     const [isDetailOpen, setIsDetailOpen] = useState(false)
     const [hoveredLeadId, setHoveredLeadId] = useState<string | null>(null)
     const [includePropertyDetails, setIncludePropertyDetails] = useState(false) // Default OFF for fast mode
+    const [selectedHotList, setSelectedHotList] = useState<string[]>([]) // Hot List filters
 
     // Refs
     const listRef = useRef<HTMLDivElement>(null)
@@ -85,6 +86,7 @@ export default function LeadScout() {
             const payload: any = {
                 property_types: selectedPropertyTypes,
                 distress_type: selectedDistressTypes, // Allow empty list for generic search
+                hot_list: selectedHotList, // FSBO, Price Reduced, High DOM, New Listing
                 limit: limit,
                 bounds: newBounds, // Include bounds in payload
                 skip_homeharvest: !includePropertyDetails // Fast mode when toggle is OFF
@@ -100,7 +102,7 @@ export default function LeadScout() {
                     payload.address = term
                 } else {
                     // Check if it's a known city, otherwise treat as Neighborhood
-                    const KNOWN_CITIES = ["TUCSON", "MARANA", "ORO VALLEY", "VAIL", "SAHUARITA", "SOUTH TUCSON", "CATALINA FOOTHILLS", "CASAS ADOBES", "DREXEL HEIGHTS", "FLOWING WELLS", "TANQUE VERDE", "TUCSON ESTATES"]
+                    const KNOWN_CITIES = ["TUCSON", "MARANA", "ORO VALLEY", "VAIL", "SAHUARITA", "SOUTH TUCSON", "CATALINA FOOTHILLS", "CASAS ADOBES", "DREXEL HEIGHTS", "FLOWING WELLS", "TANQUE VERDE", "TUCSON ESTATES", "GREEN VALLEY"]
                     if (KNOWN_CITIES.some(city => term.toUpperCase() === city)) {
                         payload.city = term
                     } else {
@@ -130,12 +132,30 @@ export default function LeadScout() {
 
             const data = await res.json()
             console.log("Search Results:", data) // Debug log
-            setLeadScoutState({ results: data, loading: false })
 
-            if (data.length === 0) {
+            let leads = []
+            let warning = null
+
+            if (Array.isArray(data)) {
+                leads = data
+            } else if (data.leads) {
+                leads = data.leads
+                warning = data.warning
+            }
+
+            setLeadScoutState({ results: leads, loading: false })
+
+            if (warning) {
+                toast({
+                    title: "Notice",
+                    description: warning,
+                    variant: "destructive", // Use destructive to grab attention
+                    duration: 5000
+                })
+            } else if (leads.length === 0) {
                 toast({ title: "No leads found", description: "Try adjusting your filters." })
             } else {
-                toast({ title: `Found ${data.length} leads`, description: "Map updated." })
+                toast({ title: `Found ${leads.length} leads`, description: "Map updated." })
             }
 
         } catch (error: any) {
@@ -259,6 +279,12 @@ export default function LeadScout() {
 
     const handleMapSelection = (newBounds: { north: number, south: number, east: number, west: number } | null) => {
         setLeadScoutState({ bounds: newBounds })
+
+        // If drawing a box, clear the text search query to avoid confusion
+        if (newBounds) {
+            setLeadScoutState({ query: "" })
+        }
+
         // Do NOT trigger search automatically. 
         // User must click "Search Area" button or hit Enter.
     }
@@ -272,7 +298,7 @@ export default function LeadScout() {
         <div className="flex h-screen w-full bg-black text-white overflow-hidden relative">
 
             {/* SEARCH BAR (Floating & Dynamic Position) */}
-            <div className={`absolute top-4 z-50 w-[calc(100%-1rem)] md:w-full max-w-2xl px-0 md:px-4 transition-all duration-300 ease-in-out ${viewMode === 'list' ? 'left-1/2 md:left-[calc(50%-12rem)]' : 'left-1/2'} -translate-x-1/2 transform pointer-events-none`}>
+            <div className={`absolute top-4 z-50 w-[calc(100%-1rem)] md:w-full max-w-4xl px-0 md:px-4 transition-all duration-300 ease-in-out ${viewMode === 'list' ? 'left-1/2 md:left-[calc(50%-12rem)]' : 'left-1/2'} -translate-x-1/2 transform pointer-events-none`}>
                 <div className="pointer-events-auto flex flex-col items-center w-full">
                     <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-md shadow-lg flex items-center px-3 h-10 gap-2 w-full">
 
@@ -280,10 +306,16 @@ export default function LeadScout() {
                         <Search className="text-gray-400 w-4 h-4 shrink-0" />
 
                         {/* Location Input */}
-                        <div className="flex-1 min-w-[200px] h-full">
+                        <div className="flex-1 min-w-[150px] h-full">
                             <AutocompleteInput
                                 value={query}
-                                onChange={(val) => setLeadScoutState({ query: val })}
+                                onChange={(val) => {
+                                    setLeadScoutState({ query: val })
+                                    // If typing, clear the map bounds to avoid confusion
+                                    if (val && bounds) {
+                                        setLeadScoutState({ bounds: null })
+                                    }
+                                }}
                                 onSearch={() => handleSearch(true)} // Clear bounds on text search
                                 placeholder="Search Zip Code, City, or Neighborhood..."
                                 className="h-full w-full"
@@ -307,10 +339,42 @@ export default function LeadScout() {
                             <option value={500} className="bg-white dark:bg-gray-900">500 Leads</option>
                         </select>
 
-                        {/* Search Button (Mobile/Desktop) */}
+                        <div className="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1 hidden md:block" />
+
+                        {/* Filter Categories (Property Type, Details, Distress) */}
+                        <LeadFilters
+                            selectedPropertyTypes={selectedPropertyTypes}
+                            setSelectedPropertyTypes={(val) => setLeadScoutState({ selectedPropertyTypes: val })}
+                            selectedDistressTypes={selectedDistressTypes}
+                            setSelectedDistressTypes={(val) => setLeadScoutState({ selectedDistressTypes: val })}
+                            selectedHotList={selectedHotList}
+                            setSelectedHotList={setSelectedHotList}
+                            minBeds={minBeds}
+                            setMinBeds={(val) => setLeadScoutState({ minBeds: val })}
+                            minBaths={minBaths}
+                            setMinBaths={(val) => setLeadScoutState({ minBaths: val })}
+                            minSqft={minSqft}
+                            setMinSqft={(val) => setLeadScoutState({ minSqft: val })}
+                            onSearch={() => handleSearch(false)}
+                        />
+
+                        <div className="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1 hidden md:block" />
+
+                        {/* Details Toggle */}
+                        <label className="flex items-center gap-1.5 cursor-pointer shrink-0" title="When enabled, fetches detailed property info (beds, baths, sqft, photos) - adds ~45s to search">
+                            <input
+                                type="checkbox"
+                                checked={includePropertyDetails}
+                                onChange={(e) => setIncludePropertyDetails(e.target.checked)}
+                                className="w-3.5 h-3.5 rounded border-gray-400 text-green-600 focus:ring-green-500 focus:ring-1"
+                            />
+                            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Details</span>
+                        </label>
+
+                        {/* Search Button */}
                         <Button
                             size="sm"
-                            className="ml-2 h-8 bg-green-600 hover:bg-green-700 text-white px-3"
+                            className="h-8 bg-green-600 hover:bg-green-700 text-white px-4 shrink-0"
                             onClick={() => {
                                 // If query is present, prioritize text search (which clears bounds)
                                 if (query) {
@@ -327,41 +391,13 @@ export default function LeadScout() {
                             Search
                         </Button>
 
-                        <div className="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1 hidden md:block" />
-
-                        {/* Property Details Toggle */}
-                        <label className="flex items-center gap-1.5 cursor-pointer" title="When enabled, fetches detailed property info (beds, baths, sqft, photos) - adds ~45s to search">
-                            <input
-                                type="checkbox"
-                                checked={includePropertyDetails}
-                                onChange={(e) => setIncludePropertyDetails(e.target.checked)}
-                                className="w-3.5 h-3.5 rounded border-gray-400 text-green-600 focus:ring-green-500 focus:ring-1"
-                            />
-                            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Details</span>
-                        </label>
-
-                        {/* Filters Button (Next to Search Bar) */}
-                        <LeadFilters
-                            selectedPropertyTypes={selectedPropertyTypes}
-                            setSelectedPropertyTypes={(val) => setLeadScoutState({ selectedPropertyTypes: val })}
-                            selectedDistressTypes={selectedDistressTypes}
-                            setSelectedDistressTypes={(val) => setLeadScoutState({ selectedDistressTypes: val })}
-                            minBeds={minBeds}
-                            setMinBeds={(val) => setLeadScoutState({ minBeds: val })}
-                            minBaths={minBaths}
-                            setMinBaths={(val) => setLeadScoutState({ minBaths: val })}
-                            minSqft={minSqft}
-                            setMinSqft={(val) => setLeadScoutState({ minSqft: val })}
-                            onSearch={() => handleSearch(false)}
-                        />
-
                         {/* Bulk Import Button */}
                         {selectedLeadIds.size > 0 && (
                             <Button
                                 variant="default"
                                 size="sm"
                                 onClick={handleBulkImport}
-                                className="bg-green-600 hover:bg-green-700 text-white rounded-md h-7 text-xs px-2 ml-2"
+                                className="bg-green-600 hover:bg-green-700 text-white rounded-md h-7 text-xs px-2 shrink-0"
                             >
                                 Import ({selectedLeadIds.size})
                             </Button>

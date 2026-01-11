@@ -6,6 +6,7 @@ import numpy as np
 from typing import List, Dict, Optional, Any
 from shapely.geometry import Polygon, Point
 from shapely.prepared import prep
+from shapely.ops import unary_union
 
 class ScoutService:
     # Priority order for AND-logic filtering (most restrictive first)
@@ -83,14 +84,6 @@ class ScoutService:
             cache_key = f"hood_{filters.get('neighborhood').replace(' ', '_')}"
         
         # Check cache first
-        # DEBUG: DISABLE CACHE TO FIX MAP SEARCH
-        # if cache_key and cache_key in self._violations_cache:
-        #     cached_data, cached_time = self._violations_cache[cache_key]
-        #     age = time_module.time() - cached_time
-        #     if age < self._violations_cache_ttl:
-        #         print(f"Code violations from cache ({len(cached_data)} violations, {age:.0f}s old)")
-        #         return cached_data
-        #     else:
         #         # Cache expired, remove it
         #         del self._violations_cache[cache_key]
         
@@ -99,17 +92,21 @@ class ScoutService:
         # Build WHERE clause
         where_parts = ["STATUS_1 NOT IN ('COMPLIAN', 'CLOSED', 'VOID')"]
 
-        
         params = {
             "outFields": "*",
             "returnGeometry": "true",
             "outSR": "4326",  # WGS84 for Leaflet map compatibility
-            "resultRecordCount": limit * 10 if (zip_code or filters.get('bounds')) else limit,  # Fetch more if filtering (spatial)
             "f": "json",
-            "orderByFields": "DT_ENT DESC"
+            "resultRecordCount": limit * 10 if (zip_code or filters.get('bounds')) else limit,  # Fetch more if filtering (spatial)
         }
         
-        # If zip code provided, use spatial query with envelope
+        # OPTIMIZATION: Short-circuit for non-Tucson cities
+        # Code Violations are ONLY available in Tucson (Layer 94)
+        if filters.get("city"):
+            city = filters["city"].upper().strip()
+            if city != "TUCSON":
+                print(f"Skipping Code Violation search for unsupported city: {city}")
+                return []
         zip_polygon = None
         bounds = filters.get('bounds')
         
@@ -158,7 +155,6 @@ class ScoutService:
                     params["geometry"] = json.dumps(zip_metadata["envelope"])
                     params["geometryType"] = "esriGeometryEnvelope"
                     params["spatialRel"] = "esriSpatialRelIntersects"
-                    params["spatialRel"] = "esriSpatialRelIntersects"
                     params["inSR"] = "2868"
         
         elif filters.get("neighborhood"):
@@ -187,6 +183,67 @@ class ScoutService:
             else:
                 print(f"Warning: Could not resolve neighborhood '{filters.get('neighborhood')}'. Returning empty results.")
                 return []
+
+        elif filters.get("city"):
+            # Handle City Filter (e.g. Vail, Green Valley)
+            city = filters.get("city")
+            print(f"DEBUG: Handling city filter: {city}")
+            
+            # Reuse the zip lookup logic
+            city_zips = await self._fetch_zips_by_city(city)
+            if city_zips:
+                print(f"DEBUG: Mapped city '{city}' to zips: {city_zips}")
+                
+                # Fetch envelopes for ALL zips and create a union envelope
+                min_x, min_y = float('inf'), float('inf')
+                max_x, max_y = float('-inf'), float('-inf')
+                polygons = []
+                
+                for z in city_zips:
+                    zm = await self._get_zip_metadata(z)
+                    if zm and "envelope" in zm:
+                        env = zm["envelope"]
+                        min_x = min(min_x, env["xmin"])
+                        min_y = min(min_y, env["ymin"])
+                        max_x = max(max_x, env["xmax"])
+                        max_y = max(max_y, env["ymax"])
+                        if "polygon" in zm:
+                            polygons.append(zm["polygon"])
+                
+                if min_x != float('inf'):
+                    # Create union envelope
+                    envelope = {
+                        "xmin": min_x,
+                        "ymin": min_y,
+                        "xmax": max_x,
+                        "ymax": max_y,
+                        "spatialReference": {"wkid": 2868} # Layer 6 returns 2868 usually, but let's check. _get_zip_metadata handles it.
+                    }
+                    # Actually _get_zip_metadata might return 2868 or 4326 depending on how it was called. 
+                    # Let's assume the envelope from _get_zip_metadata is correct for querying.
+                    # But wait, _get_zip_metadata queries Layer 6 which returns 2868 by default unless outSR is specified.
+                    # In _fetch_pima_parcels we used 2868 for zip queries.
+                    
+                    # Create client-side filter
+                    if polygons:
+                        try:
+                            zip_polygon = prep(unary_union(polygons))
+                        except Exception as e:
+                            print(f"Error creating union polygon for city: {e}")
+                            # Fallback to envelope filter only (zip_polygon=None)
+                    
+                    # Add envelope to spatial query
+                    params["geometry"] = json.dumps(envelope)
+                    params["geometryType"] = "esriGeometryEnvelope"
+                    params["spatialRel"] = "esriSpatialRelIntersects"
+                    params["inSR"] = "2868" # Assuming envelopes from _get_zip_metadata are in 2868 (State Plane)
+                    
+                    print(f"DEBUG: Created city envelope: {envelope}")
+                else:
+                     print(f"Warning: Could not resolve envelopes for city zips: {city_zips}")
+
+            else:
+                print(f"Warning: No zips found for city '{city}'")
         
         params["where"] = " AND ".join(where_parts)
         
@@ -206,26 +263,32 @@ class ScoutService:
                 batch_params["resultRecordCount"] = batch_size
                 batch_params["resultOffset"] = offset
                 
-                response = requests.get(self.tucson_violations_url, params=batch_params, timeout=15)
-                if response.status_code == 200:
-                    data = response.json()
-                    features = data.get("features", [])
+                # Use POST to avoid URL length limits with complex spatial queries
+                try:
+                    response = requests.post(self.tucson_violations_url, data=batch_params, timeout=20)
                     
-                    if not features:
-                        # No more results
+                    if response.status_code == 200:
+                        data = response.json()
+                        features = data.get("features", [])
+                        
+                        if not features:
+                            # No more results
+                            break
+                        
+                        all_features.extend(features)
+                        print(f"  Batch {batch_num + 1}: Fetched {len(features)} violations (total: {len(all_features)})")
+                        
+                        # Check if this was the last batch
+                        if len(features) < batch_size:
+                            # Server returned less than requested, no more data
+                            break
+                        
+                        offset += batch_size
+                    else:
+                        print(f"Error fetching violations batch {batch_num}: API returned {response.status_code}")
                         break
-                    
-                    all_features.extend(features)
-                    print(f"  Batch {batch_num + 1}: Fetched {len(features)} violations (total: {len(all_features)})")
-                    
-                    # Check if this was the last batch
-                    if len(features) < batch_size:
-                        # Server returned less than requested, no more data
-                        break
-                    
-                    offset += batch_size
-                else:
-                    print(f"Error fetching violations batch {batch_num}: {response.status_code}")
+                except Exception as e:
+                    print(f"Error fetching violations batch {batch_num}: {e}")
                     break
             
             print(f"Found {len(all_features)} raw code violations.")
@@ -233,8 +296,8 @@ class ScoutService:
             # Map to lead objects
             leads = [self._map_tucson_violation(f) for f in all_features]
             
-            # Client-side filtering by zip code OR bounds (strict)
-            if (zip_code or bounds) and zip_polygon:
+            # Client-side filtering by zip code OR bounds OR city (strict)
+            if (zip_code or bounds or filters.get("city")) and zip_polygon:
                 filtered_leads = []
                 for lead in leads:
                     if lead.get("latitude") and lead.get("longitude"):
@@ -748,7 +811,7 @@ class ScoutService:
 
         # Check if leads already have GIS data from cache - skip entirely if so
         # A lead needs GIS enrichment if it's NOT cache-enriched OR doesn't have any GIS data yet
-        gis_fields = ["flood_zone", "school_district", "zoning"]
+        gis_fields = ["flood_zone", "school_district", "zoning", "nearby_development"]
         
         def needs_gis(lead):
             """Returns True if lead needs GIS enrichment."""
@@ -796,9 +859,9 @@ class ScoutService:
             (
                 "Path of Progress",
                 "https://gisdata.pima.gov/arcgis1/rest/services/GISOpenData/OverlayDevelopment/MapServer/13/query",
-                "PLAT_NAME,STATUS",
-                {"nearby_development": "PLAT_NAME", "development_status": "STATUS"},
-                False  # Use multipoint intersection
+                "PROJ_NAME,AA_STATUS",
+                {"nearby_development": "PROJ_NAME", "development_status": "AA_STATUS"},
+                False  # Use multipoint intersection (spatial query works with correct fields)
             ),
             (
                 "Neighborhoods",
@@ -817,79 +880,88 @@ class ScoutService:
             
             # For fetchAll layers, query once for all polygons, then match all leads
             if fetch_all:
-                params = {
-                    "where": "1=1",  # Get ALL features
-                    "outFields": fields,
-                    "returnGeometry": "true",
-                    "outSR": "4326",
-                    "f": "json"
-                }
-                try:
-                    resp = await loop.run_in_executor(
-                        None,
-                        lambda: requests.get(url, params=params, timeout=20)
-                    )
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        features = data.get("features", [])
-                        polys = []
-                        for f in features:
-                            attr = f.get("attributes", {})
-                            geom = f.get("geometry")
-                            if geom and "rings" in geom:
-                                try:
-                                    rings = geom["rings"]
-                                    poly = None
-                                    
-                                    # Try each ring until we get a valid polygon
-                                    for ring in rings:
-                                        try:
-                                            test_poly = Polygon(ring)
-                                            # Use buffer(0) to fix self-intersecting polygons
-                                            if not test_poly.is_valid:
-                                                test_poly = test_poly.buffer(0)
-                                            if test_poly.is_valid and test_poly.area > 0.0001:  # Min area threshold
-                                                if poly is None or test_poly.area > poly.area:
-                                                    poly = test_poly
-                                        except:
-                                            continue
-                                    
-                                    if poly is not None:
-                                        polys.append((poly, attr))
-                                except Exception as e:
-                                    pass
-                        
-                        if polys:
-                            enriched_count = 0
-                            for lead in leads:
-                                lat = lead.get("latitude")
-                                lon = lead.get("longitude")
-                                if lat and lon:
-                                    pt = Point(lon, lat)
-                                    for poly, attr in polys:
-                                        if poly.contains(pt):
-                                            for lead_key, attr_key in attr_map.items():
-                                                val = attr.get(attr_key)
-                                                if val:
-                                                    lead[lead_key] = val
-                                                    enriched_count += 1
-                                            break
-                            print(f"    {name}: {len(polys)} polygons, {enriched_count} leads enriched (fetchAll)")
-                            # Debug: if 0 enriched, print sample point and all polygon names
-                            if enriched_count == 0 and leads:
-                                sample_lead = leads[0]
-                                print(f"      Sample point: ({sample_lead.get('longitude', 0):.6f}, {sample_lead.get('latitude', 0):.6f})")
-                                # Show which polygons we have and if point is contained
-                                for idx, (poly, attr) in enumerate(polys):
-                                    dist_name = attr.get("SDISTNAME", "Unknown")
-                                    bounds = poly.bounds
-                                    pt = Point(sample_lead.get('longitude', 0), sample_lead.get('latitude', 0))
-                                    contains = poly.contains(pt)
-                                    print(f"        {idx}: {dist_name[:30]} contains={contains}")
+                polys = []
+                offset = 0
+                record_count = 2000
+                
+                while True:
+                    params = {
+                        "where": "1=1",  # Get ALL features
+                        "outFields": fields,
+                        "returnGeometry": "true",
+                        "outSR": "4326",
+                        "f": "json",
+                        "resultRecordCount": record_count,
+                        "resultOffset": offset
+                    }
+                    try:
+                        resp = await loop.run_in_executor(
+                            None,
+                            lambda: requests.get(url, params=params, timeout=30)
+                        )
+                        if resp.status_code == 200:
+                            data = resp.json()
+                            features = data.get("features", [])
+                            
+                            if not features:
+                                break
+                                
+                            for f in features:
+                                attr = f.get("attributes", {})
+                                geom = f.get("geometry")
+                                if geom and "rings" in geom:
+                                    try:
+                                        rings = geom["rings"]
+                                        poly = None
+                                        
+                                        # Try each ring until we get a valid polygon
+                                        for ring in rings:
+                                            try:
+                                                test_poly = Polygon(ring)
+                                                # Use buffer(0) to fix self-intersecting polygons
+                                                if not test_poly.is_valid:
+                                                    test_poly = test_poly.buffer(0)
+                                                if test_poly.is_valid and test_poly.area > 0.0001:  # Min area threshold
+                                                    if poly is None or test_poly.area > poly.area:
+                                                        poly = test_poly
+                                            except:
+                                                continue
+                                        
+                                        if poly is not None:
+                                            polys.append((poly, attr))
+                                    except Exception as e:
+                                        pass
+                            
+                            # Check if we need to fetch more
+                            if len(features) < record_count:
+                                break
+                            
+                            offset += len(features)
+                            print(f"    {name}: Fetched {len(features)} features (offset {offset})...")
+                            
                         else:
-                            print(f"    {name}: 0 polygons returned (fetchAll)")
-                except Exception as e:
-                    print(f"  Error querying {name}: {e}")
+                            print(f"    {name}: API returned {resp.status_code}")
+                            break
+                    except Exception as e:
+                        print(f"  Error querying {name}: {e}")
+                        break
+                
+                if polys:
+                    enriched_count = 0
+                    for lead in leads:
+                        lat = lead.get("latitude")
+                        lon = lead.get("longitude")
+                        if lat and lon:
+                            pt = Point(lon, lat)
+                            for poly, attr in polys:
+                                if poly.contains(pt):
+                                    for lead_key, attr_key in attr_map.items():
+                                        val = attr.get(attr_key)
+                                        if val:
+                                            lead[lead_key] = val
+                                            enriched_count += 1
+                                    break
+                    print(f"    {name}: {len(polys)} polygons, {enriched_count} leads enriched (fetchAll)")
                 continue  # Skip to next layer
             
             # Normal multipoint intersection for other layers
@@ -927,7 +999,7 @@ class ScoutService:
                 try:
                     resp = await loop.run_in_executor(
                         None, 
-                        lambda: requests.post(url, data=params, timeout=20)  # Increased from 10s
+                        lambda: requests.post(url, data=params, timeout=20)
                     )
                     
                     if resp.status_code == 200:
@@ -1183,7 +1255,23 @@ class ScoutService:
         """
         Searches for FSBO (For Sale By Owner) listings using Zillow (best for off-market).
         """
-        print(f"Searching FSBO in {location} via Zillow...")
+        return await self.fetch_hot_leads(location, ["FSBO"])
+    
+    async def fetch_hot_leads(self, location: str, hot_list: List[str], limit: int = 100) -> List[Dict]:
+        """
+        Fetches MLS listings and filters based on hot list criteria:
+        - FSBO: No agent or agent name contains "Owner"
+        - Price Reduced: Has price reduction
+        - High Days on Market: 60+ days listed
+        - New Listing: 7 or fewer days on market
+        
+        Returns normalized lead dictionaries.
+        """
+        if not hot_list:
+            return []
+            
+        print(f"Fetching Hot Leads in {location} for filters: {hot_list}")
+        
         try:
             from homeharvest import scrape_property
             
@@ -1192,21 +1280,109 @@ class ScoutService:
                 None,
                 lambda: scrape_property(
                     location=location,
-                    listing_type="for_sale"  # We want active FSBOs
+                    listing_type="for_sale"
                 )
             )
             
             if df.empty:
+                print("  No for_sale listings found")
                 return []
+            
+            print(f"  Found {len(df)} for_sale listings, applying hot list filters...")
+            
+            # Convert to list of dicts for processing
+            all_listings = df.to_dict("records")
+            hot_leads = []
+            
+            for listing in all_listings:
+                signals = []
                 
-            # Filter for likely FSBOs if possible, or just return all found
-            # HomeHarvest might not explicitly flag FSBO in all versions, 
-            # but Zillow source is the best bet.
-            return df.to_dict("records")
+                # Check FSBO: No agent or agent is "Owner"
+                if "FSBO" in hot_list:
+                    agent_name = str(listing.get("agent_name") or "").strip().lower()
+                    if not agent_name or agent_name in ["", "nan", "none", "owner", "for sale by owner"]:
+                        signals.append("FSBO")
+                
+                # Check Price Reduced
+                if "Price Reduced" in hot_list:
+                    # Look for price_reduced flag or compare prices
+                    price_reduced = listing.get("price_reduced")
+                    if price_reduced and str(price_reduced).lower() not in ["false", "nan", "none", ""]:
+                        signals.append("Price Reduced")
+                
+                # Check High Days on Market (60+)
+                if "High Days on Market" in hot_list:
+                    days_on_mls = listing.get("days_on_mls")
+                    if days_on_mls is not None:
+                        try:
+                            if int(days_on_mls) >= 60:
+                                signals.append("High Days on Market")
+                        except (ValueError, TypeError):
+                            pass
+                
+                # Check New Listing (7 or fewer days)
+                if "New Listing" in hot_list:
+                    days_on_mls = listing.get("days_on_mls")
+                    if days_on_mls is not None:
+                        try:
+                            if int(days_on_mls) <= 7:
+                                signals.append("New Listing")
+                        except (ValueError, TypeError):
+                            pass
+                
+                # If any hot signal matches, include this lead
+                if signals:
+                    # Normalize to our lead format
+                    lead = self._normalize_homeharvest_listing(listing, signals)
+                    hot_leads.append(lead)
+            
+            print(f"  {len(hot_leads)} leads matched hot list filters")
+            return hot_leads[:limit]
             
         except Exception as e:
-            print(f"Error fetching FSBO: {e}")
+            print(f"Error fetching hot leads: {e}")
+            import traceback
+            traceback.print_exc()
             return []
+    
+    def _normalize_homeharvest_listing(self, listing: Dict, hot_signals: List[str]) -> Dict:
+        """
+        Converts a Homeharvest listing record to our standard lead format.
+        """
+        # Build address
+        street = listing.get("street_address") or listing.get("address") or ""
+        city = listing.get("city") or ""
+        state = listing.get("state") or "AZ"
+        zip_code = listing.get("zip_code") or ""
+        
+        full_address = f"{street}, {city}, {state} {zip_code}".strip(", ")
+        
+        return {
+            "source": "homeharvest_mls",
+            "parcel_id": listing.get("mls") or listing.get("property_id") or "",
+            "owner_name": listing.get("agent_name") or "Unknown",
+            "address": full_address,
+            "address_street": street,
+            "address_city": city,
+            "address_state": state,
+            "address_zip": str(zip_code),
+            "property_type": listing.get("style") or listing.get("property_type") or "Unknown",
+            "beds": listing.get("beds"),
+            "baths": listing.get("full_baths"),
+            "sqft": listing.get("sqft"),
+            "lot_size": listing.get("lot_sqft"),
+            "year_built": listing.get("year_built"),
+            "assessed_value": listing.get("assessed_value"),
+            "list_price": listing.get("list_price"),
+            "days_on_market": listing.get("days_on_mls"),
+            "latitude": listing.get("latitude"),
+            "longitude": listing.get("longitude"),
+            "status": "Active",
+            "strategy": "Wholesale",
+            "distress_signals": hot_signals,
+            "assessor_url": listing.get("property_url") or "",
+            "photos": listing.get("primary_photo") or None,
+        }
     
     def _apply_homeharvest_from_cache(self, leads: List[Dict]) -> int:
         """Apply cached HomeHarvest data to leads without making any API calls.
@@ -2083,6 +2259,36 @@ class ScoutService:
             self._log(f"Error enriching zip codes: {e}")
 
 
+
+    JURISDICTIONS = [
+        "MARANA", "ORO VALLEY", "SAHUARITA", "SOUTH TUCSON", "TUCSON", "UNINCORPORATED PIMA COUNTY"
+    ]
+
+    async def _fetch_zips_by_city(self, city: str) -> List[str]:
+        """Fetches Zip Codes from Layer 3 (Addresses) for a given ZIPCITY."""
+        url = "https://gisdata.pima.gov/arcgis1/rest/services/GISOpenData/Addresses/MapServer/3/query"
+        params = {
+            "where": f"ZIPCITY = '{city.upper()}'",
+            "outFields": "ZIPCODE",
+            "returnGeometry": "false",
+            "returnDistinctValues": "true",
+            "f": "json"
+        }
+        
+        try:
+            loop = asyncio.get_event_loop()
+            resp = await loop.run_in_executor(None, lambda: requests.get(url, params=params, timeout=10))
+            
+            if resp.status_code == 200:
+                data = resp.json()
+                features = data.get("features", [])
+                zips = [str(f["attributes"]["ZIPCODE"]) for f in features if f.get("attributes") and f["attributes"].get("ZIPCODE")]
+                return sorted(list(set(zips)))
+            return []
+        except Exception as e:
+            print(f"[Scout] Error fetching zips for city {city}: {e}")
+            return []
+
     async def _fetch_pima_parcels(self, filters: Dict, limit: int, offset: int = 0) -> List[Dict]:
         print(f"DEBUG: Entered _fetch_pima_parcels with filters keys: {list(filters.keys())}")
         self._log(f"Fetching parcels with filters: {filters}")
@@ -2161,7 +2367,63 @@ class ScoutService:
                  return []
                 
         if filters.get('city'):
-            where_parts.append(f"JURIS_OL = '{filters['city'].upper()}'")
+            city = filters['city'].upper()
+            if city in self.JURISDICTIONS:
+                where_parts.append(f"JURIS_OL = '{city}'")
+            else:
+                # Not a jurisdiction (e.g. Vail, Green Valley) - Use Spatial Filter
+                print(f"DEBUG: Handling city filter in parcels: {city}")
+                
+                city_zips = await self._fetch_zips_by_city(city)
+                if city_zips:
+                    print(f"DEBUG: Mapped city '{city}' to zips: {city_zips}")
+                    
+                    # Fetch envelopes for ALL zips and create a union envelope
+                    min_x, min_y = float('inf'), float('inf')
+                    max_x, max_y = float('-inf'), float('-inf')
+                    polygons = []
+                    
+                    for z in city_zips:
+                        zm = await self._get_zip_metadata(z)
+                        if zm and "envelope" in zm:
+                            env = zm["envelope"]
+                            min_x = min(min_x, env["xmin"])
+                            min_y = min(min_y, env["ymin"])
+                            max_x = max(max_x, env["xmax"])
+                            max_y = max(max_y, env["ymax"])
+                            if "polygon" in zm:
+                                polygons.append(zm["polygon"])
+                    
+                    if min_x != float('inf'):
+                        # Create union envelope
+                        zip_metadata = {
+                            "envelope": {
+                                "xmin": min_x,
+                                "ymin": min_y,
+                                "xmax": max_x,
+                                "ymax": max_y,
+                                "spatialReference": {"wkid": 2868} # Layer 6 returns 2868 usually
+                            },
+                            "polygon": None
+                        }
+                        
+                        # Create client-side filter
+                        if polygons:
+                            try:
+                                zip_metadata["polygon"] = prep(unary_union(polygons))
+                            except Exception as e:
+                                print(f"Error creating union polygon for city parcels: {e}")
+                        
+                        self._log(f"Using City Bounds for {city}: {zip_metadata['envelope']}")
+                    else:
+                         print(f"Warning: Could not resolve envelopes for city zips: {city_zips}")
+                         # Fallback to JURIS_OL just in case
+                         where_parts.append(f"JURIS_OL = '{city}'")
+
+                else:
+                    # Fallback: Try JURIS_OL anyway
+                    print(f"Warning: City '{city}' is not a jurisdiction and no zips found. Using JURIS_OL fallback.")
+                    where_parts.append(f"JURIS_OL = '{city}'")
             
         if filters.get('address'):
             # Normalize address for GIS matching (Ave->AV, Street->ST, etc.)
@@ -2609,14 +2871,9 @@ class ScoutService:
              owner = attr.get("MAIL1", "Unknown")
         owner = owner.title()
         
-        # Property Type Mapping (Basic)
+        # Property Type Mapping (Use comprehensive mapping function)
         use_code = attr.get("PARCEL_USE", "")
-        prop_type = "Unknown"
-        if use_code:
-            if use_code.startswith("01"): prop_type = "Single Family"
-            elif use_code.startswith("03"): prop_type = "Multi-Family"
-            elif use_code.startswith("02"): prop_type = "Commercial"
-            elif use_code.startswith("00"): prop_type = "Land"
+        prop_type = self._map_parcel_use_to_type(use_code)
 
         # Dynamic Absentee Logic
         distress_signals = []
