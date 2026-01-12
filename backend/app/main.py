@@ -370,6 +370,7 @@ class SearchFilters(BaseModel):
     bounds: Optional[Dict[str, float]] = None # {xmin, ymin, xmax, ymax}
     skip_homeharvest: bool = False # Fast mode - skip HomeHarvest enrichment
     neighborhood: Optional[str] = None # Search by subdivision/neighborhood name
+    hot_list: Optional[List[str]] = None  # Hot list filters: FSBO, Price Reduced, High Days on Market, New Listing
 
 @app.post("/scout/search")
 async def search_leads(filters: SearchFilters):

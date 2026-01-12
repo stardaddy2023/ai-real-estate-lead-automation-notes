@@ -864,6 +864,13 @@ class ScoutService:
                 False  # Use multipoint intersection (spatial query works with correct fields)
             ),
             (
+                "Parcels",
+                "https://gisdata.pima.gov/arcgis1/rest/services/GISOpenData/LandRecords/MapServer/12/query",
+                "PARCEL,MAIL1,FCV,CURZONE_OL,PARCEL_USE",
+                {"parcel_id": "PARCEL", "owner_name": "MAIL1", "assessed_value": "FCV", "zoning": "CURZONE_OL", "parcel_use_code": "PARCEL_USE"},
+                False  # Use multipoint intersection to get real APN from coordinates
+            ),
+            (
                 "Neighborhoods",
                 "https://gisdata.pima.gov/arcgis1/rest/services/GISOpenData/LandRecords/MapServer/15/query",
                 "SUB_NAME",
@@ -1349,17 +1356,38 @@ class ScoutService:
         """
         Converts a Homeharvest listing record to our standard lead format.
         """
-        # Build address
-        street = listing.get("street_address") or listing.get("address") or ""
+        # Build address - prefer formatted_address, then construct from components
+        full_address = listing.get("formatted_address") or ""
+        street = listing.get("full_street_line") or listing.get("street") or listing.get("street_address") or ""
         city = listing.get("city") or ""
         state = listing.get("state") or "AZ"
         zip_code = listing.get("zip_code") or ""
         
-        full_address = f"{street}, {city}, {state} {zip_code}".strip(", ")
+        if not full_address and street:
+            full_address = f"{street}, {city}, {state} {zip_code}".strip(", ")
+        
+        # Determine data source from property_url (realtor.com, zillow.com, redfin.com)
+        property_url = listing.get("property_url") or ""
+        mls_source = "MLS"
+        if "realtor.com" in property_url.lower():
+            mls_source = "Realtor.com"
+        elif "zillow.com" in property_url.lower():
+            mls_source = "Zillow"
+        elif "redfin.com" in property_url.lower():
+            mls_source = "Redfin"
+        elif "trulia.com" in property_url.lower():
+            mls_source = "Trulia"
+        else:
+            # Fallback to MLS name if available
+            mls_name = listing.get("mls")
+            if mls_name:
+                mls_source = f"MLS ({mls_name})"
         
         return {
             "source": "homeharvest_mls",
-            "parcel_id": listing.get("mls") or listing.get("property_id") or "",
+            "mls_source": mls_source,  # Provider: Realtor.com, Zillow, Redfin, etc.
+            "parcel_id": str(listing.get("property_id") or ""),  # Internal ID, not actual APN
+            "mls_id": str(listing.get("mls_id") or ""),  # MLS listing ID
             "owner_name": listing.get("agent_name") or "Unknown",
             "address": full_address,
             "address_street": street,
@@ -1369,19 +1397,31 @@ class ScoutService:
             "property_type": listing.get("style") or listing.get("property_type") or "Unknown",
             "beds": listing.get("beds"),
             "baths": listing.get("full_baths"),
+            "half_baths": listing.get("half_baths"),
             "sqft": listing.get("sqft"),
             "lot_size": listing.get("lot_sqft"),
             "year_built": listing.get("year_built"),
+            "stories": listing.get("stories"),
             "assessed_value": listing.get("assessed_value"),
+            "estimated_value": listing.get("estimated_value"),
             "list_price": listing.get("list_price"),
+            "price_per_sqft": listing.get("price_per_sqft"),
             "days_on_market": listing.get("days_on_mls"),
+            "list_date": str(listing.get("list_date")) if listing.get("list_date") else None,
+            "hoa_fee": listing.get("hoa_fee"),
+            "last_sold_price": listing.get("last_sold_price"),
+            "last_sold_date": str(listing.get("last_sold_date")) if listing.get("last_sold_date") else None,
+            "agent_name": listing.get("agent_name"),
+            "office_name": listing.get("office_name"),
             "latitude": listing.get("latitude"),
             "longitude": listing.get("longitude"),
-            "status": "Active",
+            "status": listing.get("status") or "Active",
+            "listing_description": listing.get("text") or "",  # MLS listing description
             "strategy": "Wholesale",
             "distress_signals": hot_signals,
-            "assessor_url": listing.get("property_url") or "",
+            "assessor_url": property_url,
             "photos": listing.get("primary_photo") or None,
+            "primary_photo": listing.get("primary_photo"),
         }
     
     def _apply_homeharvest_from_cache(self, leads: List[Dict]) -> int:
@@ -1792,6 +1832,81 @@ class ScoutService:
                 county = "Pima"
             
             print(f"Scout fetching leads with filters: {filters}")
+            
+            # ===== HOT LIST FILTER HANDLING =====
+            # If hot_list filters are selected, fetch from MLS and return those leads
+            hot_list = filters.get("hot_list") or []
+            if hot_list:
+                # Separate MLS-based filters from GIS-based filters
+                mls_filters = [f for f in hot_list if f != "Path of Progress"]
+                has_pop = "Path of Progress" in hot_list
+                
+                # Determine location for search
+                location = filters.get("zip_code") or filters.get("city") or filters.get("neighborhood")
+                if not location and filters.get("bounds"):
+                    location = "Tucson, AZ"
+                elif not location:
+                    location = "Tucson, AZ"
+                
+                hot_results = []
+                
+                # If ONLY Path of Progress selected, use regular parcel search with PoP enrichment
+                if has_pop and not mls_filters:
+                    print(f"Hot List search: Path of Progress only - using GIS spatial search")
+                    # Fall through to regular search - PoP will be enriched by GIS layers
+                    # But add Path of Progress as a distress filter
+                    modified_filters = {**filters}
+                    # Remove hot_list so we don't infinitely recurse
+                    modified_filters["hot_list"] = []
+                    # Proceed with regular parcel search below
+                elif mls_filters:
+                    # Fetch from MLS for FSBO, Price Reduced, High DOM, New Listing
+                    print(f"Hot List search: {mls_filters} in {location}")
+                    hot_results = await self.fetch_hot_leads(location, mls_filters, limit)
+                
+                if hot_results:
+                    # Optionally filter by property type if specified
+                    property_types = filters.get("property_types") or []
+                    if property_types and "all" not in [t.lower() for t in property_types]:
+                        # Normalize property type matching for Homeharvest styles
+                        # Homeharvest uses: SINGLE_FAMILY, CONDOS, TOWNHOUSES, MULTI_FAMILY, etc.
+                        type_mapping = {
+                            "single family": ["single", "house", "sfr"],
+                            "multi family": ["multi", "duplex", "triplex", "fourplex"],
+                            "condo": ["condo"],
+                            "townhouse": ["townhouse", "townhome"],
+                            "mobile home": ["mobile", "manufactured"],
+                            "vacant land": ["land", "lot"],
+                        }
+                        
+                        def matches_property_type(lead_type: str, filters: list) -> bool:
+                            lead_type_lower = lead_type.lower().replace("_", " ")
+                            for f in filters:
+                                f_lower = f.lower()
+                                # Direct match
+                                if f_lower in lead_type_lower:
+                                    return True
+                                # Check mapping
+                                keywords = type_mapping.get(f_lower, [f_lower])
+                                if any(kw in lead_type_lower for kw in keywords):
+                                    return True
+                            return False
+                        
+                        filtered = [r for r in hot_results 
+                                   if matches_property_type(r.get("property_type", ""), property_types)]
+                        
+                        # If filtering removes all results, return unfiltered (better UX)
+                        if filtered:
+                            hot_results = filtered
+                        else:
+                            print(f"  Property type filter would remove all {len(hot_results)} results, skipping filter")
+                    
+                    # Enrich MLS leads with GIS data (zoning, flood zone, school district, neighborhood, PoP)
+                    await self._enrich_with_gis_layers(hot_results)
+                    
+                    return hot_results[:limit]
+                else:
+                    print("No hot list results found, continuing with regular search...")
             
             # ===== PURE ADDRESS LOOKUP =====
             # If address is provided without zip/bounds, use direct parcel lookup

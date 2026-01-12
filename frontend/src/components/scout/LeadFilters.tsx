@@ -40,7 +40,8 @@ export const HOT_LIST_TYPES = [
     "FSBO",
     "Price Reduced",
     "High Days on Market",
-    "New Listing"
+    "New Listing",
+    "Path of Progress"  // Uses GIS spatial search, not Homeharvest
 ]
 
 // ============================================

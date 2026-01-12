@@ -47,13 +47,23 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
         email?: string
         pool?: boolean
         garage?: boolean
-        // HomeHarvest fields
+        // HomeHarvest/MLS fields
         half_baths?: number
         stories?: number
         neighborhoods?: string
         hoa_fee?: number
         price_per_sqft?: number
         description?: string
+        listing_description?: string  // MLS listing description
+        status?: string  // Listing status (Active, Pending, etc.)
+        mls_source?: string  // Data source (Realtor.com, Zillow, etc.)
+        days_on_market?: number
+        list_price?: number
+        list_date?: string
+        agent_name?: string
+        office_name?: string
+        last_sold_price?: number
+        last_sold_date?: string
         primary_photo?: string
         alt_photos?: string
         property_url?: string
@@ -61,7 +71,12 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
         lot_sqft?: number
         parking_garage?: string
         assessor_url?: string
+        source?: string  // homeharvest_mls or gis
+        mls_id?: string  // MLS listing ID for display
     }
+
+    // Check if this is an MLS listing (has listing-specific data)
+    const isMLSListing = extLead.source === "homeharvest_mls" || extLead.mls_source || extLead.list_price
 
     // Check if location section has data
     const hasLocationData = extLead.zoning || extLead.flood_zone || extLead.school_district || extLead.nearby_development
@@ -87,12 +102,25 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
                                 <Home className="h-5 w-5 text-green-400" />
                                 {lead.address}
                             </DialogTitle>
-                            <p className="text-sm text-gray-400 mt-1">APN: {lead.parcel_id || "Unknown"}</p>
+                            <p className="text-sm text-gray-400 mt-1">
+                                APN: {lead.parcel_id || "Unknown"}
+                                {isMLSListing && extLead.mls_id && <span className="ml-3 text-gray-500">| MLS ID: {extLead.mls_id}</span>}
+                            </p>
                             {extLead.neighborhoods && (
                                 <p className="text-xs text-gray-500 mt-1">{extLead.neighborhoods}</p>
                             )}
                         </div>
                         <div className="flex flex-wrap gap-1 max-w-[200px]">
+                            {extLead.status && extLead.status !== "Active" && (
+                                <Badge className={`text-xs ${extLead.status.toLowerCase().includes('pending') || extLead.status.toLowerCase().includes('contingent') ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50' : 'bg-blue-500/20 text-blue-400 border-blue-500/50'}`}>
+                                    {extLead.status}
+                                </Badge>
+                            )}
+                            {extLead.mls_source && (
+                                <Badge className="bg-green-500/20 text-green-400 border-green-500/50 text-xs">
+                                    {extLead.mls_source}
+                                </Badge>
+                            )}
                             {lead.distress_signals?.slice(0, 3).map((signal, i) => (
                                 <Badge key={i} className="bg-red-500/20 text-red-400 border-red-500/50 text-xs">
                                     {signal}
@@ -128,7 +156,95 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
                     </div>
                 </div>
 
-                <Accordion type="single" collapsible defaultValue="property" className="w-full mt-2">
+                <Accordion type="single" collapsible defaultValue={isMLSListing ? "listing" : "property"} className="w-full mt-2">
+
+                    {/* Listing Details (MLS Only) */}
+                    {isMLSListing && (
+                        <AccordionItem value="listing" className="border-gray-700">
+                            <AccordionTrigger className="text-white hover:text-green-400">
+                                <div className="flex items-center gap-2">
+                                    <DollarSign className="h-4 w-4 text-green-400" />
+                                    Listing Details
+                                    {extLead.mls_source && (
+                                        <Badge className="ml-2 bg-green-500/20 text-green-400 text-[10px]">{extLead.mls_source}</Badge>
+                                    )}
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                {/* Price & Market Row */}
+                                <div className="grid grid-cols-3 gap-3 text-sm mb-3">
+                                    <div className="p-3 bg-green-900/20 border border-green-500/30 rounded-lg text-center">
+                                        <p className="text-xs text-gray-400 mb-1">Asking Price</p>
+                                        <p className="text-xl font-bold text-green-400">{formatCurrency(extLead.list_price)}</p>
+                                    </div>
+                                    <div className="p-3 bg-gray-800/50 rounded-lg text-center">
+                                        <p className="text-xs text-gray-400 mb-1">Days on Market</p>
+                                        <p className="text-xl font-bold text-white">{extLead.days_on_market ?? "—"}</p>
+                                    </div>
+                                    <div className="p-3 bg-gray-800/50 rounded-lg text-center">
+                                        <p className="text-xs text-gray-400 mb-1">Price/SqFt</p>
+                                        <p className="text-xl font-bold text-white">{extLead.price_per_sqft ? `$${extLead.price_per_sqft}` : "—"}</p>
+                                    </div>
+                                </div>
+
+                                {/* Listing Info Row */}
+                                <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                                    <div className="p-3 bg-gray-800/50 rounded-lg">
+                                        <p className="text-xs text-gray-400">List Date</p>
+                                        <p className="font-medium text-white">{extLead.list_date ? new Date(extLead.list_date).toLocaleDateString() : "N/A"}</p>
+                                    </div>
+                                    <div className="p-3 bg-gray-800/50 rounded-lg">
+                                        <p className="text-xs text-gray-400">HOA Fee</p>
+                                        <p className="font-medium text-white">{extLead.hoa_fee !== undefined && extLead.hoa_fee !== null ? (extLead.hoa_fee === 0 ? "None" : `$${extLead.hoa_fee}/mo`) : "N/A"}</p>
+                                    </div>
+                                    <div className="p-3 bg-gray-800/50 rounded-lg">
+                                        <p className="text-xs text-gray-400">Last Sold</p>
+                                        <p className="font-medium text-white">{extLead.last_sold_date ? new Date(extLead.last_sold_date).toLocaleDateString() : "N/A"}</p>
+                                    </div>
+                                    <div className="p-3 bg-gray-800/50 rounded-lg">
+                                        <p className="text-xs text-gray-400">Last Sold Price</p>
+                                        <p className="font-medium text-white">{formatCurrency(extLead.last_sold_price)}</p>
+                                    </div>
+                                </div>
+
+                                {/* Agent Info Row */}
+                                <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                                    <div className="p-3 bg-gray-800/50 rounded-lg">
+                                        <p className="text-xs text-gray-400">Listing Agent</p>
+                                        <p className="font-medium text-white truncate">{extLead.agent_name || "N/A"}</p>
+                                    </div>
+                                    <div className="p-3 bg-gray-800/50 rounded-lg">
+                                        <p className="text-xs text-gray-400">Brokerage</p>
+                                        <p className="font-medium text-white truncate">{extLead.office_name || "N/A"}</p>
+                                    </div>
+                                </div>
+
+                                {/* Listing Description */}
+                                {extLead.listing_description && (
+                                    <div className="mt-3 pt-3 border-t border-gray-700">
+                                        <p className="text-xs text-gray-500 mb-2 flex items-center justify-center gap-1">
+                                            <FileText className="h-3 w-3" /> Listing Description
+                                        </p>
+                                        <div className="p-3 bg-gray-800/50 rounded-lg">
+                                            <p className="text-sm text-gray-300 leading-relaxed text-center">
+                                                {extLead.listing_description}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* View Listing Link */}
+                                {extLead.assessor_url && (
+                                    <div className="mt-3 pt-3 border-t border-gray-700">
+                                        <a href={extLead.assessor_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full p-2 bg-green-900/20 border border-green-500/30 rounded-lg text-green-400 hover:bg-green-900/40 transition-colors text-sm gap-2">
+                                            <FileText className="h-4 w-4" />
+                                            View Original Listing
+                                        </a>
+                                    </div>
+                                )}
+                            </AccordionContent>
+                        </AccordionItem>
+                    )}
 
                     {/* Property Details & Location (Combined) */}
                     <AccordionItem value="property" className="border-gray-700">
@@ -176,8 +292,8 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
                                     </div>
                                 </div>
 
-                                {/* Assessor Link */}
-                                {extLead.assessor_url && (
+                                {/* Assessor Link - only show for non-MLS leads (MLS has "View Original Listing" in Listing Details) */}
+                                {extLead.assessor_url && !isMLSListing && (
                                     <div className="mt-3 pt-3 border-t border-gray-700">
                                         <a href={extLead.assessor_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full p-2 bg-blue-900/20 border border-blue-500/30 rounded-lg text-blue-400 hover:bg-blue-900/40 transition-colors text-sm gap-2">
                                             <FileText className="h-4 w-4" />

@@ -568,6 +568,11 @@ export default function LeadScout() {
                                                     : s}
                                             </Badge>
                                         ))}
+                                        {(lead as any).mls_source && (
+                                            <Badge variant="outline" className="text-[10px] border-green-900 text-green-400 bg-green-950/30">
+                                                {(lead as any).mls_source}
+                                            </Badge>
+                                        )}
                                         {lead.zoning && (
                                             <Badge variant="outline" className="text-[10px] border-blue-900 text-blue-400 bg-blue-950/30">
                                                 Zoning: {lead.zoning}
