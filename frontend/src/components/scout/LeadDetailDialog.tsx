@@ -1,15 +1,20 @@
-import React from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScoutResult } from '@/lib/store'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { User, Phone, Mail, Building2, DollarSign, AlertTriangle, Gavel, FileText, MapPin, Droplets, TrendingUp, Home, Calendar, Ruler } from 'lucide-react'
+import { User, Phone, Mail, Building2, DollarSign, AlertTriangle, Gavel, FileText, MapPin, Droplets, TrendingUp, Home, Calendar, Ruler, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/simple-accordion"
 
 interface LeadDetailDialogProps {
     lead: ScoutResult | null
     open: boolean
     onOpenChange: (open: boolean) => void
+    // New props for lead navigation
+    results?: ScoutResult[]
+    onNextLead?: () => void
+    onPrevLead?: () => void
+    currentIndex?: number
 }
 
 // Helper to format currency
@@ -31,7 +36,21 @@ const getFloodZoneDescription = (zone: string | undefined) => {
     return `Zone ${zone}`
 }
 
-export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogProps) {
+// Helper to parse alt_photos string into array
+const parseAltPhotos = (altPhotos: string | undefined): string[] => {
+    if (!altPhotos) return []
+    // alt_photos can be comma-separated or a single URL
+    return altPhotos.split(',').map(url => url.trim()).filter(url => url.length > 0)
+}
+
+export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead, onPrevLead, currentIndex }: LeadDetailDialogProps) {
+    const [currentImageIndex, setCurrentImageIndex] = useState(0)
+
+    // Reset image index when lead changes
+    useEffect(() => {
+        setCurrentImageIndex(0)
+    }, [lead?.id])
+
     if (!lead) return null
 
     // Access GIS properties via type assertion
@@ -81,22 +100,123 @@ export function LeadDetailDialog({ lead, open, onOpenChange }: LeadDetailDialogP
     // Check if location section has data
     const hasLocationData = extLead.zoning || extLead.flood_zone || extLead.school_district || extLead.nearby_development
 
+    // Build images array from primary_photo and alt_photos
+    const altPhotosArray = parseAltPhotos(extLead.alt_photos)
+    const allImages = extLead.primary_photo
+        ? [extLead.primary_photo, ...altPhotosArray]
+        : altPhotosArray
+    const hasMultipleImages = allImages.length > 1
+
+    // Image navigation handlers
+    const goToNextImage = () => {
+        if (allImages.length > 0) {
+            setCurrentImageIndex((prev) => (prev + 1) % allImages.length)
+        }
+    }
+    const goToPrevImage = () => {
+        if (allImages.length > 0) {
+            setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length)
+        }
+    }
+
+    // Lead navigation enabled check
+    const canNavigateLeads = results && results.length > 1
+    const canGoPrev = canNavigateLeads && currentIndex !== undefined && currentIndex > 0
+    const canGoNext = canNavigateLeads && currentIndex !== undefined && currentIndex < results.length - 1
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-gradient-to-br from-gray-900 to-gray-950 border-gray-700">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-gray-900 to-gray-950 border-gray-700">
+                {/* Lead Navigation Bar */}
+                {canNavigateLeads && (
+                    <div className="flex items-center justify-between py-2 px-1 border-b border-gray-800 mb-2">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={onPrevLead}
+                            disabled={!canGoPrev}
+                            className="text-gray-400 hover:text-white disabled:opacity-30"
+                        >
+                            <ChevronLeft className="h-4 w-4 mr-1" />
+                            Previous
+                        </Button>
+                        <span className="text-xs text-gray-500">
+                            {(currentIndex ?? 0) + 1} of {results?.length ?? 0}
+                        </span>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={onNextLead}
+                            disabled={!canGoNext}
+                            className="text-gray-400 hover:text-white disabled:opacity-30"
+                        >
+                            Next
+                            <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                    </div>
+                )}
+
+                {/* Image Carousel */}
+                {allImages.length > 0 && (
+                    <div className="mb-4 flex flex-col items-center">
+                        {/* Main Image */}
+                        <div className="relative w-full max-w-lg aspect-[4/3] bg-gray-800 rounded-lg overflow-hidden">
+                            <img
+                                src={allImages[currentImageIndex]}
+                                alt={`${lead.address} - Photo ${currentImageIndex + 1}`}
+                                className="w-full h-full object-contain"
+                            />
+                            {/* Navigation Arrows */}
+                            {hasMultipleImages && (
+                                <>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={goToPrevImage}
+                                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full h-10 w-10"
+                                    >
+                                        <ChevronLeft className="h-6 w-6" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={goToNextImage}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full h-10 w-10"
+                                    >
+                                        <ChevronRight className="h-6 w-6" />
+                                    </Button>
+                                </>
+                            )}
+                            {/* Image Counter */}
+                            <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                                {currentImageIndex + 1} / {allImages.length}
+                            </div>
+                        </div>
+                        {/* Thumbnail Grid */}
+                        {hasMultipleImages && (
+                            <div className="w-full max-w-lg mt-2 max-h-28 overflow-y-auto">
+                                <div className="grid grid-cols-8 gap-1">
+                                    {allImages.map((img, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => setCurrentImageIndex(idx)}
+                                            className={`aspect-square rounded overflow-hidden border-2 transition-all ${idx === currentImageIndex
+                                                ? 'border-green-500 ring-1 ring-green-500/50'
+                                                : 'border-gray-600 hover:border-gray-400'
+                                                }`}
+                                        >
+                                            <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {/* Header */}
                 <DialogHeader className="pb-4 border-b border-gray-700">
                     <div className="flex items-start justify-between gap-4">
-                        {/* Property Photo Thumbnail */}
-                        {extLead.primary_photo && (
-                            <div className="flex-shrink-0">
-                                <img
-                                    src={extLead.primary_photo}
-                                    alt={lead.address}
-                                    className="w-24 h-24 object-cover rounded-lg border border-gray-600"
-                                />
-                            </div>
-                        )}
                         <div className="flex-1">
                             <DialogTitle className="text-xl font-bold text-white flex items-center gap-3 flex-wrap">
                                 <Home className="h-5 w-5 text-green-400" />

@@ -8,6 +8,7 @@ import { LeadInbox } from "@/components/leads/lead-inbox"
 import { DispositionsDashboard } from "@/components/dispositions/DispositionsDashboard"
 import { AnalyticsView } from "@/components/dashboard/AnalyticsView"
 import { RecorderDocuments } from "@/components/recorder/RecorderDocuments"
+import { SettingsPage } from "@/components/settings/SettingsPage"
 
 export default function DashboardPage() {
     const { activeZone } = useAppStore()
@@ -30,6 +31,8 @@ export default function DashboardPage() {
             return <DispositionsDashboard />
         case 'analytics':
             return <AnalyticsView />
+        case 'settings':
+            return <SettingsPage />
         default:
             return <AnalyticsView />
     }

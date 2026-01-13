@@ -53,6 +53,21 @@ export default function LeadScout() {
     const [includePropertyDetails, setIncludePropertyDetails] = useState(false) // Default OFF for fast mode
     const [selectedHotList, setSelectedHotList] = useState<string[]>([]) // Hot List filters
 
+    // Compute selected lead index for navigation
+    const selectedLeadIndex = selectedLead ? results.findIndex(r => r.id === selectedLead.id) : -1
+
+    // Lead navigation handlers
+    const handleNextLead = () => {
+        if (selectedLeadIndex >= 0 && selectedLeadIndex < results.length - 1) {
+            setSelectedLead(results[selectedLeadIndex + 1])
+        }
+    }
+    const handlePrevLead = () => {
+        if (selectedLeadIndex > 0) {
+            setSelectedLead(results[selectedLeadIndex - 1])
+        }
+    }
+
     // Refs
     const listRef = useRef<HTMLDivElement>(null)
     const abortControllerRef = useRef<AbortController | null>(null)
@@ -294,6 +309,23 @@ export default function LeadScout() {
         handleSearch(false, searchBounds, true)
     }
 
+    const handleHotListChange = (newFilters: string[]) => {
+        setSelectedHotList(newFilters)
+
+        // Auto-enable Details if MLS filter is selected
+        const mlsFilters = ["FSBO", "Price Reduced", "High Days on Market", "New Listing"]
+        const hasMlsFilter = newFilters.some(f => mlsFilters.includes(f))
+
+        if (hasMlsFilter && !includePropertyDetails) {
+            setIncludePropertyDetails(true)
+            toast({
+                title: "Details Enabled",
+                description: "MLS filters require detailed property data.",
+                duration: 3000
+            })
+        }
+    }
+
     return (
         <div className="flex h-screen w-full bg-black text-white overflow-hidden relative">
 
@@ -348,7 +380,7 @@ export default function LeadScout() {
                             selectedDistressTypes={selectedDistressTypes}
                             setSelectedDistressTypes={(val) => setLeadScoutState({ selectedDistressTypes: val })}
                             selectedHotList={selectedHotList}
-                            setSelectedHotList={setSelectedHotList}
+                            setSelectedHotList={handleHotListChange}
                             minBeds={minBeds}
                             setMinBeds={(val) => setLeadScoutState({ minBeds: val })}
                             minBaths={minBaths}
@@ -660,6 +692,10 @@ export default function LeadScout() {
                 lead={selectedLead}
                 open={isDetailOpen}
                 onOpenChange={setIsDetailOpen}
+                results={results}
+                currentIndex={selectedLeadIndex >= 0 ? selectedLeadIndex : undefined}
+                onNextLead={handleNextLead}
+                onPrevLead={handlePrevLead}
             />
         </div>
     )

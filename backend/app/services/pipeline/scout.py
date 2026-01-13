@@ -1312,9 +1312,21 @@ class ScoutService:
                 
                 # Check Price Reduced
                 if "Price Reduced" in hot_list:
-                    # Look for price_reduced flag or compare prices
+                    # Look for price_reduced flag or keywords in description
+                    is_reduced = False
+                    
+                    # 1. Check explicit flag
                     price_reduced = listing.get("price_reduced")
                     if price_reduced and str(price_reduced).lower() not in ["false", "nan", "none", ""]:
+                        is_reduced = True
+                    
+                    # 2. Check description keywords if flag not found
+                    if not is_reduced:
+                        desc = str(listing.get("text") or "").lower()
+                        if "price reduced" in desc or "price drop" in desc or "reduced price" in desc or "reduced!" in desc:
+                            is_reduced = True
+                            
+                    if is_reduced:
                         signals.append("Price Reduced")
                 
                 # Check High Days on Market (60+)
@@ -1337,10 +1349,17 @@ class ScoutService:
                         except (ValueError, TypeError):
                             pass
                 
-                # If any hot signal matches, include this lead
-                if signals:
+                # AND logic: Include only if ALL selected hot filters match
+                if len(signals) == len(hot_list):
                     # Normalize to our lead format
                     lead = self._normalize_homeharvest_listing(listing, signals)
+                    
+                    # VALIDATION: Filter out leads with missing essential data
+                    if not lead.get("address") or lead.get("address") == "None, None, AZ ":
+                        continue
+                    if not lead.get("list_price") and not lead.get("estimated_value"):
+                        continue
+                        
                     hot_leads.append(lead)
             
             print(f"  {len(hot_leads)} leads matched hot list filters")
@@ -1413,8 +1432,8 @@ class ScoutService:
             "last_sold_date": str(listing.get("last_sold_date")) if listing.get("last_sold_date") else None,
             "agent_name": listing.get("agent_name"),
             "office_name": listing.get("office_name"),
-            "latitude": listing.get("latitude"),
-            "longitude": listing.get("longitude"),
+            "latitude": float(listing.get("latitude")) if listing.get("latitude") and str(listing.get("latitude")).lower() != "nan" else None,
+            "longitude": float(listing.get("longitude")) if listing.get("longitude") and str(listing.get("longitude")).lower() != "nan" else None,
             "status": listing.get("status") or "Active",
             "listing_description": listing.get("text") or "",  # MLS listing description
             "strategy": "Wholesale",
@@ -1422,6 +1441,7 @@ class ScoutService:
             "assessor_url": property_url,
             "photos": listing.get("primary_photo") or None,
             "primary_photo": listing.get("primary_photo"),
+            "alt_photos": listing.get("alt_photos") or "",  # Comma-separated list of photo URLs
         }
     
     def _apply_homeharvest_from_cache(self, leads: List[Dict]) -> int:
@@ -1895,11 +1915,11 @@ class ScoutService:
                         filtered = [r for r in hot_results 
                                    if matches_property_type(r.get("property_type", ""), property_types)]
                         
-                        # If filtering removes all results, return unfiltered (better UX)
-                        if filtered:
-                            hot_results = filtered
-                        else:
-                            print(f"  Property type filter would remove all {len(hot_results)} results, skipping filter")
+                        # STRICT FILTERING: Only return matches
+                        hot_results = filtered
+                        
+                        if not hot_results:
+                            print(f"  Property type filter removed all results.")
                     
                     # Enrich MLS leads with GIS data (zoning, flood zone, school district, neighborhood, PoP)
                     await self._enrich_with_gis_layers(hot_results)

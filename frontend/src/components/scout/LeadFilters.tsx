@@ -7,6 +7,7 @@ import { Home, Sliders, AlertTriangle, Flame, X, RotateCcw } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
+import { useToast } from '@/components/ui/use-toast'
 
 export const PROPERTY_TYPES = [
     "Single Family",
@@ -320,12 +321,36 @@ export function HotListFilter({
 }: HotListFilterProps) {
     const [open, setOpen] = useState(false)
 
+    const { toast } = useToast()
+
     const toggleHotListType = (type: string) => {
+        // 1. Handle Uncheck
         if (selectedHotList.includes(type)) {
             setSelectedHotList(selectedHotList.filter(t => t !== type))
-        } else {
-            setSelectedHotList([...selectedHotList, type])
+            return
         }
+
+        // 2. Handle Check (with Conflict Resolution)
+        let newList = [...selectedHotList, type]
+
+        // Define conflicts (Mutually Exclusive)
+        const conflicts: Record<string, string> = {
+            "New Listing": "High Days on Market",
+            "High Days on Market": "New Listing"
+        }
+
+        const conflictType = conflicts[type]
+        if (conflictType && newList.includes(conflictType)) {
+            // Remove the OLD conflicting option, keep the NEW one
+            newList = newList.filter(t => t !== conflictType)
+            toast({
+                title: "Filter Conflict Resolved",
+                description: `Selected "${type}", removed conflicting "${conflictType}"`,
+                variant: "default"
+            })
+        }
+
+        setSelectedHotList(newList)
     }
 
     const handleReset = () => {
