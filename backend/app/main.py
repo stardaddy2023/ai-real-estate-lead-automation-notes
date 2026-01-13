@@ -42,6 +42,11 @@ try:
 except ImportError:
     RECORDER_AVAILABLE = False
     print("WARNING: Recorder module not available (mcp_servers not found)")
+
+# Settings endpoint
+from app.api.endpoints import settings as settings_router
+from app.models.settings import AppSetting
+
 from pydantic import BaseModel
 
 print("LOADING MAIN APP - DEBUG MODE")
@@ -86,6 +91,7 @@ async def health_status():
 # --- ROUTERS ---
 app.include_router(dispositions.router, prefix="/api/v1/dispositions", tags=["dispositions"])
 app.include_router(scout.router, prefix="/api/v1/scout", tags=["scout"])
+app.include_router(settings_router.router, prefix="/api/v1", tags=["settings"])
 if RECORDER_AVAILABLE:
     app.include_router(recorder.router, prefix="/api/v1/recorder", tags=["recorder"])
 
