@@ -812,7 +812,9 @@ export default function LeadScout() {
                 currentIndex={selectedLeadIndex >= 0 ? selectedLeadIndex : undefined}
                 onNextLead={handleNextLead}
                 onPrevLead={handlePrevLead}
+                onSwitchToListView={() => setLeadScoutState({ viewMode: 'list' })}
             />
+
         </div >
     )
 }

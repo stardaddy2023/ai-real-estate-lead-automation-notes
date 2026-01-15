@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScoutResult } from '@/lib/store'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { User, Phone, Mail, Building2, DollarSign, AlertTriangle, Gavel, FileText, MapPin, Droplets, TrendingUp, Home, Calendar, Ruler, ChevronLeft, ChevronRight } from 'lucide-react'
+import { User, Phone, Mail, Building2, DollarSign, AlertTriangle, Gavel, FileText, MapPin, Droplets, TrendingUp, Home, Calendar, Ruler, ChevronLeft, ChevronRight, List as ListIcon } from 'lucide-react'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/simple-accordion"
 
 interface LeadDetailDialogProps {
@@ -15,6 +15,8 @@ interface LeadDetailDialogProps {
     onNextLead?: () => void
     onPrevLead?: () => void
     currentIndex?: number
+    // View toggle
+    onSwitchToListView?: () => void
 }
 
 // Helper to format currency
@@ -43,7 +45,7 @@ const parseAltPhotos = (altPhotos: string | undefined): string[] => {
     return altPhotos.split(',').map(url => url.trim()).filter(url => url.length > 0)
 }
 
-export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead, onPrevLead, currentIndex }: LeadDetailDialogProps) {
+export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead, onPrevLead, currentIndex, onSwitchToListView }: LeadDetailDialogProps) {
     const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
     // Reset image index when lead changes
@@ -609,13 +611,30 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
                 </Accordion>
 
                 {/* Action Buttons */}
-                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-700">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} className="border-gray-600 text-gray-300 hover:bg-gray-800">
-                        Close
-                    </Button>
-                    <Button className="bg-green-600 hover:bg-green-700 text-white">
-                        Add to Campaign
-                    </Button>
+                <div className="flex justify-between gap-3 mt-6 pt-4 border-t border-gray-700">
+                    <div>
+                        {onSwitchToListView && (
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    onSwitchToListView()
+                                    onOpenChange(false)
+                                }}
+                                className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                            >
+                                <ListIcon className="h-4 w-4 mr-2" />
+                                View in List
+                            </Button>
+                        )}
+                    </div>
+                    <div className="flex gap-3">
+                        <Button variant="outline" onClick={() => onOpenChange(false)} className="border-gray-600 text-gray-300 hover:bg-gray-800">
+                            Close
+                        </Button>
+                        <Button className="bg-green-600 hover:bg-green-700 text-white">
+                            Add to Campaign
+                        </Button>
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>
