@@ -61,6 +61,26 @@ export default function LeadScout() {
     const [selectedHotList, setSelectedHotList] = useState<string[]>([]) // Hot List filters
     const [sidebarOpen, setSidebarOpen] = useState(true) // Right sidebar open/closed state
     const [listFilter, setListFilter] = useState('') // Local filter for DataTable view
+    const [filterOpen, setFilterOpen] = useState(false) // Filter dropdown open state
+    const [filterSearch, setFilterSearch] = useState('') // Search within filter options
+
+    // Column Filters for DataTable
+    const [columnFilters, setColumnFilters] = useState<{
+        beds: { min?: number; max?: number; enabled: boolean };
+        baths: { min?: number; max?: number; enabled: boolean };
+        sqft: { min?: number; max?: number; enabled: boolean };
+        year_built: { min?: number; max?: number; enabled: boolean };
+        zoning: string[];
+        property_type: string[];
+    }>({
+        beds: { enabled: false },
+        baths: { enabled: false },
+        sqft: { enabled: false },
+        year_built: { enabled: false },
+        zoning: [],
+        property_type: [],
+    })
+
 
 
     // Create scout columns with callbacks - includes selection props for checkbox column
@@ -617,18 +637,185 @@ export default function LeadScout() {
                                 )}
                             </div>
 
-                            {/* Center: Filter Input */}
-                            <div className="flex items-center gap-2 w-80">
-                                <div className="relative flex-1">
+                            {/* Center: Search Input + Filter Button */}
+                            <div className="flex items-center gap-2">
+                                <div className="relative w-64">
                                     <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                     <input
                                         type="text"
-                                        placeholder="Filter results..."
+                                        placeholder="Search results..."
                                         value={listFilter}
                                         onChange={(e) => setListFilter(e.target.value)}
                                         className="w-full h-8 pl-8 pr-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-green-500"
                                     />
                                 </div>
+
+                                {/* Filter Dropdown Button */}
+                                <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className={`h-8 gap-1 border-gray-300 dark:border-gray-700 ${Object.values(columnFilters).some(v =>
+                                                (typeof v === 'object' && 'enabled' in v && v.enabled) ||
+                                                (Array.isArray(v) && v.length > 0)
+                                            ) ? 'bg-green-100 dark:bg-green-900/30 border-green-500' : ''
+                                                }`}
+                                        >
+                                            <Filter className="w-4 h-4" />
+                                            Filters
+                                            {Object.values(columnFilters).filter(v =>
+                                                (typeof v === 'object' && 'enabled' in v && v.enabled) ||
+                                                (Array.isArray(v) && v.length > 0)
+                                            ).length > 0 && (
+                                                    <Badge className="ml-1 h-5 w-5 p-0 flex items-center justify-center bg-green-600 text-white text-xs">
+                                                        {Object.values(columnFilters).filter(v =>
+                                                            (typeof v === 'object' && 'enabled' in v && v.enabled) ||
+                                                            (Array.isArray(v) && v.length > 0)
+                                                        ).length}
+                                                    </Badge>
+                                                )}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80 p-0 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700" align="start">
+                                        <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <h4 className="font-semibold text-gray-900 dark:text-white">Filters</h4>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-6 text-xs text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                                                    onClick={() => setColumnFilters({
+                                                        beds: { enabled: false },
+                                                        baths: { enabled: false },
+                                                        sqft: { enabled: false },
+                                                        year_built: { enabled: false },
+                                                        zoning: [],
+                                                        property_type: [],
+                                                    })}
+                                                >
+                                                    Reset
+                                                </Button>
+                                            </div>
+                                            <div className="relative">
+                                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search filters..."
+                                                    value={filterSearch}
+                                                    onChange={(e) => setFilterSearch(e.target.value)}
+                                                    className="w-full h-8 pl-8 pr-3 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-green-500"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <ScrollArea className="h-72">
+                                            <div className="p-3 space-y-4">
+                                                {/* Numeric Filters */}
+                                                {['beds', 'baths', 'sqft', 'year_built'].filter(key =>
+                                                    key.toLowerCase().includes(filterSearch.toLowerCase()) ||
+                                                    (key === 'sqft' && 'square feet'.includes(filterSearch.toLowerCase())) ||
+                                                    (key === 'year_built' && 'year'.includes(filterSearch.toLowerCase()))
+                                                ).map((key) => (
+                                                    <div key={key} className="space-y-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                id={`filter-${key}`}
+                                                                checked={(columnFilters[key as keyof typeof columnFilters] as any)?.enabled || false}
+                                                                onChange={(e) => setColumnFilters(prev => ({
+                                                                    ...prev,
+                                                                    [key]: { ...prev[key as keyof typeof prev], enabled: e.target.checked }
+                                                                }))}
+                                                                className="w-4 h-4 rounded border-gray-400 dark:border-gray-600 text-green-600 focus:ring-green-500"
+                                                            />
+                                                            <label htmlFor={`filter-${key}`} className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                                                                {key === 'sqft' ? 'Square Feet' : key === 'year_built' ? 'Year Built' : key}
+                                                            </label>
+                                                        </div>
+                                                        {(columnFilters[key as keyof typeof columnFilters] as any)?.enabled && (
+                                                            <div className="flex items-center gap-2 pl-6">
+                                                                <input
+                                                                    type="number"
+                                                                    placeholder="Min"
+                                                                    value={(columnFilters[key as keyof typeof columnFilters] as any)?.min || ''}
+                                                                    onChange={(e) => setColumnFilters(prev => ({
+                                                                        ...prev,
+                                                                        [key]: { ...prev[key as keyof typeof prev], min: e.target.value ? Number(e.target.value) : undefined }
+                                                                    }))}
+                                                                    className="w-20 h-7 px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white"
+                                                                />
+                                                                <span className="text-gray-500 text-sm">to</span>
+                                                                <input
+                                                                    type="number"
+                                                                    placeholder="Max"
+                                                                    value={(columnFilters[key as keyof typeof columnFilters] as any)?.max || ''}
+                                                                    onChange={(e) => setColumnFilters(prev => ({
+                                                                        ...prev,
+                                                                        [key]: { ...prev[key as keyof typeof prev], max: e.target.value ? Number(e.target.value) : undefined }
+                                                                    }))}
+                                                                    className="w-20 h-7 px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+
+                                                {/* Text Filters - Zoning */}
+                                                {'zoning'.includes(filterSearch.toLowerCase()) && (
+                                                    <div className="space-y-2">
+                                                        <h5 className="text-sm font-medium text-gray-900 dark:text-white">Zoning</h5>
+                                                        <div className="max-h-32 overflow-y-auto space-y-1 pl-2">
+                                                            {[...new Set(results.map(r => r.zoning).filter(Boolean))].map((zoning) => (
+                                                                <label key={zoning} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded px-1 py-0.5">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={columnFilters.zoning.includes(zoning!)}
+                                                                        onChange={(e) => {
+                                                                            if (e.target.checked) {
+                                                                                setColumnFilters(prev => ({ ...prev, zoning: [...prev.zoning, zoning!] }))
+                                                                            } else {
+                                                                                setColumnFilters(prev => ({ ...prev, zoning: prev.zoning.filter(z => z !== zoning) }))
+                                                                            }
+                                                                        }}
+                                                                        className="w-3.5 h-3.5 rounded border-gray-400 dark:border-gray-600 text-green-600 focus:ring-green-500"
+                                                                    />
+                                                                    {zoning}
+                                                                </label>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Text Filters - Property Type */}
+                                                {'property type'.includes(filterSearch.toLowerCase()) && (
+                                                    <div className="space-y-2">
+                                                        <h5 className="text-sm font-medium text-gray-900 dark:text-white">Property Type</h5>
+                                                        <div className="max-h-32 overflow-y-auto space-y-1 pl-2">
+                                                            {[...new Set(results.map(r => r.property_type).filter(Boolean))].map((type) => (
+                                                                <label key={type} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded px-1 py-0.5">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={columnFilters.property_type.includes(type!)}
+                                                                        onChange={(e) => {
+                                                                            if (e.target.checked) {
+                                                                                setColumnFilters(prev => ({ ...prev, property_type: [...prev.property_type, type!] }))
+                                                                            } else {
+                                                                                setColumnFilters(prev => ({ ...prev, property_type: prev.property_type.filter(t => t !== type) }))
+                                                                            }
+                                                                        }}
+                                                                        className="w-3.5 h-3.5 rounded border-gray-400 dark:border-gray-600 text-green-600 focus:ring-green-500"
+                                                                    />
+                                                                    {type}
+                                                                </label>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </ScrollArea>
+                                    </PopoverContent>
+                                </Popover>
                             </div>
 
                             {/* Right Side: Import Button */}
@@ -650,16 +837,60 @@ export default function LeadScout() {
                             {results.length > 0 ? (
                                 <DataTable
                                     columns={scoutColumns}
-                                    data={listFilter
-                                        ? results.filter((r: ScoutResult) =>
-                                            r.address?.toLowerCase().includes(listFilter.toLowerCase()) ||
-                                            r.parcel_id?.toLowerCase().includes(listFilter.toLowerCase()) ||
-                                            r.owner_name?.toLowerCase().includes(listFilter.toLowerCase()) ||
-                                            r.property_type?.toLowerCase().includes(listFilter.toLowerCase()) ||
-                                            r.zoning?.toLowerCase().includes(listFilter.toLowerCase())
-                                        )
-                                        : results
-                                    }
+                                    data={results.filter((r: ScoutResult) => {
+                                        // Text search filter
+                                        if (listFilter) {
+                                            const searchLower = listFilter.toLowerCase()
+                                            const matchesSearch =
+                                                r.address?.toLowerCase().includes(searchLower) ||
+                                                r.parcel_id?.toLowerCase().includes(searchLower) ||
+                                                r.owner_name?.toLowerCase().includes(searchLower) ||
+                                                r.property_type?.toLowerCase().includes(searchLower) ||
+                                                r.zoning?.toLowerCase().includes(searchLower)
+                                            if (!matchesSearch) return false
+                                        }
+
+                                        // Apply column filters
+                                        // Beds filter
+                                        if (columnFilters.beds.enabled) {
+                                            const beds = r.beds ?? 0
+                                            if (columnFilters.beds.min !== undefined && beds < columnFilters.beds.min) return false
+                                            if (columnFilters.beds.max !== undefined && beds > columnFilters.beds.max) return false
+                                        }
+
+                                        // Baths filter
+                                        if (columnFilters.baths.enabled) {
+                                            const baths = r.baths ?? 0
+                                            if (columnFilters.baths.min !== undefined && baths < columnFilters.baths.min) return false
+                                            if (columnFilters.baths.max !== undefined && baths > columnFilters.baths.max) return false
+                                        }
+
+                                        // SqFt filter
+                                        if (columnFilters.sqft.enabled) {
+                                            const sqft = r.sqft ?? 0
+                                            if (columnFilters.sqft.min !== undefined && sqft < columnFilters.sqft.min) return false
+                                            if (columnFilters.sqft.max !== undefined && sqft > columnFilters.sqft.max) return false
+                                        }
+
+                                        // Year Built filter
+                                        if (columnFilters.year_built.enabled) {
+                                            const year = r.year_built ?? 0
+                                            if (columnFilters.year_built.min !== undefined && year < columnFilters.year_built.min) return false
+                                            if (columnFilters.year_built.max !== undefined && year > columnFilters.year_built.max) return false
+                                        }
+
+                                        // Zoning filter (multi-select)
+                                        if (columnFilters.zoning.length > 0) {
+                                            if (!r.zoning || !columnFilters.zoning.includes(r.zoning)) return false
+                                        }
+
+                                        // Property Type filter (multi-select)
+                                        if (columnFilters.property_type.length > 0) {
+                                            if (!r.property_type || !columnFilters.property_type.includes(r.property_type)) return false
+                                        }
+
+                                        return true
+                                    })}
                                     onRowClick={(row) => {
                                         setSelectedLead(row as ScoutResult)
                                         setLeadScoutState({ highlightedLeadId: (row as ScoutResult).id })
