@@ -9,9 +9,11 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Loader2, Map as MapIcon, List as ListIcon, Download, Search, X, SlidersHorizontal, LayoutGrid } from 'lucide-react'
+import { Loader2, Map as MapIcon, List as ListIcon, Download, Search, X, SlidersHorizontal, LayoutGrid, ChevronDown, Check } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from '@/components/ui/sheet'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Filter } from 'lucide-react'
 import { LeadDetailDialog } from './LeadDetailDialog'
 import { LeadFilters, PROPERTY_TYPES, DISTRESS_TYPES, DISABLED_DISTRESS_TYPES, HOT_LIST_TYPES } from './LeadFilters'
 import { useAppStore, ScoutResult } from '@/lib/store'
@@ -61,14 +63,34 @@ export default function LeadScout() {
     const [listFilter, setListFilter] = useState('') // Local filter for DataTable view
 
 
-    // Create scout columns with callbacks
+    // Create scout columns with callbacks - includes selection props for checkbox column
     const scoutColumns = useMemo(() => createScoutColumns({
         onViewDetails: (lead) => {
             setSelectedLead(lead)
             setIsDetailOpen(true)
         },
-        onImport: (lead) => handleImport(lead)
-    }), [])
+        onImport: (lead) => handleImport(lead),
+        // Selection props for checkbox column
+        selectedIds: selectedLeadIds,
+        onToggleSelect: (id: string) => {
+            const newSelected = new Set(selectedLeadIds)
+            if (newSelected.has(id)) {
+                newSelected.delete(id)
+            } else {
+                newSelected.add(id)
+            }
+            setLeadScoutState({ selectedLeadIds: newSelected })
+        },
+        onToggleAll: () => {
+            if (selectedLeadIds.size === results.length) {
+                setLeadScoutState({ selectedLeadIds: new Set() })
+            } else {
+                setLeadScoutState({ selectedLeadIds: new Set(results.map(r => r.id)) })
+            }
+        },
+        allSelected: results.length > 0 && selectedLeadIds.size === results.length
+    }), [selectedLeadIds, results, setLeadScoutState])
+
 
     // Compute selected lead index for navigation
     const selectedLeadIndex = selectedLead ? results.findIndex(r => r.id === selectedLead.id) : -1

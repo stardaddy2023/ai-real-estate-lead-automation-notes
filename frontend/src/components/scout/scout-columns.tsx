@@ -64,10 +64,46 @@ type ExtendedScoutResult = ScoutResult & {
 interface ScoutColumnsOptions {
     onViewDetails?: (lead: ScoutResult) => void
     onImport?: (lead: ScoutResult) => void
+    // Selection props
+    selectedIds?: Set<string>
+    onToggleSelect?: (id: string) => void
+    onToggleAll?: () => void
+    allSelected?: boolean
 }
 
 export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef<ScoutResult>[] {
     return [
+        // ============ CHECKBOX COLUMN ============
+        {
+            id: "select",
+            header: () => (
+                <div className="flex items-center justify-center px-1">
+                    <input
+                        type="checkbox"
+                        checked={options.allSelected || false}
+                        onChange={() => options.onToggleAll?.()}
+                        className="w-4 h-4 rounded border-gray-400 dark:border-gray-600 text-green-600 focus:ring-green-500 bg-white dark:bg-gray-700 cursor-pointer"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
+            ),
+            cell: ({ row }) => {
+                const lead = row.original
+                const isSelected = options.selectedIds?.has(lead.id) || false
+                return (
+                    <div className="flex items-center justify-center px-1">
+                        <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => options.onToggleSelect?.(lead.id)}
+                            className="w-4 h-4 rounded border-gray-400 dark:border-gray-600 text-green-600 focus:ring-green-500 bg-white dark:bg-gray-700 cursor-pointer"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+                )
+            },
+            size: 40,
+        },
         // ============ CORE ============
         {
             accessorKey: "address",
@@ -85,12 +121,13 @@ export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef
                 const lead = row.original as ExtendedScoutResult
                 return (
                     <div className="flex flex-col min-w-[180px] px-2">
-                        <span className="font-medium text-white truncate">{lead.address}</span>
+                        <span className="font-medium text-gray-900 dark:text-white truncate">{lead.address}</span>
                         <span className="text-xs text-gray-500">APN: {lead.parcel_id || "—"}</span>
                     </div>
                 )
             },
         },
+
 
         // ============ PROPERTY DETAILS ============
         {
@@ -119,7 +156,7 @@ export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef
                     <ArrowUpDown className="ml-1 h-3 w-3" />
                 </Button>
             ),
-            cell: ({ row }) => <div className="text-center px-2">{row.getValue("year_built") ?? "—"}</div>,
+            cell: ({ row }) => <div className="text-center px-2 text-gray-900 dark:text-white">{row.getValue("year_built") ?? "—"}</div>,
         },
         {
             accessorKey: "lot_size",
@@ -128,9 +165,9 @@ export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef
                 const lot = row.getValue("lot_size") as number
                 if (!lot) return <div className="text-right text-gray-500 px-2">—</div>
                 if (lot >= 43560) {
-                    return <div className="text-right px-2">{(lot / 43560).toFixed(2)} ac</div>
+                    return <div className="text-right px-2 text-gray-900 dark:text-white">{(lot / 43560).toFixed(2)} ac</div>
                 }
-                return <div className="text-right px-2">{lot.toLocaleString()} sf</div>
+                return <div className="text-right px-2 text-gray-900 dark:text-white">{lot.toLocaleString()} sf</div>
             },
         },
         {
@@ -143,13 +180,13 @@ export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef
             ),
             cell: ({ row }) => {
                 const sqft = row.getValue("sqft") as number
-                return <div className="text-right px-2">{sqft ? sqft.toLocaleString() : "—"}</div>
+                return <div className="text-right px-2 text-gray-900 dark:text-white">{sqft ? sqft.toLocaleString() : "—"}</div>
             },
         },
         {
             accessorKey: "beds",
             header: "Beds",
-            cell: ({ row }) => <div className="text-center">{row.getValue("beds") ?? "—"}</div>,
+            cell: ({ row }) => <div className="text-center text-gray-900 dark:text-white">{row.getValue("beds") ?? "—"}</div>,
         },
         {
             accessorKey: "baths",
@@ -158,7 +195,7 @@ export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef
                 const lead = row.original as ExtendedScoutResult
                 const baths = lead.baths ?? "—"
                 const halfBaths = lead.half_baths ? `/${lead.half_baths}` : ""
-                return <div className="text-center">{baths}{halfBaths}</div>
+                return <div className="text-center text-gray-900 dark:text-white">{baths}{halfBaths}</div>
             },
         },
         {
@@ -166,7 +203,7 @@ export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef
             header: "Stories",
             cell: ({ row }) => {
                 const lead = row.original as ExtendedScoutResult
-                return <div className="text-center">{lead.stories ?? "—"}</div>
+                return <div className="text-center text-gray-900 dark:text-white">{lead.stories ?? "—"}</div>
             },
         },
 
@@ -189,7 +226,7 @@ export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef
             cell: ({ row }) => {
                 const lead = row.original as ExtendedScoutResult
                 return (
-                    <div className="truncate max-w-[150px] text-sm" title={lead.neighborhoods}>
+                    <div className="truncate max-w-[150px] text-sm text-gray-900 dark:text-white" title={lead.neighborhoods}>
                         {lead.neighborhoods || "—"}
                     </div>
                 )
@@ -214,7 +251,7 @@ export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef
             cell: ({ row }) => {
                 const lead = row.original as ExtendedScoutResult
                 return (
-                    <div className="truncate max-w-[150px] text-xs" title={lead.school_district}>
+                    <div className="truncate max-w-[150px] text-xs text-gray-900 dark:text-white" title={lead.school_district}>
                         {lead.school_district || "—"}
                     </div>
                 )
@@ -245,7 +282,7 @@ export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef
             ),
             cell: ({ row }) => {
                 const owner = row.getValue("owner_name") as string
-                return <div className="truncate max-w-[140px] px-2">{owner || "Unknown"}</div>
+                return <div className="truncate max-w-[140px] px-2 text-gray-900 dark:text-white">{owner || "Unknown"}</div>
             },
         },
         {
@@ -254,7 +291,7 @@ export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef
             cell: ({ row }) => {
                 const addr = row.getValue("mailing_address") as string
                 return (
-                    <div className="truncate max-w-[150px] text-xs" title={addr}>
+                    <div className="truncate max-w-[150px] text-xs text-gray-900 dark:text-white" title={addr}>
                         {addr || "Same as property"}
                     </div>
                 )
@@ -288,7 +325,7 @@ export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef
             ),
             cell: ({ row }) => {
                 const value = row.getValue("assessed_value") as number
-                return <div className="text-right font-medium px-2">{formatCurrency(value)}</div>
+                return <div className="text-right font-medium px-2 text-gray-900 dark:text-white">{formatCurrency(value)}</div>
             },
         },
         {
@@ -314,7 +351,7 @@ export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef
             cell: ({ row }) => {
                 const lead = row.original as ExtendedScoutResult
                 return (
-                    <div className="text-right text-sm">
+                    <div className="text-right text-sm text-gray-900 dark:text-white">
                         {lead.price_per_sqft ? `$${lead.price_per_sqft}` : "—"}
                     </div>
                 )
@@ -326,8 +363,8 @@ export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef
             cell: ({ row }) => {
                 const lead = row.original as ExtendedScoutResult
                 if (lead.hoa_fee === undefined || lead.hoa_fee === null) return <span className="text-gray-500">—</span>
-                if (lead.hoa_fee === 0) return <span className="text-green-400">None</span>
-                return <span>${lead.hoa_fee}/mo</span>
+                if (lead.hoa_fee === 0) return <span className="text-green-600 dark:text-green-400">None</span>
+                return <span className="text-gray-900 dark:text-white">${lead.hoa_fee}/mo</span>
             },
         },
         {
@@ -352,9 +389,9 @@ export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef
                 const price = lead.last_sold_price
                 if (!date && !price) return <span className="text-gray-500">—</span>
                 return (
-                    <div className="text-xs">
+                    <div className="text-xs text-gray-900 dark:text-white">
                         {price && <div>{formatCurrency(price)}</div>}
-                        {date && <div className="text-gray-400">{new Date(date).toLocaleDateString()}</div>}
+                        {date && <div className="text-gray-500 dark:text-gray-400">{new Date(date).toLocaleDateString()}</div>}
                     </div>
                 )
             },
