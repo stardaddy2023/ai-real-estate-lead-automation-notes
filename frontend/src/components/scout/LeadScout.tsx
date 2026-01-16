@@ -58,6 +58,7 @@ export default function LeadScout() {
     const [includePropertyDetails, setIncludePropertyDetails] = useState(false) // Default OFF for fast mode
     const [selectedHotList, setSelectedHotList] = useState<string[]>([]) // Hot List filters
     const [sidebarOpen, setSidebarOpen] = useState(true) // Right sidebar open/closed state
+    const [listFilter, setListFilter] = useState('') // Local filter for DataTable view
 
 
     // Create scout columns with callbacks
@@ -364,8 +365,13 @@ export default function LeadScout() {
                 </div>
             )}
 
-            {/* SEARCH BAR (Floating & Dynamic Position) */}
-            <div className={`absolute top-4 z-50 w-[calc(100%-1rem)] md:w-full max-w-4xl px-0 md:px-4 transition-all duration-300 ease-in-out ${viewMode === 'list' ? 'left-1/2 md:left-[calc(50%-12rem)]' : 'left-1/2'} -translate-x-1/2 transform pointer-events-none`}>
+            {/* SEARCH BAR (Floating & Dynamic Position - Centers between menus) */}
+            <div className={`absolute top-4 z-50 w-[calc(100%-1rem)] md:w-full max-w-4xl px-0 md:px-4 transition-all duration-300 ease-in-out ${viewMode === 'list'
+                ? 'left-1/2'
+                : sidebarOpen
+                    ? 'left-[calc(50%-225px+32px)]'  // Center between left sidebar (64px) and right panel (450px)
+                    : 'left-1/2'
+                } -translate-x-1/2 transform pointer-events-none`}>
                 <div className="pointer-events-auto flex flex-col items-center w-full">
 
                     {/* DESKTOP LAYOUT (Hidden on Mobile) */}
@@ -567,40 +573,81 @@ export default function LeadScout() {
 
                 {/* LIST VIEW - Full Page DataTable */}
                 {viewMode === 'list' && (
-                    <div className="absolute inset-0 z-20 bg-gray-950 pt-20 overflow-hidden flex flex-col">
-                        {/* Table Header */}
-                        <div className="px-4 py-3 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 shrink-0">
-                            <div className="flex items-center gap-3">
+                    <div className="absolute inset-0 z-20 bg-gray-950 pt-16 overflow-hidden flex flex-col">
+                        {/* Table Header with Filter, Select All, Import, Map Button */}
+                        <div className="px-4 py-2 border-b border-gray-800 flex flex-wrap justify-between items-center bg-gray-900/50 shrink-0 gap-2">
+                            {/* Left Side: Results Count, Select All, Import */}
+                            <div className="flex items-center gap-4">
                                 <h2 className="font-semibold text-gray-200">RESULTS ({results.length})</h2>
                                 {results.length > 0 && (
-                                    <div className="flex items-center gap-2 ml-4">
-                                        <input
-                                            type="checkbox"
-                                            id="select-all-table"
-                                            className="w-4 h-4 rounded border-gray-600 text-green-600 focus:ring-green-500 bg-gray-700"
-                                            checked={results.length > 0 && selectedLeadIds.size === results.length}
-                                            onChange={toggleSelectAll}
-                                        />
-                                        <label htmlFor="select-all-table" className="text-xs text-gray-400 cursor-pointer select-none">
-                                            Select All
-                                        </label>
-                                    </div>
+                                    <>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                id="select-all-table"
+                                                className="w-4 h-4 rounded border-gray-600 text-green-600 focus:ring-green-500 bg-gray-700"
+                                                checked={results.length > 0 && selectedLeadIds.size === results.length}
+                                                onChange={toggleSelectAll}
+                                            />
+                                            <label htmlFor="select-all-table" className="text-xs text-gray-400 cursor-pointer select-none">
+                                                Select All
+                                            </label>
+                                        </div>
+                                        {selectedLeadIds.size > 0 && (
+                                            <Button
+                                                size="sm"
+                                                className="h-7 bg-green-600 hover:bg-green-700 text-white text-xs"
+                                                onClick={handleBulkImport}
+                                            >
+                                                <Download className="w-3 h-3 mr-1" />
+                                                Import {selectedLeadIds.size} Selected
+                                            </Button>
+                                        )}
+                                    </>
                                 )}
                             </div>
-                            {/* Mobile Map FAB */}
+
+                            {/* Center: Filter Input */}
+                            <div className="flex-1 max-w-md mx-4">
+                                <div className="relative">
+                                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Filter results..."
+                                        value={listFilter}
+                                        onChange={(e) => setListFilter(e.target.value)}
+                                        className="w-full h-8 pl-8 pr-3 bg-gray-800 border border-gray-700 rounded-md text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Right Side: Map Button */}
                             <Button
-                                className="md:hidden rounded-full shadow-xl h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2"
+                                size="sm"
+                                className="h-8 bg-blue-600 hover:bg-blue-700 text-white"
                                 onClick={() => setLeadScoutState({ viewMode: 'map' })}
                             >
-                                <MapIcon className="h-4 w-4" />
-                                Map
+                                <MapIcon className="h-4 w-4 mr-1" />
+                                Map View
                             </Button>
                         </div>
 
-                        {/* DataTable with Scroll */}
-                        <div className="flex-1 overflow-auto p-4">
+                        {/* DataTable with Scroll - reduced padding */}
+                        <div className="flex-1 overflow-auto px-4 py-2">
                             {results.length > 0 ? (
-                                <DataTable columns={scoutColumns} data={results} />
+                                <DataTable
+                                    columns={scoutColumns}
+                                    data={listFilter
+                                        ? results.filter(r =>
+                                            r.address?.toLowerCase().includes(listFilter.toLowerCase()) ||
+                                            r.parcel_id?.toLowerCase().includes(listFilter.toLowerCase()) ||
+                                            r.owner_name?.toLowerCase().includes(listFilter.toLowerCase()) ||
+                                            r.property_type?.toLowerCase().includes(listFilter.toLowerCase()) ||
+                                            r.zoning?.toLowerCase().includes(listFilter.toLowerCase())
+                                        )
+                                        : results
+                                    }
+                                />
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-full text-gray-500">
                                     <ListIcon className="w-12 h-12 mb-4 opacity-50" />
@@ -789,20 +836,21 @@ export default function LeadScout() {
                     )
                 }
 
-                {/* "Show Results" Toggle Button (Bottom Center) - Opens DataTable */}
-                {
-                    !sidebarOpen && results.length > 0 && (
-                        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-50">
-                            <Button
-                                onClick={() => setLeadScoutState({ viewMode: 'list' })}
-                                className="rounded-full shadow-2xl bg-green-600 hover:bg-green-700 text-white border-none px-8 py-6 text-lg font-semibold transition-all transform hover:scale-105"
-                            >
-                                <ListIcon className="w-5 h-5 mr-2" />
-                                Show {results.length} Results
-                            </Button>
-                        </div>
-                    )
-                }
+                {/* Bottom Center Button - Show Results (map view) or Map (list view) */}
+                {results.length > 0 && viewMode !== 'list' && (
+                    <div className={`absolute bottom-8 z-50 transition-all duration-300 ${sidebarOpen
+                            ? 'left-[calc(50%-225px+32px)] -translate-x-1/2'  // Center between menus when sidebar open
+                            : 'left-1/2 -translate-x-1/2'
+                        }`}>
+                        <Button
+                            onClick={() => setLeadScoutState({ viewMode: 'list' })}
+                            className="rounded-full shadow-2xl bg-green-600 hover:bg-green-700 text-white border-none px-8 py-6 text-lg font-semibold transition-all transform hover:scale-105"
+                        >
+                            <ListIcon className="w-5 h-5 mr-2" />
+                            Show {results.length} Results
+                        </Button>
+                    </div>
+                )}
 
             </div >
 
