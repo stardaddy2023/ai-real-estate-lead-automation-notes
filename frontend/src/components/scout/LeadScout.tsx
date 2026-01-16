@@ -64,21 +64,33 @@ export default function LeadScout() {
     const [filterOpen, setFilterOpen] = useState(false) // Filter dropdown open state
     const [filterSearch, setFilterSearch] = useState('') // Search within filter options
 
-    // Column Filters for DataTable
+    // Column Filters for DataTable - All filterable columns
     const [columnFilters, setColumnFilters] = useState<{
+        // Numeric filters (min/max)
         beds: { min?: number; max?: number; enabled: boolean };
         baths: { min?: number; max?: number; enabled: boolean };
         sqft: { min?: number; max?: number; enabled: boolean };
         year_built: { min?: number; max?: number; enabled: boolean };
+        lot_size: { min?: number; max?: number; enabled: boolean };
+        stories: { min?: number; max?: number; enabled: boolean };
+        assessed_value: { min?: number; max?: number; enabled: boolean };
+        // Text filters (multi-select)
         zoning: string[];
         property_type: string[];
+        flood_zone: string[];
+        neighborhood: string[];
     }>({
         beds: { enabled: false },
         baths: { enabled: false },
         sqft: { enabled: false },
         year_built: { enabled: false },
+        lot_size: { enabled: false },
+        stories: { enabled: false },
+        assessed_value: { enabled: false },
         zoning: [],
         property_type: [],
+        flood_zone: [],
+        neighborhood: [],
     })
 
 
@@ -650,9 +662,9 @@ export default function LeadScout() {
                                     />
                                 </div>
 
-                                {/* Filter Dropdown Button */}
-                                <Popover open={filterOpen} onOpenChange={setFilterOpen}>
-                                    <PopoverTrigger asChild>
+                                {/* Filter Panel Button */}
+                                <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+                                    <SheetTrigger asChild>
                                         <Button
                                             variant="outline"
                                             size="sm"
@@ -676,28 +688,34 @@ export default function LeadScout() {
                                                     </Badge>
                                                 )}
                                         </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-80 p-0 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700" align="start">
-                                        <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <h4 className="font-semibold text-gray-900 dark:text-white">Filters</h4>
+                                    </SheetTrigger>
+                                    <SheetContent side="right" className="w-[400px] sm:w-[540px] bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-y-auto">
+                                        <SheetHeader className="pb-4 border-b border-gray-200 dark:border-gray-700">
+                                            <div className="flex items-center justify-between">
+                                                <SheetTitle className="text-gray-900 dark:text-white">Filters</SheetTitle>
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="h-6 text-xs text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                                                    className="h-7 text-xs text-gray-500 hover:text-gray-900 dark:hover:text-white"
                                                     onClick={() => setColumnFilters({
                                                         beds: { enabled: false },
                                                         baths: { enabled: false },
                                                         sqft: { enabled: false },
                                                         year_built: { enabled: false },
+                                                        lot_size: { enabled: false },
+                                                        stories: { enabled: false },
+                                                        assessed_value: { enabled: false },
                                                         zoning: [],
                                                         property_type: [],
+                                                        flood_zone: [],
+                                                        neighborhood: [],
                                                     })}
                                                 >
-                                                    Reset
+                                                    Reset All
                                                 </Button>
                                             </div>
-                                            <div className="relative">
+                                            {/* Search Filters */}
+                                            <div className="relative mt-3">
                                                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                                 <input
                                                     type="text"
@@ -707,115 +725,227 @@ export default function LeadScout() {
                                                     className="w-full h-8 pl-8 pr-3 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-green-500"
                                                 />
                                             </div>
-                                        </div>
+                                        </SheetHeader>
 
-                                        <ScrollArea className="h-72">
-                                            <div className="p-3 space-y-4">
-                                                {/* Numeric Filters */}
-                                                {['beds', 'baths', 'sqft', 'year_built'].filter(key =>
-                                                    key.toLowerCase().includes(filterSearch.toLowerCase()) ||
-                                                    (key === 'sqft' && 'square feet'.includes(filterSearch.toLowerCase())) ||
-                                                    (key === 'year_built' && 'year'.includes(filterSearch.toLowerCase()))
-                                                ).map((key) => (
-                                                    <div key={key} className="space-y-2">
-                                                        <div className="flex items-center gap-2">
+                                        <div className="py-4 space-y-6">
+                                            {/* Quick Filters as Chips */}
+                                            <div>
+                                                <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Quick Filters</h4>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {[
+                                                        { label: '3+ Beds', key: 'beds', value: { min: 3 } },
+                                                        { label: '2+ Baths', key: 'baths', value: { min: 2 } },
+                                                        { label: '1500+ SqFt', key: 'sqft', value: { min: 1500 } },
+                                                        { label: 'Built after 2000', key: 'year_built', value: { min: 2000 } },
+                                                    ].map((quick) => (
+                                                        <Badge
+                                                            key={quick.label}
+                                                            className={`cursor-pointer px-3 py-1 ${(columnFilters[quick.key as keyof typeof columnFilters] as any)?.enabled &&
+                                                                (columnFilters[quick.key as keyof typeof columnFilters] as any)?.min === quick.value.min
+                                                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                                                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                                                }`}
+                                                            onClick={() => {
+                                                                const current = columnFilters[quick.key as keyof typeof columnFilters] as any
+                                                                if (current?.enabled && current?.min === quick.value.min) {
+                                                                    setColumnFilters(prev => ({ ...prev, [quick.key]: { enabled: false } }))
+                                                                } else {
+                                                                    setColumnFilters(prev => ({ ...prev, [quick.key]: { ...quick.value, enabled: true } }))
+                                                                }
+                                                            }}
+                                                        >
+                                                            {quick.label}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Property Filters */}
+                                            {'property beds baths sqft year stories'.includes(filterSearch.toLowerCase()) && (
+                                                <div>
+                                                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Property Details</h4>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        {[
+                                                            { key: 'beds', label: 'Beds' },
+                                                            { key: 'baths', label: 'Baths' },
+                                                            { key: 'sqft', label: 'Square Feet' },
+                                                            { key: 'year_built', label: 'Year Built' },
+                                                            { key: 'lot_size', label: 'Lot Size' },
+                                                            { key: 'stories', label: 'Stories' },
+                                                        ].filter(f => f.label.toLowerCase().includes(filterSearch.toLowerCase()) || filterSearch === '').map((field) => (
+                                                            <div key={field.key} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
+                                                                <label className="flex items-center gap-2 mb-2">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={(columnFilters[field.key as keyof typeof columnFilters] as any)?.enabled || false}
+                                                                        onChange={(e) => setColumnFilters(prev => ({
+                                                                            ...prev,
+                                                                            [field.key]: { ...prev[field.key as keyof typeof prev] as any, enabled: e.target.checked }
+                                                                        }))}
+                                                                        className="w-4 h-4 rounded border-gray-400 dark:border-gray-600 text-green-600 focus:ring-green-500"
+                                                                    />
+                                                                    <span className="text-sm font-medium text-gray-900 dark:text-white">{field.label}</span>
+                                                                </label>
+                                                                {(columnFilters[field.key as keyof typeof columnFilters] as any)?.enabled && (
+                                                                    <div className="flex items-center gap-2">
+                                                                        <input
+                                                                            type="number"
+                                                                            placeholder="Min"
+                                                                            value={(columnFilters[field.key as keyof typeof columnFilters] as any)?.min || ''}
+                                                                            onChange={(e) => setColumnFilters(prev => ({
+                                                                                ...prev,
+                                                                                [field.key]: { ...prev[field.key as keyof typeof prev] as any, min: e.target.value ? Number(e.target.value) : undefined }
+                                                                            }))}
+                                                                            className="flex-1 h-7 px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white"
+                                                                        />
+                                                                        <span className="text-gray-400 text-xs">to</span>
+                                                                        <input
+                                                                            type="number"
+                                                                            placeholder="Max"
+                                                                            value={(columnFilters[field.key as keyof typeof columnFilters] as any)?.max || ''}
+                                                                            onChange={(e) => setColumnFilters(prev => ({
+                                                                                ...prev,
+                                                                                [field.key]: { ...prev[field.key as keyof typeof prev] as any, max: e.target.value ? Number(e.target.value) : undefined }
+                                                                            }))}
+                                                                            className="flex-1 h-7 px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white"
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Financial Filters */}
+                                            {'assessed value financial price'.includes(filterSearch.toLowerCase()) && (
+                                                <div>
+                                                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Financial</h4>
+                                                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
+                                                        <label className="flex items-center gap-2 mb-2">
                                                             <input
                                                                 type="checkbox"
-                                                                id={`filter-${key}`}
-                                                                checked={(columnFilters[key as keyof typeof columnFilters] as any)?.enabled || false}
+                                                                checked={columnFilters.assessed_value.enabled}
                                                                 onChange={(e) => setColumnFilters(prev => ({
                                                                     ...prev,
-                                                                    [key]: { ...prev[key as keyof typeof prev], enabled: e.target.checked }
+                                                                    assessed_value: { ...prev.assessed_value, enabled: e.target.checked }
                                                                 }))}
                                                                 className="w-4 h-4 rounded border-gray-400 dark:border-gray-600 text-green-600 focus:ring-green-500"
                                                             />
-                                                            <label htmlFor={`filter-${key}`} className="text-sm font-medium text-gray-900 dark:text-white capitalize">
-                                                                {key === 'sqft' ? 'Square Feet' : key === 'year_built' ? 'Year Built' : key}
-                                                            </label>
-                                                        </div>
-                                                        {(columnFilters[key as keyof typeof columnFilters] as any)?.enabled && (
-                                                            <div className="flex items-center gap-2 pl-6">
+                                                            <span className="text-sm font-medium text-gray-900 dark:text-white">Assessed Value</span>
+                                                        </label>
+                                                        {columnFilters.assessed_value.enabled && (
+                                                            <div className="flex items-center gap-2">
                                                                 <input
                                                                     type="number"
-                                                                    placeholder="Min"
-                                                                    value={(columnFilters[key as keyof typeof columnFilters] as any)?.min || ''}
+                                                                    placeholder="Min $"
+                                                                    value={columnFilters.assessed_value.min || ''}
                                                                     onChange={(e) => setColumnFilters(prev => ({
                                                                         ...prev,
-                                                                        [key]: { ...prev[key as keyof typeof prev], min: e.target.value ? Number(e.target.value) : undefined }
+                                                                        assessed_value: { ...prev.assessed_value, min: e.target.value ? Number(e.target.value) : undefined }
                                                                     }))}
-                                                                    className="w-20 h-7 px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white"
+                                                                    className="flex-1 h-7 px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white"
                                                                 />
-                                                                <span className="text-gray-500 text-sm">to</span>
+                                                                <span className="text-gray-400 text-xs">to</span>
                                                                 <input
                                                                     type="number"
-                                                                    placeholder="Max"
-                                                                    value={(columnFilters[key as keyof typeof columnFilters] as any)?.max || ''}
+                                                                    placeholder="Max $"
+                                                                    value={columnFilters.assessed_value.max || ''}
                                                                     onChange={(e) => setColumnFilters(prev => ({
                                                                         ...prev,
-                                                                        [key]: { ...prev[key as keyof typeof prev], max: e.target.value ? Number(e.target.value) : undefined }
+                                                                        assessed_value: { ...prev.assessed_value, max: e.target.value ? Number(e.target.value) : undefined }
                                                                     }))}
-                                                                    className="w-20 h-7 px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white"
+                                                                    className="flex-1 h-7 px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white"
                                                                 />
                                                             </div>
                                                         )}
                                                     </div>
-                                                ))}
+                                                </div>
+                                            )}
 
-                                                {/* Text Filters - Zoning */}
-                                                {'zoning'.includes(filterSearch.toLowerCase()) && (
-                                                    <div className="space-y-2">
-                                                        <h5 className="text-sm font-medium text-gray-900 dark:text-white">Zoning</h5>
-                                                        <div className="max-h-32 overflow-y-auto space-y-1 pl-2">
-                                                            {[...new Set(results.map(r => r.zoning).filter(Boolean))].map((zoning) => (
-                                                                <label key={zoning} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded px-1 py-0.5">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={columnFilters.zoning.includes(zoning!)}
-                                                                        onChange={(e) => {
-                                                                            if (e.target.checked) {
-                                                                                setColumnFilters(prev => ({ ...prev, zoning: [...prev.zoning, zoning!] }))
-                                                                            } else {
-                                                                                setColumnFilters(prev => ({ ...prev, zoning: prev.zoning.filter(z => z !== zoning) }))
-                                                                            }
-                                                                        }}
-                                                                        className="w-3.5 h-3.5 rounded border-gray-400 dark:border-gray-600 text-green-600 focus:ring-green-500"
-                                                                    />
-                                                                    {zoning}
-                                                                </label>
-                                                            ))}
-                                                        </div>
+                                            {/* Property Type */}
+                                            {'property type'.includes(filterSearch.toLowerCase()) && (
+                                                <div>
+                                                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Property Type</h4>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {[...new Set(results.map(r => r.property_type).filter(Boolean))].map((type) => (
+                                                            <Badge
+                                                                key={type}
+                                                                className={`cursor-pointer px-3 py-1 ${columnFilters.property_type.includes(type!)
+                                                                    ? 'bg-green-600 text-white hover:bg-green-700'
+                                                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                                                    }`}
+                                                                onClick={() => {
+                                                                    if (columnFilters.property_type.includes(type!)) {
+                                                                        setColumnFilters(prev => ({ ...prev, property_type: prev.property_type.filter(t => t !== type) }))
+                                                                    } else {
+                                                                        setColumnFilters(prev => ({ ...prev, property_type: [...prev.property_type, type!] }))
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {type}
+                                                            </Badge>
+                                                        ))}
                                                     </div>
-                                                )}
+                                                </div>
+                                            )}
 
-                                                {/* Text Filters - Property Type */}
-                                                {'property type'.includes(filterSearch.toLowerCase()) && (
-                                                    <div className="space-y-2">
-                                                        <h5 className="text-sm font-medium text-gray-900 dark:text-white">Property Type</h5>
-                                                        <div className="max-h-32 overflow-y-auto space-y-1 pl-2">
-                                                            {[...new Set(results.map(r => r.property_type).filter(Boolean))].map((type) => (
-                                                                <label key={type} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded px-1 py-0.5">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={columnFilters.property_type.includes(type!)}
-                                                                        onChange={(e) => {
-                                                                            if (e.target.checked) {
-                                                                                setColumnFilters(prev => ({ ...prev, property_type: [...prev.property_type, type!] }))
-                                                                            } else {
-                                                                                setColumnFilters(prev => ({ ...prev, property_type: prev.property_type.filter(t => t !== type) }))
-                                                                            }
-                                                                        }}
-                                                                        className="w-3.5 h-3.5 rounded border-gray-400 dark:border-gray-600 text-green-600 focus:ring-green-500"
-                                                                    />
-                                                                    {type}
-                                                                </label>
-                                                            ))}
-                                                        </div>
+                                            {/* Zoning */}
+                                            {'zoning'.includes(filterSearch.toLowerCase()) && (
+                                                <div>
+                                                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Zoning</h4>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {[...new Set(results.map(r => r.zoning).filter(Boolean))].map((zone) => (
+                                                            <Badge
+                                                                key={zone}
+                                                                className={`cursor-pointer px-3 py-1 ${columnFilters.zoning.includes(zone!)
+                                                                    ? 'bg-green-600 text-white hover:bg-green-700'
+                                                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                                                    }`}
+                                                                onClick={() => {
+                                                                    if (columnFilters.zoning.includes(zone!)) {
+                                                                        setColumnFilters(prev => ({ ...prev, zoning: prev.zoning.filter(z => z !== zone) }))
+                                                                    } else {
+                                                                        setColumnFilters(prev => ({ ...prev, zoning: [...prev.zoning, zone!] }))
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {zone}
+                                                            </Badge>
+                                                        ))}
                                                     </div>
-                                                )}
-                                            </div>
-                                        </ScrollArea>
-                                    </PopoverContent>
-                                </Popover>
+                                                </div>
+                                            )}
+
+                                            {/* Flood Zone */}
+                                            {'flood zone'.includes(filterSearch.toLowerCase()) && (
+                                                <div>
+                                                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Flood Zone</h4>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {[...new Set(results.map(r => (r as any).flood_zone).filter(Boolean))].map((zone: string) => (
+                                                            <Badge
+                                                                key={zone}
+                                                                className={`cursor-pointer px-3 py-1 ${columnFilters.flood_zone.includes(zone)
+                                                                    ? 'bg-green-600 text-white hover:bg-green-700'
+                                                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                                                    }`}
+                                                                onClick={() => {
+                                                                    if (columnFilters.flood_zone.includes(zone)) {
+                                                                        setColumnFilters(prev => ({ ...prev, flood_zone: prev.flood_zone.filter(z => z !== zone) }))
+                                                                    } else {
+                                                                        setColumnFilters(prev => ({ ...prev, flood_zone: [...prev.flood_zone, zone] }))
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {zone}
+                                                            </Badge>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </SheetContent>
+                                </Sheet>
                             </div>
 
                             {/* Right Side: Import Button */}
@@ -879,6 +1009,27 @@ export default function LeadScout() {
                                             if (columnFilters.year_built.max !== undefined && year > columnFilters.year_built.max) return false
                                         }
 
+                                        // Lot Size filter
+                                        if (columnFilters.lot_size.enabled) {
+                                            const lotSize = (r as any).lot_size ?? 0
+                                            if (columnFilters.lot_size.min !== undefined && lotSize < columnFilters.lot_size.min) return false
+                                            if (columnFilters.lot_size.max !== undefined && lotSize > columnFilters.lot_size.max) return false
+                                        }
+
+                                        // Stories filter
+                                        if (columnFilters.stories.enabled) {
+                                            const stories = (r as any).stories ?? 0
+                                            if (columnFilters.stories.min !== undefined && stories < columnFilters.stories.min) return false
+                                            if (columnFilters.stories.max !== undefined && stories > columnFilters.stories.max) return false
+                                        }
+
+                                        // Assessed Value filter
+                                        if (columnFilters.assessed_value.enabled) {
+                                            const value = r.assessed_value ?? 0
+                                            if (columnFilters.assessed_value.min !== undefined && value < columnFilters.assessed_value.min) return false
+                                            if (columnFilters.assessed_value.max !== undefined && value > columnFilters.assessed_value.max) return false
+                                        }
+
                                         // Zoning filter (multi-select)
                                         if (columnFilters.zoning.length > 0) {
                                             if (!r.zoning || !columnFilters.zoning.includes(r.zoning)) return false
@@ -887,6 +1038,18 @@ export default function LeadScout() {
                                         // Property Type filter (multi-select)
                                         if (columnFilters.property_type.length > 0) {
                                             if (!r.property_type || !columnFilters.property_type.includes(r.property_type)) return false
+                                        }
+
+                                        // Flood Zone filter (multi-select)
+                                        if (columnFilters.flood_zone.length > 0) {
+                                            const floodZone = (r as any).flood_zone
+                                            if (!floodZone || !columnFilters.flood_zone.includes(floodZone)) return false
+                                        }
+
+                                        // Neighborhood filter (multi-select)
+                                        if (columnFilters.neighborhood.length > 0) {
+                                            const neighborhood = (r as any).neighborhoods
+                                            if (!neighborhood || !columnFilters.neighborhood.includes(neighborhood)) return false
                                         }
 
                                         return true
