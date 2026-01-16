@@ -365,280 +365,271 @@ export default function LeadScout() {
                 </div>
             )}
 
-            {/* SEARCH BAR (Floating & Dynamic Position - Centers between menus) */}
-            <div className={`absolute top-4 z-50 w-[calc(100%-1rem)] md:w-full max-w-4xl px-0 md:px-4 transition-all duration-300 ease-in-out ${viewMode === 'list'
-                ? 'left-1/2'
-                : sidebarOpen
-                    ? 'left-[calc(50%-225px+32px)]'  // Center between left sidebar (64px) and right panel (450px)
+            {/* SEARCH BAR (Floating & Dynamic Position - Only in Map View) */}
+            {viewMode !== 'list' && (
+                <div className={`absolute top-4 z-50 w-[calc(100%-1rem)] md:w-full max-w-4xl px-0 md:px-4 transition-all duration-300 ease-in-out ${sidebarOpen
+                    ? 'left-[calc(50%-225px+32px)]'
                     : 'left-1/2'
-                } -translate-x-1/2 transform pointer-events-none`}>
-                <div className="pointer-events-auto flex flex-col items-center w-full">
+                    } -translate-x-1/2 transform pointer-events-none`}>
+                    <div className="pointer-events-auto flex flex-col items-center w-full">
 
-                    {/* DESKTOP LAYOUT (Hidden on Mobile) */}
-                    <div className="hidden md:flex bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-md shadow-lg items-center px-3 h-10 gap-2 w-full">
-                        <Search className="text-gray-400 w-4 h-4 shrink-0" />
-                        <div className="flex-1 min-w-[150px] h-full">
-                            <AutocompleteInput
-                                value={query}
-                                onChange={(val) => {
-                                    setLeadScoutState({ query: val })
-                                    if (val && bounds) setLeadScoutState({ bounds: null })
-                                }}
-                                onSearch={() => handleSearch(true)}
-                                placeholder="Search Zip Code, City, or Neighborhood..."
-                                className="h-full w-full"
-                                inputClassName="bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white placeholder:text-gray-400 h-full w-full focus:outline-none text-sm px-0"
-                                showIcon={false}
+                        {/* DESKTOP LAYOUT (Hidden on Mobile) */}
+                        <div className="hidden md:flex bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-md shadow-lg items-center px-3 h-10 gap-2 w-full">
+                            <Search className="text-gray-400 w-4 h-4 shrink-0" />
+                            <div className="flex-1 min-w-[150px] h-full">
+                                <AutocompleteInput
+                                    value={query}
+                                    onChange={(val) => {
+                                        setLeadScoutState({ query: val })
+                                        if (val && bounds) setLeadScoutState({ bounds: null })
+                                    }}
+                                    onSearch={() => handleSearch(true)}
+                                    placeholder="Search Zip Code, City, or Neighborhood..."
+                                    className="h-full w-full"
+                                    inputClassName="bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white placeholder:text-gray-400 h-full w-full focus:outline-none text-sm px-0"
+                                    showIcon={false}
+                                />
+                            </div>
+                            <div className="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1" />
+                            <select
+                                className="bg-transparent border-none text-gray-700 dark:text-gray-300 text-sm focus:outline-none cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-medium"
+                                value={limit}
+                                onChange={(e) => setLeadScoutState({ limit: Number(e.target.value) })}
+                            >
+                                <option value={10} className="bg-white dark:bg-gray-900">10 Leads</option>
+                                <option value={25} className="bg-white dark:bg-gray-900">25 Leads</option>
+                                <option value={50} className="bg-white dark:bg-gray-900">50 Leads</option>
+                                <option value={100} className="bg-white dark:bg-gray-900">100 Leads</option>
+                                <option value={500} className="bg-white dark:bg-gray-900">500 Leads</option>
+                            </select>
+                            <div className="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1" />
+                            <LeadFilters
+                                selectedPropertyTypes={selectedPropertyTypes}
+                                setSelectedPropertyTypes={(val) => setLeadScoutState({ selectedPropertyTypes: val })}
+                                selectedDistressTypes={selectedDistressTypes}
+                                setSelectedDistressTypes={(val) => setLeadScoutState({ selectedDistressTypes: val })}
+                                selectedHotList={selectedHotList}
+                                setSelectedHotList={handleHotListChange}
+                                minBeds={minBeds}
+                                setMinBeds={(val) => setLeadScoutState({ minBeds: val })}
+                                minBaths={minBaths}
+                                setMinBaths={(val) => setLeadScoutState({ minBaths: val })}
+                                minSqft={minSqft}
+                                setMinSqft={(val) => setLeadScoutState({ minSqft: val })}
+                                onSearch={() => handleSearch(false)}
                             />
-                        </div>
-                        <div className="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1" />
-                        <select
-                            className="bg-transparent border-none text-gray-700 dark:text-gray-300 text-sm focus:outline-none cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-medium"
-                            value={limit}
-                            onChange={(e) => setLeadScoutState({ limit: Number(e.target.value) })}
-                        >
-                            <option value={10} className="bg-white dark:bg-gray-900">10 Leads</option>
-                            <option value={25} className="bg-white dark:bg-gray-900">25 Leads</option>
-                            <option value={50} className="bg-white dark:bg-gray-900">50 Leads</option>
-                            <option value={100} className="bg-white dark:bg-gray-900">100 Leads</option>
-                            <option value={500} className="bg-white dark:bg-gray-900">500 Leads</option>
-                        </select>
-                        <div className="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1" />
-                        <LeadFilters
-                            selectedPropertyTypes={selectedPropertyTypes}
-                            setSelectedPropertyTypes={(val) => setLeadScoutState({ selectedPropertyTypes: val })}
-                            selectedDistressTypes={selectedDistressTypes}
-                            setSelectedDistressTypes={(val) => setLeadScoutState({ selectedDistressTypes: val })}
-                            selectedHotList={selectedHotList}
-                            setSelectedHotList={handleHotListChange}
-                            minBeds={minBeds}
-                            setMinBeds={(val) => setLeadScoutState({ minBeds: val })}
-                            minBaths={minBaths}
-                            setMinBaths={(val) => setLeadScoutState({ minBaths: val })}
-                            minSqft={minSqft}
-                            setMinSqft={(val) => setLeadScoutState({ minSqft: val })}
-                            onSearch={() => handleSearch(false)}
-                        />
-                        <div className="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1" />
-                        <label className="flex items-center gap-1.5 cursor-pointer shrink-0" title="When enabled, fetches detailed property info (beds, baths, sqft, photos) - adds ~45s to search">
-                            <input
-                                type="checkbox"
-                                checked={includePropertyDetails}
-                                onChange={(e) => setIncludePropertyDetails(e.target.checked)}
-                                className="w-3.5 h-3.5 rounded border-gray-400 text-green-600 focus:ring-green-500 focus:ring-1"
-                            />
-                            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Details</span>
-                        </label>
-                        <Button
-                            size="sm"
-                            className="h-8 bg-green-600 hover:bg-green-700 text-white px-4 shrink-0"
-                            onClick={() => query ? handleSearch(true) : handleSearch(false)}
-                        >
-                            Search
-                        </Button>
-                    </div>
-
-
-                    {/* MOBILE LAYOUT (Visible on Mobile) */}
-                    <div className="flex md:hidden bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-full shadow-lg items-center px-4 h-12 w-full gap-3">
-                        <Search className="text-gray-400 w-5 h-5 shrink-0" />
-                        <div className="flex-1 h-full">
-                            <AutocompleteInput
-                                value={query}
-                                onChange={(val) => {
-                                    setLeadScoutState({ query: val })
-                                    if (val && bounds) setLeadScoutState({ bounds: null })
-                                }}
-                                onSearch={() => handleSearch(true)}
-                                placeholder="Zip, City, Neighborhood..."
-                                className="h-full w-full"
-                                inputClassName="bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white placeholder:text-gray-500 h-full w-full focus:outline-none text-base px-0"
-                                showIcon={false}
-                            />
+                            <div className="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1" />
+                            <label className="flex items-center gap-1.5 cursor-pointer shrink-0" title="When enabled, fetches detailed property info (beds, baths, sqft, photos) - adds ~45s to search">
+                                <input
+                                    type="checkbox"
+                                    checked={includePropertyDetails}
+                                    onChange={(e) => setIncludePropertyDetails(e.target.checked)}
+                                    className="w-3.5 h-3.5 rounded border-gray-400 text-green-600 focus:ring-green-500 focus:ring-1"
+                                />
+                                <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Details</span>
+                            </label>
+                            <Button
+                                size="sm"
+                                className="h-8 bg-green-600 hover:bg-green-700 text-white px-4 shrink-0"
+                                onClick={() => query ? handleSearch(true) : handleSearch(false)}
+                            >
+                                Search
+                            </Button>
                         </div>
 
-                        {/* Filter Sheet Trigger */}
-                        <Sheet>
-                            <SheetTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-                                    <SlidersHorizontal className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent side="right" className="w-full sm:w-[400px] h-full p-0 bg-gray-950 border-l border-gray-800 text-white">
-                                <SheetHeader className="p-4 border-b border-gray-800">
-                                    <SheetTitle className="text-white">Search Filters</SheetTitle>
-                                </SheetHeader>
-                                <ScrollArea className="h-[calc(100vh-80px)]">
-                                    <div className="p-4 space-y-6 pb-20">
-                                        {/* Limit */}
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-400">Results Limit</label>
-                                            <Select value={limit.toString()} onValueChange={(val) => setLeadScoutState({ limit: Number(val) })}>
-                                                <SelectTrigger className="w-full bg-gray-900 border-gray-800 text-white">
-                                                    <SelectValue placeholder="Select limit" />
-                                                </SelectTrigger>
-                                                <SelectContent className="bg-gray-900 border-gray-800 text-white">
-                                                    <SelectItem value="10">10 Leads</SelectItem>
-                                                    <SelectItem value="25">25 Leads</SelectItem>
-                                                    <SelectItem value="50">50 Leads</SelectItem>
-                                                    <SelectItem value="100">100 Leads</SelectItem>
-                                                    <SelectItem value="500">500 Leads</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
 
-                                        {/* Details Toggle */}
-                                        <div className="flex items-center justify-between bg-gray-900 p-3 rounded-lg border border-gray-800">
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-medium text-white">Fetch Property Details</span>
-                                                <span className="text-xs text-gray-500">Includes beds, baths, sqft (Slower)</span>
+                        {/* MOBILE LAYOUT (Visible on Mobile) */}
+                        <div className="flex md:hidden bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-full shadow-lg items-center px-4 h-12 w-full gap-3">
+                            <Search className="text-gray-400 w-5 h-5 shrink-0" />
+                            <div className="flex-1 h-full">
+                                <AutocompleteInput
+                                    value={query}
+                                    onChange={(val) => {
+                                        setLeadScoutState({ query: val })
+                                        if (val && bounds) setLeadScoutState({ bounds: null })
+                                    }}
+                                    onSearch={() => handleSearch(true)}
+                                    placeholder="Zip, City, Neighborhood..."
+                                    className="h-full w-full"
+                                    inputClassName="bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white placeholder:text-gray-500 h-full w-full focus:outline-none text-base px-0"
+                                    showIcon={false}
+                                />
+                            </div>
+
+                            {/* Filter Sheet Trigger */}
+                            <Sheet>
+                                <SheetTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                                        <SlidersHorizontal className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                                    </Button>
+                                </SheetTrigger>
+                                <SheetContent side="right" className="w-full sm:w-[400px] h-full p-0 bg-gray-950 border-l border-gray-800 text-white">
+                                    <SheetHeader className="p-4 border-b border-gray-800">
+                                        <SheetTitle className="text-white">Search Filters</SheetTitle>
+                                    </SheetHeader>
+                                    <ScrollArea className="h-[calc(100vh-80px)]">
+                                        <div className="p-4 space-y-6 pb-20">
+                                            {/* Limit */}
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium text-gray-400">Results Limit</label>
+                                                <Select value={limit.toString()} onValueChange={(val) => setLeadScoutState({ limit: Number(val) })}>
+                                                    <SelectTrigger className="w-full bg-gray-900 border-gray-800 text-white">
+                                                        <SelectValue placeholder="Select limit" />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="bg-gray-900 border-gray-800 text-white">
+                                                        <SelectItem value="10">10 Leads</SelectItem>
+                                                        <SelectItem value="25">25 Leads</SelectItem>
+                                                        <SelectItem value="50">50 Leads</SelectItem>
+                                                        <SelectItem value="100">100 Leads</SelectItem>
+                                                        <SelectItem value="500">500 Leads</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
                                             </div>
-                                            <input
-                                                type="checkbox"
-                                                checked={includePropertyDetails}
-                                                onChange={(e) => setIncludePropertyDetails(e.target.checked)}
-                                                className="w-5 h-5 rounded border-gray-600 text-green-600 focus:ring-green-500 bg-gray-800"
-                                            />
-                                        </div>
 
-                                        {/* Filters Component (Reused) */}
-                                        <div className="space-y-4">
-                                            <LeadFilters
-                                                mobile // Pass mobile prop to force expanded view if needed
-                                                selectedPropertyTypes={selectedPropertyTypes}
-                                                setSelectedPropertyTypes={(val) => setLeadScoutState({ selectedPropertyTypes: val })}
-                                                selectedDistressTypes={selectedDistressTypes}
-                                                setSelectedDistressTypes={(val) => setLeadScoutState({ selectedDistressTypes: val })}
-                                                selectedHotList={selectedHotList}
-                                                setSelectedHotList={handleHotListChange}
-                                                minBeds={minBeds}
-                                                setMinBeds={(val) => setLeadScoutState({ minBeds: val })}
-                                                minBaths={minBaths}
-                                                setMinBaths={(val) => setLeadScoutState({ minBaths: val })}
-                                                minSqft={minSqft}
-                                                setMinSqft={(val) => setLeadScoutState({ minSqft: val })}
-                                                onSearch={() => { }} // No-op, search is manual
-                                            />
+                                            {/* Details Toggle */}
+                                            <div className="flex items-center justify-between bg-gray-900 p-3 rounded-lg border border-gray-800">
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-medium text-white">Fetch Property Details</span>
+                                                    <span className="text-xs text-gray-500">Includes beds, baths, sqft (Slower)</span>
+                                                </div>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={includePropertyDetails}
+                                                    onChange={(e) => setIncludePropertyDetails(e.target.checked)}
+                                                    className="w-5 h-5 rounded border-gray-600 text-green-600 focus:ring-green-500 bg-gray-800"
+                                                />
+                                            </div>
+
+                                            {/* Filters Component (Reused) */}
+                                            <div className="space-y-4">
+                                                <LeadFilters
+                                                    mobile // Pass mobile prop to force expanded view if needed
+                                                    selectedPropertyTypes={selectedPropertyTypes}
+                                                    setSelectedPropertyTypes={(val) => setLeadScoutState({ selectedPropertyTypes: val })}
+                                                    selectedDistressTypes={selectedDistressTypes}
+                                                    setSelectedDistressTypes={(val) => setLeadScoutState({ selectedDistressTypes: val })}
+                                                    selectedHotList={selectedHotList}
+                                                    setSelectedHotList={handleHotListChange}
+                                                    minBeds={minBeds}
+                                                    setMinBeds={(val) => setLeadScoutState({ minBeds: val })}
+                                                    minBaths={minBaths}
+                                                    setMinBaths={(val) => setLeadScoutState({ minBaths: val })}
+                                                    minSqft={minSqft}
+                                                    setMinSqft={(val) => setLeadScoutState({ minSqft: val })}
+                                                    onSearch={() => { }} // No-op, search is manual
+                                                />
+                                            </div>
                                         </div>
+                                    </ScrollArea>
+                                    <div className="absolute bottom-0 left-0 right-0 p-4 bg-gray-950 border-t border-gray-800">
+                                        <SheetClose asChild>
+                                            <Button
+                                                className="w-full bg-green-600 hover:bg-green-700 text-white h-12 text-lg font-semibold"
+                                                onClick={() => query ? handleSearch(true) : handleSearch(false)}
+                                            >
+                                                Search {limit} Leads
+                                            </Button>
+                                        </SheetClose>
                                     </div>
-                                </ScrollArea>
-                                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gray-950 border-t border-gray-800">
-                                    <SheetClose asChild>
-                                        <Button
-                                            className="w-full bg-green-600 hover:bg-green-700 text-white h-12 text-lg font-semibold"
-                                            onClick={() => query ? handleSearch(true) : handleSearch(false)}
-                                        >
-                                            Search {limit} Leads
-                                        </Button>
-                                    </SheetClose>
-                                </div>
-                            </SheetContent>
-                        </Sheet>
-                    </div>
-
-                    {/* Bulk Import Button */}
-                    {selectedLeadIds.size > 0 && (
-                        <Button
-                            variant="default"
-                            size="sm"
-                            onClick={handleBulkImport}
-                            className="bg-green-600 hover:bg-green-700 text-white rounded-md h-7 text-xs px-2 shrink-0"
-                        >
-                            Import ({selectedLeadIds.size})
-                        </Button>
-                    )}
-
-                    {/* ACTIVE FILTERS (TAGS) */}
-                    {(selectedPropertyTypes.length > 0 || selectedDistressTypes.length > 0) && (
-                        <div className="flex flex-wrap gap-2 mt-2 justify-center w-full pointer-events-auto">
-                            {selectedPropertyTypes.map(type => (
-                                <Badge key={type} variant="secondary" className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700 shadow-sm hover:bg-white dark:hover:bg-gray-800 pl-2 pr-1 py-0.5 gap-1 cursor-pointer" onClick={() => togglePropertyType(type)}>
-                                    {type}
-                                    <X className="w-3 h-3 text-gray-400 hover:text-red-500" />
-                                </Badge>
-                            ))}
-                            {selectedDistressTypes.map(type => (
-                                <Badge key={type} variant="secondary" className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 shadow-sm hover:bg-white dark:hover:bg-gray-800 pl-2 pr-1 py-0.5 gap-1 cursor-pointer" onClick={() => toggleDistressType(type)}>
-                                    {type}
-                                    <X className="w-3 h-3 text-red-400 hover:text-red-600" />
-                                </Badge>
-                            ))}
+                                </SheetContent>
+                            </Sheet>
                         </div>
-                    )}
+
+                        {/* Bulk Import Button */}
+                        {selectedLeadIds.size > 0 && (
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={handleBulkImport}
+                                className="bg-green-600 hover:bg-green-700 text-white rounded-md h-7 text-xs px-2 shrink-0"
+                            >
+                                Import ({selectedLeadIds.size})
+                            </Button>
+                        )}
+
+                        {/* ACTIVE FILTERS (TAGS) */}
+                        {(selectedPropertyTypes.length > 0 || selectedDistressTypes.length > 0) && (
+                            <div className="flex flex-wrap gap-2 mt-2 justify-center w-full pointer-events-auto">
+                                {selectedPropertyTypes.map(type => (
+                                    <Badge key={type} variant="secondary" className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700 shadow-sm hover:bg-white dark:hover:bg-gray-800 pl-2 pr-1 py-0.5 gap-1 cursor-pointer" onClick={() => togglePropertyType(type)}>
+                                        {type}
+                                        <X className="w-3 h-3 text-gray-400 hover:text-red-500" />
+                                    </Badge>
+                                ))}
+                                {selectedDistressTypes.map(type => (
+                                    <Badge key={type} variant="secondary" className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 shadow-sm hover:bg-white dark:hover:bg-gray-800 pl-2 pr-1 py-0.5 gap-1 cursor-pointer" onClick={() => toggleDistressType(type)}>
+                                        {type}
+                                        <X className="w-3 h-3 text-red-400 hover:text-red-600" />
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* MAIN CONTENT AREA */}
             <div className="flex-1 relative h-full">
 
                 {/* LIST VIEW - Full Page DataTable */}
                 {viewMode === 'list' && (
-                    <div className="absolute inset-0 z-20 bg-gray-950 pt-16 overflow-hidden flex flex-col">
-                        {/* Table Header with Filter, Select All, Import, Map Button */}
-                        <div className="px-4 py-2 border-b border-gray-800 flex flex-wrap justify-between items-center bg-gray-900/50 shrink-0 gap-2">
-                            {/* Left Side: Results Count, Select All, Import */}
+                    <div className="absolute inset-0 z-20 bg-white dark:bg-gray-950 flex flex-col">
+                        {/* Table Header - Results, Select All, Filter, Import */}
+                        <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 flex items-center justify-center bg-gray-50 dark:bg-gray-900/50 shrink-0 gap-4">
+                            {/* Left Side: Results Count, Select All */}
                             <div className="flex items-center gap-4">
-                                <h2 className="font-semibold text-gray-200">RESULTS ({results.length})</h2>
+                                <h2 className="font-semibold text-gray-800 dark:text-gray-200">RESULTS ({results.length})</h2>
                                 {results.length > 0 && (
-                                    <>
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="checkbox"
-                                                id="select-all-table"
-                                                className="w-4 h-4 rounded border-gray-600 text-green-600 focus:ring-green-500 bg-gray-700"
-                                                checked={results.length > 0 && selectedLeadIds.size === results.length}
-                                                onChange={toggleSelectAll}
-                                            />
-                                            <label htmlFor="select-all-table" className="text-xs text-gray-400 cursor-pointer select-none">
-                                                Select All
-                                            </label>
-                                        </div>
-                                        {selectedLeadIds.size > 0 && (
-                                            <Button
-                                                size="sm"
-                                                className="h-7 bg-green-600 hover:bg-green-700 text-white text-xs"
-                                                onClick={handleBulkImport}
-                                            >
-                                                <Download className="w-3 h-3 mr-1" />
-                                                Import {selectedLeadIds.size} Selected
-                                            </Button>
-                                        )}
-                                    </>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="select-all-table"
+                                            className="w-4 h-4 rounded border-gray-400 dark:border-gray-600 text-green-600 focus:ring-green-500 bg-white dark:bg-gray-700"
+                                            checked={results.length > 0 && selectedLeadIds.size === results.length}
+                                            onChange={toggleSelectAll}
+                                        />
+                                        <label htmlFor="select-all-table" className="text-xs text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+                                            Select All
+                                        </label>
+                                    </div>
                                 )}
                             </div>
 
                             {/* Center: Filter Input */}
-                            <div className="flex-1 max-w-md mx-4">
-                                <div className="relative">
+                            <div className="flex items-center gap-2 w-80">
+                                <div className="relative flex-1">
                                     <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                     <input
                                         type="text"
                                         placeholder="Filter results..."
                                         value={listFilter}
                                         onChange={(e) => setListFilter(e.target.value)}
-                                        className="w-full h-8 pl-8 pr-3 bg-gray-800 border border-gray-700 rounded-md text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                                        className="w-full h-8 pl-8 pr-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-green-500"
                                     />
                                 </div>
                             </div>
 
-                            {/* Right Side: Map Button */}
-                            <Button
-                                size="sm"
-                                className="h-8 bg-blue-600 hover:bg-blue-700 text-white"
-                                onClick={() => setLeadScoutState({ viewMode: 'map' })}
-                            >
-                                <MapIcon className="h-4 w-4 mr-1" />
-                                Map View
-                            </Button>
+                            {/* Right Side: Import Button */}
+                            {selectedLeadIds.size > 0 && (
+                                <Button
+                                    size="sm"
+                                    className="h-8 bg-green-600 hover:bg-green-700 text-white"
+                                    onClick={handleBulkImport}
+                                >
+                                    <Download className="w-4 h-4 mr-1" />
+                                    Import {selectedLeadIds.size}
+                                </Button>
+                            )}
                         </div>
 
-                        {/* DataTable with Scroll - reduced padding */}
-                        <div className="flex-1 overflow-auto px-4 py-2">
+
+                        {/* DataTable with Scroll - full height, no bottom padding */}
+                        <div className="flex-1 overflow-auto px-4">
                             {results.length > 0 ? (
                                 <DataTable
                                     columns={scoutColumns}
                                     data={listFilter
-                                        ? results.filter(r =>
+                                        ? results.filter((r: ScoutResult) =>
                                             r.address?.toLowerCase().includes(listFilter.toLowerCase()) ||
                                             r.parcel_id?.toLowerCase().includes(listFilter.toLowerCase()) ||
                                             r.owner_name?.toLowerCase().includes(listFilter.toLowerCase()) ||
@@ -647,6 +638,11 @@ export default function LeadScout() {
                                         )
                                         : results
                                     }
+                                    onRowClick={(row) => {
+                                        setSelectedLead(row as ScoutResult)
+                                        setLeadScoutState({ highlightedLeadId: (row as ScoutResult).id })
+                                        setIsDetailOpen(true)
+                                    }}
                                 />
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -656,8 +652,20 @@ export default function LeadScout() {
                                 </div>
                             )}
                         </div>
+
+                        {/* Map View Button - Bottom Center */}
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30">
+                            <Button
+                                onClick={() => setLeadScoutState({ viewMode: 'map' })}
+                                className="rounded-full shadow-2xl bg-blue-600 hover:bg-blue-700 text-white px-6 py-5 text-base font-semibold"
+                            >
+                                <MapIcon className="w-5 h-5 mr-2" />
+                                Map View
+                            </Button>
+                        </div>
                     </div>
                 )}
+
 
                 {/* PROPERTY SIDEBAR (Right Panel) */}
                 {sidebarOpen && results.length > 0 && (
@@ -839,8 +847,8 @@ export default function LeadScout() {
                 {/* Bottom Center Button - Show Results (map view) or Map (list view) */}
                 {results.length > 0 && viewMode !== 'list' && (
                     <div className={`absolute bottom-8 z-50 transition-all duration-300 ${sidebarOpen
-                            ? 'left-[calc(50%-225px+32px)] -translate-x-1/2'  // Center between menus when sidebar open
-                            : 'left-1/2 -translate-x-1/2'
+                        ? 'left-[calc(50%-225px+32px)] -translate-x-1/2'  // Center between menus when sidebar open
+                        : 'left-1/2 -translate-x-1/2'
                         }`}>
                         <Button
                             onClick={() => setLeadScoutState({ viewMode: 'list' })}
