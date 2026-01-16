@@ -15,10 +15,12 @@ import {
     Database,
     ChevronLeft,
     ChevronRight,
-    Bot
+    Bot,
+    Sun,
+    Moon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCoPilotStore } from '@/store/copilot-store';
 
 const navItems = [
@@ -37,6 +39,30 @@ export function Sidebar() {
     const { activeZone, setActiveZone } = useAppStore();
     const [isCollapsed, setIsCollapsed] = useState(false);
     const { toggle: toggleCoPilot, isOpen: isCoPilotOpen } = useCoPilotStore();
+    const [isDarkMode, setIsDarkMode] = useState(true);
+
+    // Sync theme with document
+    useEffect(() => {
+        const isDark = document.documentElement.classList.contains('dark');
+        setIsDarkMode(isDark);
+    }, []);
+
+    const toggleTheme = () => {
+        const newMode = !isDarkMode;
+        setIsDarkMode(newMode);
+        if (newMode) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    };
+
+    // Auto-collapse on mobile (Initial Load Only)
+    useEffect(() => {
+        if (window.innerWidth < 768) {
+            setIsCollapsed(true);
+        }
+    }, []);
 
     return (
         <div
@@ -147,6 +173,40 @@ export function Sidebar() {
                     );
                 })}
             </nav>
+
+            {/* Theme Toggle */}
+            <div className="px-2 py-2 border-t border-border">
+                <button
+                    onClick={toggleTheme}
+                    title={isCollapsed ? (isDarkMode ? "Light Mode" : "Dark Mode") : undefined}
+                    className={cn(
+                        "w-full flex items-center p-2 rounded-md transition-all duration-200 group relative",
+                        "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                        isCollapsed ? "justify-center" : ""
+                    )}
+                >
+                    {isDarkMode ? (
+                        <Sun className="w-5 h-5 shrink-0" />
+                    ) : (
+                        <Moon className="w-5 h-5 shrink-0" />
+                    )}
+                    <span className={cn(
+                        "ml-3 font-medium tracking-wide whitespace-nowrap transition-all duration-200",
+                        isCollapsed ? "opacity-0 w-0 hidden" : "opacity-100"
+                    )}>
+                        {isDarkMode ? "Light Mode" : "Dark Mode"}
+                    </span>
+
+                    {/* Tooltip for Collapsed State */}
+                    {isCollapsed && (
+                        <div className="absolute left-14 z-50 hidden group-hover:block">
+                            <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap border border-gray-700">
+                                {isDarkMode ? "Light Mode" : "Dark Mode"}
+                            </div>
+                        </div>
+                    )}
+                </button>
+            </div>
 
             {/* User Status */}
             <div className="p-4 border-t border-border bg-card/30 overflow-hidden whitespace-nowrap">

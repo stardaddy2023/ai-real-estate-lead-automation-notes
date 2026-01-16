@@ -57,6 +57,8 @@ export default function LeadScout() {
     const [hoveredLeadId, setHoveredLeadId] = useState<string | null>(null)
     const [includePropertyDetails, setIncludePropertyDetails] = useState(false) // Default OFF for fast mode
     const [selectedHotList, setSelectedHotList] = useState<string[]>([]) // Hot List filters
+    const [sidebarOpen, setSidebarOpen] = useState(true) // Right sidebar open/closed state
+
 
     // Create scout columns with callbacks
     const scoutColumns = useMemo(() => createScoutColumns({
@@ -293,7 +295,9 @@ export default function LeadScout() {
 
     // Map Interactions
     const handleMarkerClick = (lead: ScoutResult) => {
-        setLeadScoutState({ highlightedLeadId: lead.id, panToLeadId: lead.id, viewMode: 'list' })
+        // Open sidebar and scroll to the clicked property
+        setSidebarOpen(true)
+        setLeadScoutState({ highlightedLeadId: lead.id, panToLeadId: lead.id })
 
         // Scroll to item in list
         setTimeout(() => {
@@ -305,8 +309,11 @@ export default function LeadScout() {
     }
 
     const handleMapClick = () => {
-        setLeadScoutState({ viewMode: 'map', highlightedLeadId: null, panToLeadId: null })
+        // Close sidebar when clicking on empty map area
+        setSidebarOpen(false)
+        setLeadScoutState({ highlightedLeadId: null, panToLeadId: null })
     }
+
 
     const handleMapSelection = (newBounds: { north: number, south: number, east: number, west: number } | null) => {
         setLeadScoutState({ bounds: newBounds })
@@ -423,19 +430,6 @@ export default function LeadScout() {
                         >
                             Search
                         </Button>
-                        <div className="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1" />
-                        <Tabs value={viewMode} onValueChange={(v) => setLeadScoutState({ viewMode: v as 'map' | 'list' })} className="shrink-0">
-                            <TabsList className="h-8 bg-gray-100 dark:bg-gray-800 p-0.5">
-                                <TabsTrigger value="list" className="h-7 px-2 text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700">
-                                    <ListIcon className="w-3.5 h-3.5 mr-1" />
-                                    List
-                                </TabsTrigger>
-                                <TabsTrigger value="map" className="h-7 px-2 text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700">
-                                    <MapIcon className="w-3.5 h-3.5 mr-1" />
-                                    Map
-                                </TabsTrigger>
-                            </TabsList>
-                        </Tabs>
                     </div>
 
 
@@ -618,8 +612,8 @@ export default function LeadScout() {
                     </div>
                 )}
 
-                {/* MAP VIEW - Card Sidebar Overlay (Original) */}
-                {viewMode === 'map' && results.length > 0 && (
+                {/* PROPERTY SIDEBAR (Right Panel) */}
+                {sidebarOpen && results.length > 0 && (
                     <div className="absolute top-0 bottom-0 right-0 left-16 md:left-auto md:w-[450px] bg-gray-950/95 backdrop-blur-md border-l border-gray-800 z-10 flex pt-16 shadow-2xl flex-col">
                         <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 backdrop-blur-sm flex-shrink-0">
                             <div className="flex items-center gap-3">
@@ -639,11 +633,19 @@ export default function LeadScout() {
                                     </div>
                                 )}
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="sm" onClick={() => setLeadScoutState({ viewMode: 'list' })}>
-                                    <ListIcon className="h-4 w-4 mr-2" /> List View
-                                </Button>
-                            </div>
+                            {/* List/Map Toggle */}
+                            <Tabs value={sidebarOpen ? 'list' : 'map'} onValueChange={(v) => setSidebarOpen(v === 'list')} className="shrink-0">
+                                <TabsList className="h-8 bg-gray-800 p-0.5">
+                                    <TabsTrigger value="list" className="h-7 px-3 text-xs data-[state=active]:bg-gray-700 data-[state=active]:text-white">
+                                        <ListIcon className="w-3.5 h-3.5 mr-1" />
+                                        List
+                                    </TabsTrigger>
+                                    <TabsTrigger value="map" className="h-7 px-3 text-xs data-[state=active]:bg-gray-700 data-[state=active]:text-white">
+                                        <MapIcon className="w-3.5 h-3.5 mr-1" />
+                                        Map
+                                    </TabsTrigger>
+                                </TabsList>
+                            </Tabs>
                         </div>
 
                         <ScrollArea className="flex-1" ref={listRef}>
@@ -787,13 +789,13 @@ export default function LeadScout() {
                     )
                 }
 
-                {/* "Show List" Toggle Button (Bottom Center) */}
+                {/* "Show Results" Toggle Button (Bottom Center) - Opens DataTable */}
                 {
-                    viewMode === 'map' && results.length > 0 && (
+                    !sidebarOpen && results.length > 0 && (
                         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-50">
                             <Button
                                 onClick={() => setLeadScoutState({ viewMode: 'list' })}
-                                className="rounded-full shadow-2xl bg-blue-600 hover:bg-blue-700 text-white border-none px-8 py-6 text-lg font-semibold transition-all transform hover:scale-105"
+                                className="rounded-full shadow-2xl bg-green-600 hover:bg-green-700 text-white border-none px-8 py-6 text-lg font-semibold transition-all transform hover:scale-105"
                             >
                                 <ListIcon className="w-5 h-5 mr-2" />
                                 Show {results.length} Results
@@ -801,6 +803,7 @@ export default function LeadScout() {
                         </div>
                     )
                 }
+
             </div >
 
             {/* Detail Dialog */}
