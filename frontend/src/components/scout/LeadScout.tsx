@@ -46,7 +46,8 @@ export default function LeadScout() {
     const {
         query, results, loading,
         selectedPropertyTypes, selectedDistressTypes,
-        limit, minBeds, minBaths, minSqft,
+        selectedHotList, selectedStatuses,
+        limit, minBeds, maxBeds, minBaths, maxBaths, minSqft, maxSqft,
         viewMode, highlightedLeadId, panToLeadId, selectedLeadIds,
         bounds
     } = leadScout
@@ -58,7 +59,6 @@ export default function LeadScout() {
     const [isDetailOpen, setIsDetailOpen] = useState(false)
     const [hoveredLeadId, setHoveredLeadId] = useState<string | null>(null)
     const [includePropertyDetails, setIncludePropertyDetails] = useState(false) // Default OFF for fast mode
-    const [selectedHotList, setSelectedHotList] = useState<string[]>([]) // Hot List filters
     const [sidebarOpen, setSidebarOpen] = useState(true) // Right sidebar open/closed state
     const [listFilter, setListFilter] = useState('') // Local filter for DataTable view
     const [filterOpen, setFilterOpen] = useState(false) // Filter dropdown open state
@@ -94,7 +94,6 @@ export default function LeadScout() {
     })
 
 
-
     // Create scout columns with callbacks - includes selection props for checkbox column
     const scoutColumns = useMemo(() => createScoutColumns({
         onViewDetails: (lead) => {
@@ -122,6 +121,97 @@ export default function LeadScout() {
         },
         allSelected: results.length > 0 && selectedLeadIds.size === results.length
     }), [selectedLeadIds, results, setLeadScoutState])
+
+    // Compute filtered results for display count and DataTable
+    const filteredResults = useMemo(() => {
+        return results.filter((r: ScoutResult) => {
+            // Text search filter
+            if (listFilter) {
+                const searchLower = listFilter.toLowerCase()
+                const matchesSearch =
+                    r.address?.toLowerCase().includes(searchLower) ||
+                    r.parcel_id?.toLowerCase().includes(searchLower) ||
+                    r.owner_name?.toLowerCase().includes(searchLower) ||
+                    r.property_type?.toLowerCase().includes(searchLower) ||
+                    r.zoning?.toLowerCase().includes(searchLower)
+                if (!matchesSearch) return false
+            }
+
+            // Apply column filters
+            // Beds filter
+            if (columnFilters.beds.enabled) {
+                const beds = r.beds ?? 0
+                if (columnFilters.beds.min !== undefined && beds < columnFilters.beds.min) return false
+                if (columnFilters.beds.max !== undefined && beds > columnFilters.beds.max) return false
+            }
+
+            // Baths filter
+            if (columnFilters.baths.enabled) {
+                const baths = r.baths ?? 0
+                if (columnFilters.baths.min !== undefined && baths < columnFilters.baths.min) return false
+                if (columnFilters.baths.max !== undefined && baths > columnFilters.baths.max) return false
+            }
+
+            // SqFt filter
+            if (columnFilters.sqft.enabled) {
+                const sqft = r.sqft ?? 0
+                if (columnFilters.sqft.min !== undefined && sqft < columnFilters.sqft.min) return false
+                if (columnFilters.sqft.max !== undefined && sqft > columnFilters.sqft.max) return false
+            }
+
+            // Year Built filter
+            if (columnFilters.year_built.enabled) {
+                const year = r.year_built ?? 0
+                if (columnFilters.year_built.min !== undefined && year < columnFilters.year_built.min) return false
+                if (columnFilters.year_built.max !== undefined && year > columnFilters.year_built.max) return false
+            }
+
+            // Lot Size filter
+            if (columnFilters.lot_size.enabled) {
+                const lotSize = (r as any).lot_size ?? 0
+                if (columnFilters.lot_size.min !== undefined && lotSize < columnFilters.lot_size.min) return false
+                if (columnFilters.lot_size.max !== undefined && lotSize > columnFilters.lot_size.max) return false
+            }
+
+            // Stories filter
+            if (columnFilters.stories.enabled) {
+                const stories = (r as any).stories ?? 0
+                if (columnFilters.stories.min !== undefined && stories < columnFilters.stories.min) return false
+                if (columnFilters.stories.max !== undefined && stories > columnFilters.stories.max) return false
+            }
+
+            // Assessed Value filter
+            if (columnFilters.assessed_value.enabled) {
+                const value = r.assessed_value ?? 0
+                if (columnFilters.assessed_value.min !== undefined && value < columnFilters.assessed_value.min) return false
+                if (columnFilters.assessed_value.max !== undefined && value > columnFilters.assessed_value.max) return false
+            }
+
+            // Zoning filter (multi-select)
+            if (columnFilters.zoning.length > 0) {
+                if (!r.zoning || !columnFilters.zoning.includes(r.zoning)) return false
+            }
+
+            // Property Type filter (multi-select)
+            if (columnFilters.property_type.length > 0) {
+                if (!r.property_type || !columnFilters.property_type.includes(r.property_type)) return false
+            }
+
+            // Flood Zone filter (multi-select)
+            if (columnFilters.flood_zone.length > 0) {
+                const floodZone = (r as any).flood_zone
+                if (!floodZone || !columnFilters.flood_zone.includes(floodZone)) return false
+            }
+
+            // Neighborhood filter (multi-select)
+            if (columnFilters.neighborhood.length > 0) {
+                const neighborhood = (r as any).neighborhoods
+                if (!neighborhood || !columnFilters.neighborhood.includes(neighborhood)) return false
+            }
+
+            return true
+        })
+    }, [results, listFilter, columnFilters])
 
 
     // Compute selected lead index for navigation
@@ -169,11 +259,17 @@ export default function LeadScout() {
 
         try {
             const term = ignoreQuery ? "" : query.trim()
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const payload: any = {
                 property_types: selectedPropertyTypes,
                 distress_type: selectedDistressTypes, // Allow empty list for generic search
                 hot_list: selectedHotList, // FSBO, Price Reduced, High DOM, New Listing
+                listing_statuses: selectedStatuses, // For Sale, Contingent, Pending, etc.
+                min_beds: minBeds ? parseInt(minBeds) : undefined,
+                max_beds: maxBeds ? parseInt(maxBeds) : undefined,
+                min_baths: minBaths ? parseInt(minBaths) : undefined,
+                max_baths: maxBaths ? parseInt(maxBaths) : undefined,
+                min_sqft: minSqft ? parseInt(minSqft) : undefined,
+                max_sqft: maxSqft ? parseInt(maxSqft) : undefined,
                 limit: limit,
                 bounds: newBounds, // Include bounds in payload
                 skip_homeharvest: !includePropertyDetails // Fast mode when toggle is OFF
@@ -388,7 +484,7 @@ export default function LeadScout() {
     }
 
     const handleHotListChange = (newFilters: string[]) => {
-        setSelectedHotList(newFilters)
+        setLeadScoutState({ selectedHotList: newFilters })
 
         // Auto-enable Details if MLS filter is selected
         const mlsFilters = ["FSBO", "Price Reduced", "High Days on Market", "New Listing"]
@@ -464,12 +560,20 @@ export default function LeadScout() {
                                 setSelectedDistressTypes={(val) => setLeadScoutState({ selectedDistressTypes: val })}
                                 selectedHotList={selectedHotList}
                                 setSelectedHotList={handleHotListChange}
+                                selectedStatuses={selectedStatuses}
+                                setSelectedStatuses={(val) => setLeadScoutState({ selectedStatuses: val })}
                                 minBeds={minBeds}
                                 setMinBeds={(val) => setLeadScoutState({ minBeds: val })}
+                                maxBeds={maxBeds}
+                                setMaxBeds={(val) => setLeadScoutState({ maxBeds: val })}
                                 minBaths={minBaths}
                                 setMinBaths={(val) => setLeadScoutState({ minBaths: val })}
+                                maxBaths={maxBaths}
+                                setMaxBaths={(val) => setLeadScoutState({ maxBaths: val })}
                                 minSqft={minSqft}
                                 setMinSqft={(val) => setLeadScoutState({ minSqft: val })}
+                                maxSqft={maxSqft}
+                                setMaxSqft={(val) => setLeadScoutState({ maxSqft: val })}
                                 onSearch={() => handleSearch(false)}
                             />
                             <div className="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1" />
@@ -564,12 +668,20 @@ export default function LeadScout() {
                                                     setSelectedDistressTypes={(val) => setLeadScoutState({ selectedDistressTypes: val })}
                                                     selectedHotList={selectedHotList}
                                                     setSelectedHotList={handleHotListChange}
+                                                    selectedStatuses={selectedStatuses}
+                                                    setSelectedStatuses={(val) => setLeadScoutState({ selectedStatuses: val })}
                                                     minBeds={minBeds}
                                                     setMinBeds={(val) => setLeadScoutState({ minBeds: val })}
+                                                    maxBeds={maxBeds}
+                                                    setMaxBeds={(val) => setLeadScoutState({ maxBeds: val })}
                                                     minBaths={minBaths}
                                                     setMinBaths={(val) => setLeadScoutState({ minBaths: val })}
+                                                    maxBaths={maxBaths}
+                                                    setMaxBaths={(val) => setLeadScoutState({ maxBaths: val })}
                                                     minSqft={minSqft}
                                                     setMinSqft={(val) => setLeadScoutState({ minSqft: val })}
+                                                    maxSqft={maxSqft}
+                                                    setMaxSqft={(val) => setLeadScoutState({ maxSqft: val })}
                                                     onSearch={() => { }} // No-op, search is manual
                                                 />
                                             </div>
@@ -632,7 +744,9 @@ export default function LeadScout() {
                         <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 flex items-center justify-center bg-gray-50 dark:bg-gray-900/50 shrink-0 gap-4">
                             {/* Left Side: Results Count, Select All */}
                             <div className="flex items-center gap-4">
-                                <h2 className="font-semibold text-gray-800 dark:text-gray-200">RESULTS ({results.length})</h2>
+                                <h2 className="font-semibold text-gray-800 dark:text-gray-200">
+                                    RESULTS ({filteredResults.length !== results.length ? `${filteredResults.length} of ${results.length}` : results.length})
+                                </h2>
                                 {results.length > 0 && (
                                     <div className="flex items-center gap-2">
                                         <input
@@ -764,7 +878,7 @@ export default function LeadScout() {
                                             {'property beds baths sqft year stories'.includes(filterSearch.toLowerCase()) && (
                                                 <div>
                                                     <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Property Details</h4>
-                                                    <div className="grid grid-cols-2 gap-3">
+                                                    <div className="space-y-2">
                                                         {[
                                                             { key: 'beds', label: 'Beds' },
                                                             { key: 'baths', label: 'Baths' },
@@ -774,43 +888,44 @@ export default function LeadScout() {
                                                             { key: 'stories', label: 'Stories' },
                                                         ].filter(f => f.label.toLowerCase().includes(filterSearch.toLowerCase()) || filterSearch === '').map((field) => (
                                                             <div key={field.key} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
-                                                                <label className="flex items-center gap-2 mb-2">
+                                                                <div className="flex items-center gap-3">
+                                                                    <span className="text-sm font-medium text-gray-900 dark:text-white w-24">{field.label}</span>
                                                                     <input
-                                                                        type="checkbox"
-                                                                        checked={(columnFilters[field.key as keyof typeof columnFilters] as any)?.enabled || false}
-                                                                        onChange={(e) => setColumnFilters(prev => ({
-                                                                            ...prev,
-                                                                            [field.key]: { ...prev[field.key as keyof typeof prev] as any, enabled: e.target.checked }
-                                                                        }))}
-                                                                        className="w-4 h-4 rounded border-gray-400 dark:border-gray-600 text-green-600 focus:ring-green-500"
+                                                                        type="number"
+                                                                        placeholder="Min"
+                                                                        value={(columnFilters[field.key as keyof typeof columnFilters] as any)?.min ?? ''}
+                                                                        onChange={(e) => {
+                                                                            const val = e.target.value ? Number(e.target.value) : undefined
+                                                                            setColumnFilters(prev => ({
+                                                                                ...prev,
+                                                                                [field.key]: {
+                                                                                    ...prev[field.key as keyof typeof prev] as any,
+                                                                                    min: val,
+                                                                                    enabled: val !== undefined || (prev[field.key as keyof typeof prev] as any)?.max !== undefined
+                                                                                }
+                                                                            }))
+                                                                        }}
+                                                                        className="flex-1 h-8 px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white"
                                                                     />
-                                                                    <span className="text-sm font-medium text-gray-900 dark:text-white">{field.label}</span>
-                                                                </label>
-                                                                {(columnFilters[field.key as keyof typeof columnFilters] as any)?.enabled && (
-                                                                    <div className="flex items-center gap-2">
-                                                                        <input
-                                                                            type="number"
-                                                                            placeholder="Min"
-                                                                            value={(columnFilters[field.key as keyof typeof columnFilters] as any)?.min || ''}
-                                                                            onChange={(e) => setColumnFilters(prev => ({
+                                                                    <span className="text-gray-400 text-sm">-</span>
+                                                                    <input
+                                                                        type="number"
+                                                                        placeholder="Max"
+                                                                        value={(columnFilters[field.key as keyof typeof columnFilters] as any)?.max ?? ''}
+                                                                        onChange={(e) => {
+                                                                            const val = e.target.value ? Number(e.target.value) : undefined
+                                                                            setColumnFilters(prev => ({
                                                                                 ...prev,
-                                                                                [field.key]: { ...prev[field.key as keyof typeof prev] as any, min: e.target.value ? Number(e.target.value) : undefined }
-                                                                            }))}
-                                                                            className="flex-1 h-7 px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white"
-                                                                        />
-                                                                        <span className="text-gray-400 text-xs">to</span>
-                                                                        <input
-                                                                            type="number"
-                                                                            placeholder="Max"
-                                                                            value={(columnFilters[field.key as keyof typeof columnFilters] as any)?.max || ''}
-                                                                            onChange={(e) => setColumnFilters(prev => ({
-                                                                                ...prev,
-                                                                                [field.key]: { ...prev[field.key as keyof typeof prev] as any, max: e.target.value ? Number(e.target.value) : undefined }
-                                                                            }))}
-                                                                            className="flex-1 h-7 px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white"
-                                                                        />
-                                                                    </div>
-                                                                )}
+                                                                                [field.key]: {
+                                                                                    ...prev[field.key as keyof typeof prev] as any,
+                                                                                    max: val,
+                                                                                    enabled: val !== undefined || (prev[field.key as keyof typeof prev] as any)?.min !== undefined
+                                                                                }
+                                                                            }))
+                                                                        }}
+                                                                        className="flex-1 h-8 px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white"
+                                                                    />
+                                                                </div>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -822,43 +937,44 @@ export default function LeadScout() {
                                                 <div>
                                                     <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Financial</h4>
                                                     <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
-                                                        <label className="flex items-center gap-2 mb-2">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-sm font-medium text-gray-900 dark:text-white w-24">Assessed Value</span>
                                                             <input
-                                                                type="checkbox"
-                                                                checked={columnFilters.assessed_value.enabled}
-                                                                onChange={(e) => setColumnFilters(prev => ({
-                                                                    ...prev,
-                                                                    assessed_value: { ...prev.assessed_value, enabled: e.target.checked }
-                                                                }))}
-                                                                className="w-4 h-4 rounded border-gray-400 dark:border-gray-600 text-green-600 focus:ring-green-500"
+                                                                type="number"
+                                                                placeholder="Min $"
+                                                                value={columnFilters.assessed_value.min ?? ''}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value ? Number(e.target.value) : undefined
+                                                                    setColumnFilters(prev => ({
+                                                                        ...prev,
+                                                                        assessed_value: {
+                                                                            ...prev.assessed_value,
+                                                                            min: val,
+                                                                            enabled: val !== undefined || prev.assessed_value.max !== undefined
+                                                                        }
+                                                                    }))
+                                                                }}
+                                                                className="flex-1 h-8 px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white"
                                                             />
-                                                            <span className="text-sm font-medium text-gray-900 dark:text-white">Assessed Value</span>
-                                                        </label>
-                                                        {columnFilters.assessed_value.enabled && (
-                                                            <div className="flex items-center gap-2">
-                                                                <input
-                                                                    type="number"
-                                                                    placeholder="Min $"
-                                                                    value={columnFilters.assessed_value.min || ''}
-                                                                    onChange={(e) => setColumnFilters(prev => ({
+                                                            <span className="text-gray-400 text-sm">-</span>
+                                                            <input
+                                                                type="number"
+                                                                placeholder="Max $"
+                                                                value={columnFilters.assessed_value.max ?? ''}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value ? Number(e.target.value) : undefined
+                                                                    setColumnFilters(prev => ({
                                                                         ...prev,
-                                                                        assessed_value: { ...prev.assessed_value, min: e.target.value ? Number(e.target.value) : undefined }
-                                                                    }))}
-                                                                    className="flex-1 h-7 px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white"
-                                                                />
-                                                                <span className="text-gray-400 text-xs">to</span>
-                                                                <input
-                                                                    type="number"
-                                                                    placeholder="Max $"
-                                                                    value={columnFilters.assessed_value.max || ''}
-                                                                    onChange={(e) => setColumnFilters(prev => ({
-                                                                        ...prev,
-                                                                        assessed_value: { ...prev.assessed_value, max: e.target.value ? Number(e.target.value) : undefined }
-                                                                    }))}
-                                                                    className="flex-1 h-7 px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white"
-                                                                />
-                                                            </div>
-                                                        )}
+                                                                        assessed_value: {
+                                                                            ...prev.assessed_value,
+                                                                            max: val,
+                                                                            enabled: val !== undefined || prev.assessed_value.min !== undefined
+                                                                        }
+                                                                    }))
+                                                                }}
+                                                                className="flex-1 h-8 px-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white"
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}
@@ -967,93 +1083,7 @@ export default function LeadScout() {
                             {results.length > 0 ? (
                                 <DataTable
                                     columns={scoutColumns}
-                                    data={results.filter((r: ScoutResult) => {
-                                        // Text search filter
-                                        if (listFilter) {
-                                            const searchLower = listFilter.toLowerCase()
-                                            const matchesSearch =
-                                                r.address?.toLowerCase().includes(searchLower) ||
-                                                r.parcel_id?.toLowerCase().includes(searchLower) ||
-                                                r.owner_name?.toLowerCase().includes(searchLower) ||
-                                                r.property_type?.toLowerCase().includes(searchLower) ||
-                                                r.zoning?.toLowerCase().includes(searchLower)
-                                            if (!matchesSearch) return false
-                                        }
-
-                                        // Apply column filters
-                                        // Beds filter
-                                        if (columnFilters.beds.enabled) {
-                                            const beds = r.beds ?? 0
-                                            if (columnFilters.beds.min !== undefined && beds < columnFilters.beds.min) return false
-                                            if (columnFilters.beds.max !== undefined && beds > columnFilters.beds.max) return false
-                                        }
-
-                                        // Baths filter
-                                        if (columnFilters.baths.enabled) {
-                                            const baths = r.baths ?? 0
-                                            if (columnFilters.baths.min !== undefined && baths < columnFilters.baths.min) return false
-                                            if (columnFilters.baths.max !== undefined && baths > columnFilters.baths.max) return false
-                                        }
-
-                                        // SqFt filter
-                                        if (columnFilters.sqft.enabled) {
-                                            const sqft = r.sqft ?? 0
-                                            if (columnFilters.sqft.min !== undefined && sqft < columnFilters.sqft.min) return false
-                                            if (columnFilters.sqft.max !== undefined && sqft > columnFilters.sqft.max) return false
-                                        }
-
-                                        // Year Built filter
-                                        if (columnFilters.year_built.enabled) {
-                                            const year = r.year_built ?? 0
-                                            if (columnFilters.year_built.min !== undefined && year < columnFilters.year_built.min) return false
-                                            if (columnFilters.year_built.max !== undefined && year > columnFilters.year_built.max) return false
-                                        }
-
-                                        // Lot Size filter
-                                        if (columnFilters.lot_size.enabled) {
-                                            const lotSize = (r as any).lot_size ?? 0
-                                            if (columnFilters.lot_size.min !== undefined && lotSize < columnFilters.lot_size.min) return false
-                                            if (columnFilters.lot_size.max !== undefined && lotSize > columnFilters.lot_size.max) return false
-                                        }
-
-                                        // Stories filter
-                                        if (columnFilters.stories.enabled) {
-                                            const stories = (r as any).stories ?? 0
-                                            if (columnFilters.stories.min !== undefined && stories < columnFilters.stories.min) return false
-                                            if (columnFilters.stories.max !== undefined && stories > columnFilters.stories.max) return false
-                                        }
-
-                                        // Assessed Value filter
-                                        if (columnFilters.assessed_value.enabled) {
-                                            const value = r.assessed_value ?? 0
-                                            if (columnFilters.assessed_value.min !== undefined && value < columnFilters.assessed_value.min) return false
-                                            if (columnFilters.assessed_value.max !== undefined && value > columnFilters.assessed_value.max) return false
-                                        }
-
-                                        // Zoning filter (multi-select)
-                                        if (columnFilters.zoning.length > 0) {
-                                            if (!r.zoning || !columnFilters.zoning.includes(r.zoning)) return false
-                                        }
-
-                                        // Property Type filter (multi-select)
-                                        if (columnFilters.property_type.length > 0) {
-                                            if (!r.property_type || !columnFilters.property_type.includes(r.property_type)) return false
-                                        }
-
-                                        // Flood Zone filter (multi-select)
-                                        if (columnFilters.flood_zone.length > 0) {
-                                            const floodZone = (r as any).flood_zone
-                                            if (!floodZone || !columnFilters.flood_zone.includes(floodZone)) return false
-                                        }
-
-                                        // Neighborhood filter (multi-select)
-                                        if (columnFilters.neighborhood.length > 0) {
-                                            const neighborhood = (r as any).neighborhoods
-                                            if (!neighborhood || !columnFilters.neighborhood.includes(neighborhood)) return false
-                                        }
-
-                                        return true
-                                    })}
+                                    data={filteredResults}
                                     onRowClick={(row) => {
                                         setSelectedLead(row as ScoutResult)
                                         setLeadScoutState({ highlightedLeadId: (row as ScoutResult).id })

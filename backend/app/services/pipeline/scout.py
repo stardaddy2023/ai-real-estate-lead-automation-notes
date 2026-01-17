@@ -1264,20 +1264,23 @@ class ScoutService:
         """
         return await self.fetch_hot_leads(location, ["FSBO"])
     
-    async def fetch_hot_leads(self, location: str, hot_list: List[str], limit: int = 100) -> List[Dict]:
+    async def fetch_hot_leads(self, location: str, hot_list: List[str], limit: int = 100, listing_statuses: List[str] = None) -> List[Dict]:
         """
         Fetches MLS listings and filters based on hot list criteria:
-        - FSBO: No agent or agent name contains "Owner"
+        - FSBO: No agent AND no brokerage (office_name)
         - Price Reduced: Has price reduction
         - High Days on Market: 60+ days listed
         - New Listing: 7 or fewer days on market
+        
+        Also filters by listing_statuses if provided (For Sale, Contingent, Pending, etc.)
         
         Returns normalized lead dictionaries.
         """
         if not hot_list:
             return []
-            
-        print(f"Fetching Hot Leads in {location} for filters: {hot_list}")
+        
+        listing_statuses = listing_statuses or []
+        print(f"Fetching Hot Leads in {location} for filters: {hot_list}, statuses: {listing_statuses}")
         
         try:
             from homeharvest import scrape_property
@@ -1301,14 +1304,45 @@ class ScoutService:
             all_listings = df.to_dict("records")
             hot_leads = []
             
+            # DEBUG: Log available columns and sample data
+            print(f"  DEBUG: Available columns in HomeHarvest data: {list(df.columns)}")
+            if len(all_listings) > 0:
+                sample = all_listings[0]
+                print(f"  DEBUG: Sample listing keys: {list(sample.keys())}")
+                print(f"  DEBUG: Sample listing agent_name: '{sample.get('agent_name')}'")
+                print(f"  DEBUG: Sample listing office_name: '{sample.get('office_name')}'")
+                print(f"  DEBUG: Sample listing property_url: '{sample.get('property_url')}'")
+                print(f"  DEBUG: Sample listing list_price: '{sample.get('list_price')}'")
+                print(f"  DEBUG: Sample listing status: '{sample.get('status')}'")
+                print(f"  DEBUG: Sample listing days_on_mls: '{sample.get('days_on_mls')}'")
+            
+            fsbo_candidates = 0  # Track how many pass FSBO check
+            
             for listing in all_listings:
                 signals = []
                 
-                # Check FSBO: No agent or agent is "Owner"
+                # Check FSBO: No agent AND no brokerage (or agent is "Owner")
                 if "FSBO" in hot_list:
                     agent_name = str(listing.get("agent_name") or "").strip().lower()
-                    if not agent_name or agent_name in ["", "nan", "none", "owner", "for sale by owner"]:
+                    office_name = str(listing.get("office_name") or "").strip().lower()
+                    
+                    # FSBO = no agent AND no brokerage/office
+                    agent_empty = not agent_name or agent_name in ["", "nan", "none", "owner", "for sale by owner", "fsbo"]
+                    office_empty = not office_name or office_name in ["", "nan", "none", "owner", "for sale by owner", "fsbo"]
+                    
+                    if agent_empty and office_empty:
                         signals.append("FSBO")
+                        fsbo_candidates += 1
+                        # DEBUG: Log first 5 FSBO candidates
+                        if fsbo_candidates <= 5:
+                            print(f"  DEBUG FSBO CANDIDATE #{fsbo_candidates}:")
+                            print(f"    Address: {listing.get('full_street_line') or listing.get('street')} {listing.get('city')}, {listing.get('state')} {listing.get('zip_code')}")
+                            print(f"    agent_name: '{listing.get('agent_name')}' (empty: {agent_empty})")
+                            print(f"    office_name: '{listing.get('office_name')}' (empty: {office_empty})")
+                            print(f"    list_price: {listing.get('list_price')}")
+                            print(f"    property_url: {listing.get('property_url')}")
+                            print(f"    status: {listing.get('status')}")
+                            print(f"    days_on_mls: {listing.get('days_on_mls')}")
                 
                 # Check Price Reduced
                 if "Price Reduced" in hot_list:
@@ -1351,18 +1385,42 @@ class ScoutService:
                 
                 # AND logic: Include only if ALL selected hot filters match
                 if len(signals) == len(hot_list):
+                    # Status filtering - if listing_statuses specified, check if listing status matches
+                    if listing_statuses:
+                        listing_status = str(listing.get("status") or "").upper()
+                        # Map HomeHarvest status to our UI status names
+                        status_matches = False
+                        for stat in listing_statuses:
+                            stat_upper = stat.upper()
+                            if stat_upper == "FOR SALE" and listing_status in ["FOR_SALE", "ACTIVE", "NEW"]:
+                                status_matches = True
+                            elif stat_upper == "CONTINGENT" and "CONTINGENT" in listing_status:
+                                status_matches = True
+                            elif stat_upper == "PENDING" and "PENDING" in listing_status:
+                                status_matches = True
+                            elif stat_upper == "UNDER CONTRACT" and listing_status in ["UNDER_CONTRACT", "CONTINGENT", "PENDING"]:
+                                status_matches = True
+                            elif stat_upper == "COMING SOON" and "COMING" in listing_status:
+                                status_matches = True
+                            elif stat_upper == "SOLD" and listing_status in ["SOLD", "CLOSED"]:
+                                status_matches = True
+                        if not status_matches:
+                            continue  # Skip this listing - status doesn't match
                     # Normalize to our lead format
                     lead = self._normalize_homeharvest_listing(listing, signals)
                     
                     # VALIDATION: Filter out leads with missing essential data
                     if not lead.get("address") or lead.get("address") == "None, None, AZ ":
+                        print(f"  DEBUG: Skipping FSBO - invalid address: {lead.get('address')}")
                         continue
                     if not lead.get("list_price") and not lead.get("estimated_value"):
+                        print(f"  DEBUG: Skipping FSBO - no price: {lead.get('address')}")
                         continue
                         
                     hot_leads.append(lead)
             
-            print(f"  {len(hot_leads)} leads matched hot list filters")
+            print(f"  DEBUG: {fsbo_candidates} listings matched FSBO criteria (no agent/office)")
+            print(f"  {len(hot_leads)} leads matched hot list filters (after validation)")
             return hot_leads[:limit]
             
         except Exception as e:
@@ -1882,7 +1940,8 @@ class ScoutService:
                 elif mls_filters:
                     # Fetch from MLS for FSBO, Price Reduced, High DOM, New Listing
                     print(f"Hot List search: {mls_filters} in {location}")
-                    hot_results = await self.fetch_hot_leads(location, mls_filters, limit)
+                    listing_statuses = filters.get("listing_statuses") or []
+                    hot_results = await self.fetch_hot_leads(location, mls_filters, limit, listing_statuses)
                 
                 if hot_results:
                     # Optionally filter by property type if specified
@@ -1921,12 +1980,58 @@ class ScoutService:
                         if not hot_results:
                             print(f"  Property type filter removed all results.")
                     
+                    # Apply min/max filters for beds, baths, sqft
+                    min_beds = filters.get("min_beds")
+                    max_beds = filters.get("max_beds")
+                    min_baths = filters.get("min_baths")
+                    max_baths = filters.get("max_baths")
+                    min_sqft = filters.get("min_sqft")
+                    max_sqft = filters.get("max_sqft")
+                    
+                    if any([min_beds, max_beds, min_baths, max_baths, min_sqft, max_sqft]):
+                        print(f"  Applying property detail filters: beds={min_beds}-{max_beds}, baths={min_baths}-{max_baths}, sqft={min_sqft}-{max_sqft}")
+                        
+                        def matches_property_details(lead: Dict) -> bool:
+                            # Beds filter
+                            if min_beds is not None:
+                                beds = lead.get("beds") or 0
+                                if beds < min_beds:
+                                    return False
+                            if max_beds is not None:
+                                beds = lead.get("beds") or 0
+                                if beds > max_beds:
+                                    return False
+                            # Baths filter
+                            if min_baths is not None:
+                                baths = lead.get("baths") or 0
+                                if baths < min_baths:
+                                    return False
+                            if max_baths is not None:
+                                baths = lead.get("baths") or 0
+                                if baths > max_baths:
+                                    return False
+                            # Sqft filter
+                            if min_sqft is not None:
+                                sqft = lead.get("sqft") or 0
+                                if sqft < min_sqft:
+                                    return False
+                            if max_sqft is not None:
+                                sqft = lead.get("sqft") or 0
+                                if sqft > max_sqft:
+                                    return False
+                            return True
+                        
+                        hot_results = [r for r in hot_results if matches_property_details(r)]
+                        print(f"  After property detail filters: {len(hot_results)} results")
+                    
                     # Enrich MLS leads with GIS data (zoning, flood zone, school district, neighborhood, PoP)
                     await self._enrich_with_gis_layers(hot_results)
                     
                     return hot_results[:limit]
                 else:
-                    print("No hot list results found, continuing with regular search...")
+                    print("No hot list results found - returning empty (not falling back to regular search)")
+                    # When user specifically filters for FSBO/Price Reduced/etc, don't return unrelated results
+                    return []
             
             # ===== PURE ADDRESS LOOKUP =====
             # If address is provided without zip/bounds, use direct parcel lookup

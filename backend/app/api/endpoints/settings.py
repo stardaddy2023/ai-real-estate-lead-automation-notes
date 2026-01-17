@@ -305,3 +305,20 @@ def get_setting_sync(key: str) -> Optional[str]:
     # Fallback to env var
     return getattr(app_config, key, "") or os.getenv(key, "")
 
+
+class PublicConfig(BaseModel):
+    googleMapsApiKey: str
+
+
+@router.get("/public-config", response_model=PublicConfig)
+async def get_public_config(db: AsyncSession = Depends(get_db)):
+    """
+    Get public configuration for the frontend.
+    This endpoint is unauthenticated and safe for public consumption.
+    """
+    # Get Google Maps API Key
+    google_maps_key = await get_setting_value("GOOGLE_MAPS_API_KEY", db)
+    
+    return PublicConfig(
+        googleMapsApiKey=google_maps_key or ""
+    )

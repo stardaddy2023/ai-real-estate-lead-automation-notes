@@ -8,20 +8,6 @@
         "type": "tabs",
         "children": [
           {
-            "id": "95f3b48b57b730b5",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ARELA Front End Design.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ARELA Front End Design"
-            }
-          },
-          {
             "id": "799d6f6f5d8c3959",
             "type": "leaf",
             "state": {
@@ -209,12 +195,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "ARELA Notes/Property Use Code Pima County.md",
+                "file": "ARELA Notes/Reventure Maps.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Property Use Code Pima County"
+              "title": "Reventure Maps"
             }
           },
           {
@@ -229,6 +215,20 @@
               },
               "icon": "lucide-file",
               "title": "Old_ARELA Front End UI Design"
+            }
+          },
+          {
+            "id": "eae7d7d6e5097863",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Build Docs/00_SYSTEM_TOPOLOGY.md.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "00_SYSTEM_TOPOLOGY.md"
             }
           }
         ],
@@ -289,7 +289,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 452.5
   },
   "right": {
     "id": "1c4ff91ba49a66ac",
@@ -394,43 +394,46 @@
       "bases:Create new base": false
     }
   },
-  "active": "259e50b8775258af",
+  "active": "eae7d7d6e5097863",
   "lastOpenFiles": [
-    "backend/app/services/pipeline/__pycache__/scout.cpython-314.pyc.2600514257472",
-    "backend/app/services/pipeline/__pycache__/scout.cpython-314.pyc.2423554525824",
-    "backend/app/__pycache__/main.cpython-314.pyc.2519092982320",
-    "ARELA Notes/Gemini System Instruction.md",
-    "ARELA Notes/Data Sources Distressed Property Pima County.md",
+    "backend/app/services/pipeline/__pycache__/scout.cpython-314.pyc.2270892280448",
+    "backend/app/services/pipeline/__pycache__/scout.cpython-314.pyc.1741227117184",
+    "frontend/src/components/scout/scout-columns.tsx",
+    "Build Docs/02_WORKFLOW_LOGIC.mermaid.md",
+    "Build Docs/02_WORKFLOW_LOGIC.mermaid",
+    "Build Docs/00_SYSTEM_TOPOLOGY.md.md",
+    "Build Docs/01_AGENT_ROSTER.md.md",
+    "ARELA Notes/Old_ARELA Org Chart and Roles.md",
+    "ARELA Notes/Old_ARELA Master Architectural Blueprint.md",
+    "ARELA Notes/Old_ARELA Front End UI Design.md",
+    "ARELA Notes/Market Analysis and KPI.md",
     "ARELA Notes/Antigravity Dev Team.md",
+    "frontend/node_modules/date-fns/eachHourOfInterval.js",
+    "frontend/node_modules/date-fns/eachDayOfInterval.js",
+    "frontend/node_modules/date-fns/getWeekOfMonth.js",
+    "backend/cloudbuild.yaml",
+    "frontend/node_modules/recharts/node_modules/react-is/index.js",
+    "frontend/src/hooks/useGoogleMapsKey.ts",
+    "frontend/src/hooks",
+    "ARELA Notes/Property Use Code Pima County.md",
+    "ARELA Notes/Data Sources Distressed Property Pima County.md",
+    "ARELA Notes/Gemini System Instruction.md",
     "Build Docs/06_MIGRATION_ROADMAP.md.md",
     "Build Docs/Gemini_Generated_Image_bi9bp1bi9bp1bi9b.png",
-    "backend/debug_hot_list.py",
-    "backend/inspect_hh_source.py",
-    "backend/app/services/pipeline/__pycache__/scout.cpython-314.pyc.2108240210992",
-    "backend/test_hot_list.py",
-    "backend/app/services/pipeline/__pycache__/scout.cpython-314.pyc.2799364375104",
-    "backend/app/services/pipeline/__pycache__/scout.cpython-314.pyc.1986212809344",
-    "frontend/tsconfig.tsbuildinfo",
-    "backend/check_layer_metadata.py",
     "Build Docs/Master Blueprint & Roadmap.md",
-    "Build Docs/01_AGENT_ROSTER.md.md",
-    "Build Docs/00_SYSTEM_TOPOLOGY.md.md",
-    "Reventure Maps.md",
+    "ARELA Notes/Reventure Maps.md",
     "Pasted image 20260105124920.png",
     "Pasted image 20260105124850.png",
     "Pasted image 20260105124837.png",
     "Pasted image 20260105124814.png",
     "Pasted image 20260105124700.png",
-    "ARELA Notes/Property Use Code Pima County.md",
     "Build Docs/deal_detail_spec.md",
     "backend/tax_debug.png",
     "Build Docs/copilot_spec.md",
     "Build Docs/lex_agent_spec.md",
     "Build Docs/05_UI_COMPONENT_SPEC.md.md",
     "Build Docs/03_DATABASE_SCHEMA.sql.md",
-    "Build Docs/02_WORKFLOW_LOGIC.mermaid.md",
     "ARELA Notes/Seller Script.md",
-    "ARELA Notes/Old_ARELA Front End UI Design.md",
     "frontend/node_modules/@radix-ui/react-accordion/README.md",
     "frontend/node_modules/@radix-ui/react-radio-group/README.md",
     "frontend/node_modules/@radix-ui/react-slider/README.md",
@@ -439,9 +442,6 @@
     "backend/mcp_servers/recorder/downloads/DOC419S345_temp/page_5.png",
     "backend/mcp_servers/recorder/README.md",
     "ARELA Notes/Wholesale KPI Leaders.md",
-    "frontend/node_modules/date-fns/docs/webpack.md",
-    "frontend/node_modules/date-fns/docs/unicodeTokens.md",
-    "frontend/node_modules/date-fns/docs/timeZones.md",
     "ARELA Org Chart.canvas"
   ]
 }

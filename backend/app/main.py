@@ -377,6 +377,14 @@ class SearchFilters(BaseModel):
     skip_homeharvest: bool = False # Fast mode - skip HomeHarvest enrichment
     neighborhood: Optional[str] = None # Search by subdivision/neighborhood name
     hot_list: Optional[List[str]] = None  # Hot list filters: FSBO, Price Reduced, High Days on Market, New Listing
+    listing_statuses: Optional[List[str]] = None  # Listing status filter: For Sale, Contingent, Pending, etc.
+    # Property detail filters (for MLS/HomeHarvest search)
+    min_beds: Optional[int] = None
+    max_beds: Optional[int] = None
+    min_baths: Optional[int] = None
+    max_baths: Optional[int] = None
+    min_sqft: Optional[int] = None
+    max_sqft: Optional[int] = None
 
 @app.post("/scout/search")
 async def search_leads(filters: SearchFilters):

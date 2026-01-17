@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react'
 import { APIProvider, Map, useMap } from '@vis.gl/react-google-maps'
+import { useAppStore } from '@/lib/store'
 
 export type DataLayerType = 'home_value' | 'inventory' | 'days_on_market' | 'price_drops'
 
@@ -126,10 +127,12 @@ const MapLayerController = ({ activeLayer, onRegionClick }: MarketMapProps) => {
 }
 
 export function MarketMap({ activeLayer, onRegionClick }: MarketMapProps) {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""
+    const { googleMapsApiKey } = useAppStore();
+
+    if (!googleMapsApiKey) return <div className="h-full w-full bg-gray-900 flex items-center justify-center text-gray-500">Loading Map...</div>;
 
     return (
-        <APIProvider apiKey={apiKey}>
+        <APIProvider apiKey={googleMapsApiKey}>
             <div className="h-full w-full bg-gray-900">
                 <Map
                     defaultCenter={TUCSON_CENTER}

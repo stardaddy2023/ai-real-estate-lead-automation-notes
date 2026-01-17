@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { APIProvider, Map, AdvancedMarker, Pin, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
+import { useAppStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Pencil, X, Search } from 'lucide-react'
 import { ScoutResult } from '@/lib/store'
@@ -184,8 +185,13 @@ const DrawingManager = ({ onSelection, isDrawing, setIsDrawing, initialBounds }:
 }
 
 export function GoogleScoutMap({ leads, highlightedLeadId, panToLeadId, onMarkerClick, onMapClick, onMapSelection, onSearchArea, selectedBounds }: GoogleScoutMapProps) {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""
+    const { googleMapsApiKey: apiKey } = useAppStore()
+    const isLoading = !apiKey
     const [isDrawing, setIsDrawing] = useState(false)
+
+    if (isLoading) {
+        return <div className="h-full w-full flex items-center justify-center bg-muted/20">Loading Map...</div>
+    }
 
     // Clear selection handler
     const handleClearSelection = () => {
@@ -201,8 +207,10 @@ export function GoogleScoutMap({ leads, highlightedLeadId, panToLeadId, onMarker
 
     console.log("GoogleScoutMap received leads:", leads)
 
+    const LIBRARIES: ("places" | "geometry" | "drawing" | "visualization")[] = ['places', 'geometry', 'drawing'];
+
     return (
-        <APIProvider apiKey={apiKey}>
+        <APIProvider apiKey={apiKey} libraries={LIBRARIES}>
             <div className="h-full w-full rounded-md overflow-hidden">
                 <Map
                     defaultCenter={defaultCenter}

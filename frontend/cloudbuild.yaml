@@ -4,6 +4,7 @@ steps:
     'build',
     '-t', 'us-central1-docker.pkg.dev/alpine-infinity-480716-i4/cloud-run-source-deploy/arela-frontend:latest',
     '--build-arg', 'NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${_NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}',
+    '--build-arg', 'NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL}',
     '.'
   ]
 images:

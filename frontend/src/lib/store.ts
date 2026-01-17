@@ -55,6 +55,7 @@ export interface AppState {
     leads: any[];
     filteredLeads: any[];
     viewMode: 'map' | 'list';
+    googleMapsApiKey: string | null;
 
     // Lead Scout State
     leadScout: {
@@ -65,13 +66,19 @@ export interface AppState {
         selectedDistressTypes: string[];
         limit: number;
         minBeds: string;
+        maxBeds: string;
         minBaths: string;
+        maxBaths: string;
         minSqft: string;
+        maxSqft: string;
+        selectedHotList: string[];
+        selectedStatuses: string[];
         viewMode: 'map' | 'list';
         highlightedLeadId: string | null;
         panToLeadId: string | null;
         selectedLeadIds: Set<string>;
         bounds: { north: number, south: number, east: number, west: number } | null;
+        error: string | null;
     };
 
     setSelectedProperty: (property: Property | null) => void;
@@ -80,6 +87,7 @@ export interface AppState {
     setActiveZone: (zone: AppState['activeZone']) => void;
     setViewMode: (mode: 'map' | 'list') => void;
     fetchLeads: () => Promise<void>;
+    fetchConfig: () => Promise<void>;
     filterDeals: (query: string) => void;
 
     // Lead Scout Actions
@@ -106,6 +114,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     leads: [],
     filteredLeads: [],
     viewMode: 'map',
+    googleMapsApiKey: null,
 
     // Lead Scout Initial State
     leadScout: {
@@ -116,13 +125,19 @@ export const useAppStore = create<AppState>((set, get) => ({
         selectedDistressTypes: [],
         limit: 100,
         minBeds: "",
+        maxBeds: "",
         minBaths: "",
+        maxBaths: "",
         minSqft: "",
+        maxSqft: "",
+        selectedHotList: [],
+        selectedStatuses: [],
         viewMode: 'map',
         highlightedLeadId: null,
         panToLeadId: null,
         selectedLeadIds: new Set(),
         bounds: null,
+        error: null,
     },
 
     // Scout State (Legacy)
@@ -154,13 +169,19 @@ export const useAppStore = create<AppState>((set, get) => ({
             selectedDistressTypes: [],
             limit: 100,
             minBeds: "",
+            maxBeds: "",
             minBaths: "",
+            maxBaths: "",
             minSqft: "",
+            maxSqft: "",
+            selectedHotList: [],
+            selectedStatuses: [],
             viewMode: 'map',
             highlightedLeadId: null,
             panToLeadId: null,
             selectedLeadIds: new Set(),
             bounds: null,
+            error: null,
         }
     })),
 
@@ -170,11 +191,30 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     fetchLeads: async () => {
         try {
-            const res = await fetch('http://127.0.0.1:8000/leads');
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+            const res = await fetch(`${baseUrl}/api/v1/leads`);
             const data = await res.json();
             set({ leads: data, filteredLeads: data }); // Initialize filteredLeads with all leads
         } catch (error) {
             console.error("Failed to fetch leads:", error);
+            set((state) => ({
+                leadScout: { ...state.leadScout, error: error instanceof Error ? error.message : "Unknown error" }
+            }));
+        }
+    },
+
+    fetchConfig: async () => {
+        try {
+            // In development, we might need the full URL if not proxied
+            // In production (Cloud Run), relative path should work if served from same origin or configured correctly
+            // For now assuming backend is at same host or proxied, or we use env var for base URL
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+            const res = await fetch(`${baseUrl}/api/v1/settings/public-config`);
+            if (!res.ok) throw new Error('Failed to fetch config');
+            const data = await res.json();
+            set({ googleMapsApiKey: data.googleMapsApiKey });
+        } catch (error) {
+            console.error("Failed to fetch config:", error);
         }
     },
 

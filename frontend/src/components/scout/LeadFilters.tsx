@@ -45,8 +45,209 @@ export const HOT_LIST_TYPES = [
     "Path of Progress"  // Uses GIS spatial search, not Homeharvest
 ]
 
+// Listing Status - MLS listing status filters
+export const LISTING_STATUS_TYPES = [
+    "For Sale",
+    "Contingent",
+    "Pending",
+    "Under Contract",
+    "Coming Soon",
+    "Sold"
+]
+
 // ============================================
-// Property Type Filter
+// Reusable Content Components
+// ============================================
+
+function PropertyTypeContent({ selectedPropertyTypes, togglePropertyType }: { selectedPropertyTypes: string[], togglePropertyType: (t: string) => void }) {
+    return (
+        <div className="space-y-2">
+            {PROPERTY_TYPES.map(type => (
+                <div key={type} className="flex items-center space-x-2">
+                    <Checkbox
+                        id={`type-${type}`}
+                        checked={selectedPropertyTypes.includes(type)}
+                        onCheckedChange={() => togglePropertyType(type)}
+                    />
+                    <label htmlFor={`type-${type}`} className="text-sm leading-none cursor-pointer text-gray-200">
+                        {type}
+                    </label>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+function PropertyDetailsContent({
+    minBeds, setMinBeds, maxBeds, setMaxBeds,
+    minBaths, setMinBaths, maxBaths, setMaxBaths,
+    minSqft, setMinSqft, maxSqft, setMaxSqft
+}: PropertyDetailsFilterProps) {
+    return (
+        <div className="space-y-3">
+            {/* Beds */}
+            <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Beds</Label>
+                <div className="flex gap-2">
+                    <input
+                        type="number"
+                        className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white"
+                        value={minBeds}
+                        onChange={(e) => setMinBeds(e.target.value)}
+                        placeholder="Min"
+                    />
+                    <span className="text-gray-400 self-center">-</span>
+                    <input
+                        type="number"
+                        className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white"
+                        value={maxBeds}
+                        onChange={(e) => setMaxBeds(e.target.value)}
+                        placeholder="Max"
+                    />
+                </div>
+            </div>
+            {/* Baths */}
+            <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Baths</Label>
+                <div className="flex gap-2">
+                    <input
+                        type="number"
+                        className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white"
+                        value={minBaths}
+                        onChange={(e) => setMinBaths(e.target.value)}
+                        placeholder="Min"
+                    />
+                    <span className="text-gray-400 self-center">-</span>
+                    <input
+                        type="number"
+                        className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white"
+                        value={maxBaths}
+                        onChange={(e) => setMaxBaths(e.target.value)}
+                        placeholder="Max"
+                    />
+                </div>
+            </div>
+            {/* SqFt */}
+            <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Sqft</Label>
+                <div className="flex gap-2">
+                    <input
+                        type="number"
+                        className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white"
+                        value={minSqft}
+                        onChange={(e) => setMinSqft(e.target.value)}
+                        placeholder="Min"
+                    />
+                    <span className="text-gray-400 self-center">-</span>
+                    <input
+                        type="number"
+                        className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white"
+                        value={maxSqft}
+                        onChange={(e) => setMaxSqft(e.target.value)}
+                        placeholder="Max"
+                    />
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function DistressFlagsContent({ selectedDistressTypes, toggleDistressType }: { selectedDistressTypes: string[], toggleDistressType: (t: string) => void }) {
+    return (
+        <div className="space-y-2">
+            {DISTRESS_TYPES.map(type => (
+                <div key={type} className="flex items-center space-x-2">
+                    <Checkbox
+                        id={`distress-${type}`}
+                        checked={selectedDistressTypes.includes(type)}
+                        onCheckedChange={() => toggleDistressType(type)}
+                        disabled={DISABLED_DISTRESS_TYPES.includes(type)}
+                    />
+                    <label
+                        htmlFor={`distress-${type}`}
+                        className={`text-sm leading-none cursor-pointer ${DISABLED_DISTRESS_TYPES.includes(type) ? 'text-gray-500' : 'text-gray-200'}`}
+                    >
+                        {type}
+                    </label>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+function HotListContent({
+    selectedHotList,
+    toggleHotListType,
+    selectedStatuses,
+    toggleStatus
+}: {
+    selectedHotList: string[],
+    toggleHotListType: (t: string) => void,
+    selectedStatuses: string[],
+    toggleStatus: (s: string) => void
+}) {
+    const isFsboSelected = selectedHotList.includes("FSBO")
+
+    return (
+        <div className="space-y-2">
+            {HOT_LIST_TYPES.map(type => (
+                <div key={type}>
+                    <div className="flex items-center space-x-2">
+                        <Checkbox
+                            id={`hot-${type}`}
+                            checked={selectedHotList.includes(type)}
+                            onCheckedChange={() => toggleHotListType(type)}
+                        />
+                        <label htmlFor={`hot-${type}`} className="text-sm leading-none cursor-pointer text-gray-200">
+                            {type}
+                        </label>
+                    </div>
+
+                    {/* Status sub-options appear indented under FSBO when selected */}
+                    {type === "FSBO" && isFsboSelected && (
+                        <div className="ml-6 mt-2 pl-2 border-l border-gray-700 space-y-1.5">
+                            <p className="text-xs text-gray-500 mb-1">Filter by Status:</p>
+                            {LISTING_STATUS_TYPES.map(status => (
+                                <div key={status} className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id={`status-${status}`}
+                                        checked={selectedStatuses.includes(status)}
+                                        onCheckedChange={() => toggleStatus(status)}
+                                    />
+                                    <label htmlFor={`status-${status}`} className="text-xs leading-none cursor-pointer text-gray-300">
+                                        {status}
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            ))}
+        </div>
+    )
+}
+
+function ListingStatusContent({ selectedStatuses, toggleStatus }: { selectedStatuses: string[], toggleStatus: (t: string) => void }) {
+    return (
+        <div className="space-y-2">
+            {LISTING_STATUS_TYPES.map(status => (
+                <div key={status} className="flex items-center space-x-2">
+                    <Checkbox
+                        id={`status-${status}`}
+                        checked={selectedStatuses.includes(status)}
+                        onCheckedChange={() => toggleStatus(status)}
+                    />
+                    <label htmlFor={`status-${status}`} className="text-sm leading-none cursor-pointer text-gray-200">
+                        {status}
+                    </label>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+// ============================================
+// Property Type Filter (Popover Wrapper)
 // ============================================
 interface PropertyTypeFilterProps {
     selectedPropertyTypes: string[]
@@ -103,23 +304,7 @@ export function PropertyTypeFilter({
                     </div>
                 </div>
                 <ScrollArea className="max-h-[300px] p-3">
-                    <div className="space-y-2">
-                        {PROPERTY_TYPES.map(type => (
-                            <div key={type} className="flex items-center space-x-2">
-                                <Checkbox
-                                    id={`type-${type}`}
-                                    checked={selectedPropertyTypes.includes(type)}
-                                    onCheckedChange={() => togglePropertyType(type)}
-                                />
-                                <label
-                                    htmlFor={`type-${type}`}
-                                    className="text-sm leading-none cursor-pointer"
-                                >
-                                    {type}
-                                </label>
-                            </div>
-                        ))}
-                    </div>
+                    <PropertyTypeContent selectedPropertyTypes={selectedPropertyTypes} togglePropertyType={togglePropertyType} />
                 </ScrollArea>
             </PopoverContent>
         </Popover>
@@ -127,35 +312,42 @@ export function PropertyTypeFilter({
 }
 
 // ============================================
-// Property Details Filter
+// Property Details Filter (Popover Wrapper)
 // ============================================
 interface PropertyDetailsFilterProps {
     minBeds: string
     setMinBeds: (val: string) => void
+    maxBeds: string
+    setMaxBeds: (val: string) => void
     minBaths: string
     setMinBaths: (val: string) => void
+    maxBaths: string
+    setMaxBaths: (val: string) => void
     minSqft: string
     setMinSqft: (val: string) => void
+    maxSqft: string
+    setMaxSqft: (val: string) => void
 }
 
-export function PropertyDetailsFilter({
-    minBeds,
-    setMinBeds,
-    minBaths,
-    setMinBaths,
-    minSqft,
-    setMinSqft
-}: PropertyDetailsFilterProps) {
+export function PropertyDetailsFilter(props: PropertyDetailsFilterProps) {
     const [open, setOpen] = useState(false)
+    const {
+        minBeds, setMinBeds, maxBeds, setMaxBeds,
+        minBaths, setMinBaths, maxBaths, setMaxBaths,
+        minSqft, setMinSqft, maxSqft, setMaxSqft
+    } = props
 
     const handleReset = () => {
         setMinBeds("")
+        setMaxBeds("")
         setMinBaths("")
+        setMaxBaths("")
         setMinSqft("")
+        setMaxSqft("")
     }
 
-    const hasActiveFilters = minBeds || minBaths || minSqft
-    const activeCount = [minBeds, minBaths, minSqft].filter(Boolean).length
+    const hasActiveFilters = minBeds || maxBeds || minBaths || maxBaths || minSqft || maxSqft
+    const activeCount = [minBeds, maxBeds, minBaths, maxBaths, minSqft, maxSqft].filter(Boolean).length
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -188,37 +380,8 @@ export function PropertyDetailsFilter({
                         </Button>
                     </div>
                 </div>
-                <div className="p-3 space-y-3">
-                    <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Min Beds</Label>
-                        <input
-                            type="number"
-                            className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            value={minBeds}
-                            onChange={(e) => setMinBeds(e.target.value)}
-                            placeholder="Any"
-                        />
-                    </div>
-                    <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Min Baths</Label>
-                        <input
-                            type="number"
-                            className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            value={minBaths}
-                            onChange={(e) => setMinBaths(e.target.value)}
-                            placeholder="Any"
-                        />
-                    </div>
-                    <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Min Sqft</Label>
-                        <input
-                            type="number"
-                            className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            value={minSqft}
-                            onChange={(e) => setMinSqft(e.target.value)}
-                            placeholder="Any"
-                        />
-                    </div>
+                <div className="p-3">
+                    <PropertyDetailsContent {...props} />
                 </div>
             </PopoverContent>
         </Popover>
@@ -226,7 +389,7 @@ export function PropertyDetailsFilter({
 }
 
 // ============================================
-// Distress Flags Filter
+// Distress Flags Filter (Popover Wrapper)
 // ============================================
 interface DistressFlagsFilterProps {
     selectedDistressTypes: string[]
@@ -283,24 +446,7 @@ export function DistressFlagsFilter({
                     </div>
                 </div>
                 <ScrollArea className="max-h-[300px] p-3">
-                    <div className="space-y-2">
-                        {DISTRESS_TYPES.map(type => (
-                            <div key={type} className="flex items-center space-x-2">
-                                <Checkbox
-                                    id={`distress-${type}`}
-                                    checked={selectedDistressTypes.includes(type)}
-                                    onCheckedChange={() => toggleDistressType(type)}
-                                    disabled={DISABLED_DISTRESS_TYPES.includes(type)}
-                                />
-                                <label
-                                    htmlFor={`distress-${type}`}
-                                    className={`text-sm leading-none cursor-pointer ${DISABLED_DISTRESS_TYPES.includes(type) ? 'text-gray-400' : ''}`}
-                                >
-                                    {type}
-                                </label>
-                            </div>
-                        ))}
-                    </div>
+                    <DistressFlagsContent selectedDistressTypes={selectedDistressTypes} toggleDistressType={toggleDistressType} />
                 </ScrollArea>
             </PopoverContent>
         </Popover>
@@ -308,19 +454,22 @@ export function DistressFlagsFilter({
 }
 
 // ============================================
-// Hot List Filter (FSBO, Price Reduced, High DOM, New Listing)
+// Hot List Filter (Popover Wrapper)
 // ============================================
 interface HotListFilterProps {
     selectedHotList: string[]
     setSelectedHotList: (types: string[]) => void
+    selectedStatuses: string[]
+    setSelectedStatuses: (statuses: string[]) => void
 }
 
 export function HotListFilter({
     selectedHotList,
-    setSelectedHotList
+    setSelectedHotList,
+    selectedStatuses,
+    setSelectedStatuses
 }: HotListFilterProps) {
     const [open, setOpen] = useState(false)
-
     const { toast } = useToast()
 
     const toggleHotListType = (type: string) => {
@@ -355,6 +504,15 @@ export function HotListFilter({
 
     const handleReset = () => {
         setSelectedHotList([])
+        setSelectedStatuses([])
+    }
+
+    const toggleStatus = (status: string) => {
+        if (selectedStatuses.includes(status)) {
+            setSelectedStatuses(selectedStatuses.filter(s => s !== status))
+        } else {
+            setSelectedStatuses([...selectedStatuses, status])
+        }
     }
 
     return (
@@ -388,24 +546,78 @@ export function HotListFilter({
                         </Button>
                     </div>
                 </div>
-                <ScrollArea className="max-h-[300px] p-3">
-                    <div className="space-y-2">
-                        {HOT_LIST_TYPES.map(type => (
-                            <div key={type} className="flex items-center space-x-2">
-                                <Checkbox
-                                    id={`hot-${type}`}
-                                    checked={selectedHotList.includes(type)}
-                                    onCheckedChange={() => toggleHotListType(type)}
-                                />
-                                <label
-                                    htmlFor={`hot-${type}`}
-                                    className="text-sm leading-none cursor-pointer"
-                                >
-                                    {type}
-                                </label>
-                            </div>
-                        ))}
+                <ScrollArea className="max-h-[350px] p-3">
+                    <HotListContent
+                        selectedHotList={selectedHotList}
+                        toggleHotListType={toggleHotListType}
+                        selectedStatuses={selectedStatuses}
+                        toggleStatus={toggleStatus}
+                    />
+                </ScrollArea>
+            </PopoverContent>
+        </Popover>
+    )
+}
+
+// ============================================
+// Listing Status Filter (Popover Wrapper)
+// ============================================
+interface ListingStatusFilterProps {
+    selectedStatuses: string[]
+    setSelectedStatuses: (statuses: string[]) => void
+}
+
+export function ListingStatusFilter({
+    selectedStatuses,
+    setSelectedStatuses
+}: ListingStatusFilterProps) {
+    const [open, setOpen] = useState(false)
+
+    const toggleStatus = (status: string) => {
+        if (selectedStatuses.includes(status)) {
+            setSelectedStatuses(selectedStatuses.filter(s => s !== status))
+        } else {
+            setSelectedStatuses([...selectedStatuses, status])
+        }
+    }
+
+    const handleReset = () => {
+        setSelectedStatuses([])
+    }
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 gap-1.5"
+                >
+                    <span className="text-xs">📋</span>
+                    <span className="text-xs font-medium hidden sm:inline">Status</span>
+                    {selectedStatuses.length > 0 && (
+                        <span className="bg-cyan-600 text-white text-[10px] px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                            {selectedStatuses.length}
+                        </span>
+                    )}
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0 bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800 shadow-xl" align="start">
+                <div className="flex items-center justify-between p-3 border-b border-gray-100 dark:border-gray-800">
+                    <h3 className="font-medium text-sm">Listing Status</h3>
+                    <div className="flex items-center gap-1">
+                        {selectedStatuses.length > 0 && (
+                            <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs text-muted-foreground hover:text-foreground" onClick={handleReset}>
+                                <RotateCcw className="w-3 h-3" />
+                            </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setOpen(false)}>
+                            <X className="w-3.5 h-3.5" />
+                        </Button>
                     </div>
+                </div>
+                <ScrollArea className="max-h-[300px] p-3">
+                    <ListingStatusContent selectedStatuses={selectedStatuses} toggleStatus={toggleStatus} />
                 </ScrollArea>
             </PopoverContent>
         </Popover>
@@ -422,17 +634,114 @@ interface LeadFiltersProps {
     setSelectedDistressTypes: (types: string[]) => void
     selectedHotList: string[]
     setSelectedHotList: (types: string[]) => void
+    selectedStatuses: string[]
+    setSelectedStatuses: (statuses: string[]) => void
     minBeds: string
     setMinBeds: (val: string) => void
+    maxBeds: string
+    setMaxBeds: (val: string) => void
     minBaths: string
     setMinBaths: (val: string) => void
+    maxBaths: string
+    setMaxBaths: (val: string) => void
     minSqft: string
     setMinSqft: (val: string) => void
+    maxSqft: string
+    setMaxSqft: (val: string) => void
     onSearch: () => void
+    mobile?: boolean
 }
 
 export function LeadFilters(props: LeadFiltersProps) {
-    // This is now a wrapper that renders the four separate filters
+    const { toast } = useToast() // Need toast for mobile HotList toggle logic
+
+    // Helper for mobile toggles (since we don't have the internal state of the sub-components)
+    const togglePropertyType = (type: string) => {
+        if (props.selectedPropertyTypes.includes(type)) {
+            props.setSelectedPropertyTypes(props.selectedPropertyTypes.filter(t => t !== type))
+        } else {
+            props.setSelectedPropertyTypes([...props.selectedPropertyTypes, type])
+        }
+    }
+
+    const toggleDistressType = (type: string) => {
+        if (props.selectedDistressTypes.includes(type)) {
+            props.setSelectedDistressTypes(props.selectedDistressTypes.filter(t => t !== type))
+        } else {
+            props.setSelectedDistressTypes([...props.selectedDistressTypes, type])
+        }
+    }
+
+    const toggleHotListType = (type: string) => {
+        if (props.selectedHotList.includes(type)) {
+            props.setSelectedHotList(props.selectedHotList.filter(t => t !== type))
+            return
+        }
+        let newList = [...props.selectedHotList, type]
+        const conflicts: Record<string, string> = { "New Listing": "High Days on Market", "High Days on Market": "New Listing" }
+        const conflictType = conflicts[type]
+        if (conflictType && newList.includes(conflictType)) {
+            newList = newList.filter(t => t !== conflictType)
+            toast({ title: "Filter Conflict Resolved", description: `Selected "${type}", removed conflicting "${conflictType}"`, variant: "default" })
+        }
+        props.setSelectedHotList(newList)
+    }
+
+    const toggleStatus = (status: string) => {
+        if (props.selectedStatuses.includes(status)) {
+            props.setSelectedStatuses(props.selectedStatuses.filter(s => s !== status))
+        } else {
+            props.setSelectedStatuses([...props.selectedStatuses, status])
+        }
+    }
+
+    if (props.mobile) {
+        return (
+            <div className="flex flex-col gap-6">
+                <div className="space-y-3">
+                    <h3 className="font-semibold text-white flex items-center gap-2">
+                        <Home className="w-4 h-4 text-blue-400" /> Property Type
+                    </h3>
+                    <div className="pl-2">
+                        <PropertyTypeContent selectedPropertyTypes={props.selectedPropertyTypes} togglePropertyType={togglePropertyType} />
+                    </div>
+                </div>
+
+                <div className="space-y-3">
+                    <h3 className="font-semibold text-white flex items-center gap-2">
+                        <Sliders className="w-4 h-4 text-green-400" /> Property Details
+                    </h3>
+                    <div className="pl-2">
+                        <PropertyDetailsContent {...props} />
+                    </div>
+                </div>
+
+                <div className="space-y-3">
+                    <h3 className="font-semibold text-white flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-red-400" /> Distress Flags
+                    </h3>
+                    <div className="pl-2">
+                        <DistressFlagsContent selectedDistressTypes={props.selectedDistressTypes} toggleDistressType={toggleDistressType} />
+                    </div>
+                </div>
+
+                <div className="space-y-3">
+                    <h3 className="font-semibold text-white flex items-center gap-2">
+                        <Flame className="w-4 h-4 text-orange-400" /> Hot List
+                    </h3>
+                    <div className="pl-2">
+                        <HotListContent
+                            selectedHotList={props.selectedHotList}
+                            toggleHotListType={toggleHotListType}
+                            selectedStatuses={props.selectedStatuses}
+                            toggleStatus={toggleStatus}
+                        />
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="flex items-center gap-1">
             <PropertyTypeFilter
@@ -442,10 +751,16 @@ export function LeadFilters(props: LeadFiltersProps) {
             <PropertyDetailsFilter
                 minBeds={props.minBeds}
                 setMinBeds={props.setMinBeds}
+                maxBeds={props.maxBeds}
+                setMaxBeds={props.setMaxBeds}
                 minBaths={props.minBaths}
                 setMinBaths={props.setMinBaths}
+                maxBaths={props.maxBaths}
+                setMaxBaths={props.setMaxBaths}
                 minSqft={props.minSqft}
                 setMinSqft={props.setMinSqft}
+                maxSqft={props.maxSqft}
+                setMaxSqft={props.setMaxSqft}
             />
             <DistressFlagsFilter
                 selectedDistressTypes={props.selectedDistressTypes}
@@ -454,6 +769,8 @@ export function LeadFilters(props: LeadFiltersProps) {
             <HotListFilter
                 selectedHotList={props.selectedHotList}
                 setSelectedHotList={props.setSelectedHotList}
+                selectedStatuses={props.selectedStatuses}
+                setSelectedStatuses={props.setSelectedStatuses}
             />
         </div>
     )

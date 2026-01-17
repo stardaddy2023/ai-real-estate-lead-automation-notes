@@ -51,8 +51,12 @@ function MapController({ leads, selectedProperty }: { leads: any[], selectedProp
 }
 
 export function InteractiveMap({ leads, onSelect }: InteractiveMapProps) {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    const { selectedProperty } = useAppStore();
+    const { googleMapsApiKey: apiKey, selectedProperty } = useAppStore();
+    const isLoading = !apiKey;
+
+    if (isLoading) {
+        return <div className="flex-1 flex items-center justify-center text-muted-foreground">Loading Map...</div>;
+    }
 
     if (!apiKey) {
         return <div className="flex-1 flex items-center justify-center text-red-500">Missing Google Maps API Key</div>;

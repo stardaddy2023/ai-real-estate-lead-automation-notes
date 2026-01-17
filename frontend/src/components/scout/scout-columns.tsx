@@ -185,12 +185,22 @@ export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef
         },
         {
             accessorKey: "beds",
-            header: "Beds",
+            header: ({ column }) => (
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="px-1">
+                    Beds
+                    <ArrowUpDown className="ml-1 h-3 w-3" />
+                </Button>
+            ),
             cell: ({ row }) => <div className="text-center text-gray-900 dark:text-white">{row.getValue("beds") ?? "—"}</div>,
         },
         {
             accessorKey: "baths",
-            header: "Baths",
+            header: ({ column }) => (
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="px-1">
+                    Baths
+                    <ArrowUpDown className="ml-1 h-3 w-3" />
+                </Button>
+            ),
             cell: ({ row }) => {
                 const lead = row.original as ExtendedScoutResult
                 const baths = lead.baths ?? "—"
@@ -199,8 +209,13 @@ export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef
             },
         },
         {
-            id: "stories",
-            header: "Stories",
+            accessorKey: "stories",
+            header: ({ column }) => (
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="px-1">
+                    Stories
+                    <ArrowUpDown className="ml-1 h-3 w-3" />
+                </Button>
+            ),
             cell: ({ row }) => {
                 const lead = row.original as ExtendedScoutResult
                 return <div className="text-center text-gray-900 dark:text-white">{lead.stories ?? "—"}</div>

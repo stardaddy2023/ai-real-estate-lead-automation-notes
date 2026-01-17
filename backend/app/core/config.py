@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     
     # AI
     GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
+    
+    # Security
+    ARELA_ADMIN_KEY: str = os.getenv("ARELA_ADMIN_KEY", "")
 
     class Config:
         env_file = ".env"

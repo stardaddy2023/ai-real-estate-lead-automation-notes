@@ -75,7 +75,14 @@ export default function AutocompleteInput({
 
     return (
         <div ref={wrapperRef} className={`relative w-full max-w-md ${className || ''}`}>
-            <div className="relative h-full">
+            <form
+                className="relative h-full w-full"
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    setIsOpen(false);
+                    onSearch();
+                }}
+            >
                 {showIcon && (
                     <Search
                         className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 cursor-pointer hover:text-green-500 transition-colors"
@@ -83,20 +90,21 @@ export default function AutocompleteInput({
                     />
                 )}
                 <input
-                    type="text"
+                    type="search" // Changed to search for better mobile keyboard
+                    enterKeyHint="search" // Explicit hint for mobile
                     placeholder={placeholder || "Search city, zip, or address..."}
                     className={inputClassName || "w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-400 focus:outline-none focus:border-green-500 transition-colors"}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') {
-                            console.log("DEBUG: Enter key pressed in AutocompleteInput")
+                            // Form submission handles this now, but keeping for safety if form fails
                             setIsOpen(false);
-                            onSearch();
+                            // onSearch() called by onSubmit
                         }
                     }}
                 />
-            </div>
+            </form>
 
             {isOpen && suggestions.length > 0 && (
                 <ul className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
