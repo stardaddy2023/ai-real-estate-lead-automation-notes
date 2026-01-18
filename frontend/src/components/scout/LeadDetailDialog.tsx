@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScoutResult } from '@/lib/store'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { User, Phone, Mail, Building2, DollarSign, AlertTriangle, Gavel, FileText, MapPin, Droplets, TrendingUp, Home, Calendar, Ruler, ChevronLeft, ChevronRight, List as ListIcon } from 'lucide-react'
+import { User, Phone, Mail, Building2, DollarSign, AlertTriangle, Gavel, FileText, MapPin, Droplets, TrendingUp, Home, Calendar, Ruler, ChevronLeft, ChevronRight, List as ListIcon, Map as MapIcon } from 'lucide-react'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/simple-accordion"
 
 interface LeadDetailDialogProps {
@@ -17,6 +17,8 @@ interface LeadDetailDialogProps {
     currentIndex?: number
     // View toggle
     onSwitchToListView?: () => void
+    onSwitchToMapView?: () => void
+    currentViewMode?: 'list' | 'map'
 }
 
 // Helper to format currency
@@ -45,7 +47,7 @@ const parseAltPhotos = (altPhotos: string | undefined): string[] => {
     return altPhotos.split(',').map(url => url.trim()).filter(url => url.length > 0)
 }
 
-export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead, onPrevLead, currentIndex, onSwitchToListView }: LeadDetailDialogProps) {
+export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead, onPrevLead, currentIndex, onSwitchToListView, onSwitchToMapView, currentViewMode }: LeadDetailDialogProps) {
     const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
     // Reset image index when lead changes
@@ -72,6 +74,7 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
         half_baths?: number
         stories?: number
         neighborhoods?: string
+        subdivision?: string
         hoa_fee?: number
         price_per_sqft?: number
         description?: string
@@ -449,6 +452,12 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
                                     </div>
                                     <div className="p-3 bg-gray-800/50 rounded-lg">
                                         <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
+                                            <MapPin className="h-3 w-3" /> Subdivision
+                                        </div>
+                                        <p className="font-medium text-white">{extLead.subdivision || "Unknown"}</p>
+                                    </div>
+                                    <div className="p-3 bg-gray-800/50 rounded-lg">
+                                        <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
                                             <Droplets className="h-3 w-3" /> Flood Zone
                                         </div>
                                         <p className={`font-medium ${extLead.flood_zone && !extLead.flood_zone.includes('X') ? 'text-yellow-400' : 'text-white'}`}>
@@ -612,18 +621,35 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
 
                 {/* Action Buttons */}
                 <div className="flex justify-between gap-3 mt-6 pt-4 border-t border-gray-700">
-                    <div>
+                    <div className="flex gap-2">
                         {onSwitchToListView && (
                             <Button
-                                variant="outline"
+                                variant={currentViewMode === 'list' ? 'secondary' : 'outline'}
                                 onClick={() => {
                                     onSwitchToListView()
                                     onOpenChange(false)
                                 }}
-                                className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                                className={currentViewMode === 'list'
+                                    ? "bg-gray-700 text-white border-gray-600"
+                                    : "border-gray-600 text-gray-300 hover:bg-gray-800"}
                             >
                                 <ListIcon className="h-4 w-4 mr-2" />
-                                View in List
+                                List
+                            </Button>
+                        )}
+                        {onSwitchToMapView && (
+                            <Button
+                                variant={currentViewMode === 'map' ? 'secondary' : 'outline'}
+                                onClick={() => {
+                                    onSwitchToMapView()
+                                    onOpenChange(false)
+                                }}
+                                className={currentViewMode === 'map'
+                                    ? "bg-gray-700 text-white border-gray-600"
+                                    : "border-gray-600 text-gray-300 hover:bg-gray-800"}
+                            >
+                                <MapIcon className="h-4 w-4 mr-2" />
+                                Map
                             </Button>
                         )}
                     </div>

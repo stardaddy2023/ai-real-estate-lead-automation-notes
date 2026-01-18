@@ -285,7 +285,12 @@ export default function LeadScout() {
                     payload.address = term
                 } else {
                     // Check if it's a known city, otherwise treat as Neighborhood
-                    const KNOWN_CITIES = ["TUCSON", "MARANA", "ORO VALLEY", "VAIL", "SAHUARITA", "SOUTH TUCSON", "CATALINA FOOTHILLS", "CASAS ADOBES", "DREXEL HEIGHTS", "FLOWING WELLS", "TANQUE VERDE", "TUCSON ESTATES", "GREEN VALLEY"]
+                    const KNOWN_CITIES = [
+                        "TUCSON", "MARANA", "ORO VALLEY", "VAIL", "SAHUARITA", "SOUTH TUCSON",
+                        "CATALINA FOOTHILLS", "CASAS ADOBES", "DREXEL HEIGHTS", "FLOWING WELLS",
+                        "TANQUE VERDE", "TUCSON ESTATES", "GREEN VALLEY",
+                        "CATALINA", "ORACLE", "SAN MANUEL", "AJO", "SELLS"
+                    ]
                     if (KNOWN_CITIES.some(city => term.toUpperCase() === city)) {
                         payload.city = term
                     } else {
@@ -517,10 +522,10 @@ export default function LeadScout() {
 
             {/* SEARCH BAR (Floating & Dynamic Position - Only in Map View) */}
             {viewMode !== 'list' && (
-                <div className={`absolute top-4 z-50 w-[calc(100%-1rem)] md:w-full max-w-4xl px-0 md:px-4 transition-all duration-300 ease-in-out ${sidebarOpen
-                    ? 'left-[calc(50%-225px+32px)]'
-                    : 'left-1/2'
-                    } -translate-x-1/2 transform pointer-events-none`}>
+                <div className={`absolute top-4 z-50 w-[calc(100%-1rem)] md:w-full max-w-4xl px-0 md:px-4 transition-all duration-300 ease-in-out
+                    left-[calc(50%+32px)] md:left-1/2
+                    ${sidebarOpen ? 'md:left-[calc(50%-225px+32px)]' : 'md:left-1/2'}
+                    -translate-x-1/2 transform pointer-events-none`}>
                     <div className="pointer-events-auto flex flex-col items-center w-full">
 
                         {/* DESKTOP LAYOUT (Hidden on Mobile) */}
@@ -1115,7 +1120,7 @@ export default function LeadScout() {
 
                 {/* PROPERTY SIDEBAR (Right Panel) */}
                 {sidebarOpen && results.length > 0 && (
-                    <div className="absolute top-0 bottom-0 right-0 left-16 md:left-auto md:w-[450px] bg-gray-950/95 backdrop-blur-md border-l border-gray-800 z-10 flex pt-16 shadow-2xl flex-col">
+                    <div className="absolute top-0 bottom-0 right-0 left-0 md:left-auto md:w-[450px] bg-gray-950/95 backdrop-blur-md border-l border-gray-800 z-10 flex pt-16 shadow-2xl flex-col">
                         <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 backdrop-blur-sm flex-shrink-0">
                             <div className="flex items-center gap-3">
                                 <h2 className="font-semibold text-gray-200">RESULTS ({results.length})</h2>
@@ -1292,10 +1297,10 @@ export default function LeadScout() {
 
                 {/* Bottom Center Button - Show Results (map view) or Map (list view) */}
                 {results.length > 0 && viewMode !== 'list' && (
-                    <div className={`absolute bottom-8 z-50 transition-all duration-300 ${sidebarOpen
-                        ? 'left-[calc(50%-225px+32px)] -translate-x-1/2'  // Center between menus when sidebar open
-                        : 'left-1/2 -translate-x-1/2'
-                        }`}>
+                    <div className={`absolute bottom-8 z-50 transition-all duration-300
+                        left-[calc(50%+32px)] md:left-1/2
+                        ${sidebarOpen ? 'md:left-[calc(50%-225px+32px)]' : 'md:left-1/2'}
+                        -translate-x-1/2`}>
                         <Button
                             onClick={() => setLeadScoutState({ viewMode: 'list' })}
                             className="rounded-full shadow-2xl bg-green-600 hover:bg-green-700 text-white border-none px-8 py-6 text-lg font-semibold transition-all transform hover:scale-105"
@@ -1309,15 +1314,34 @@ export default function LeadScout() {
             </div >
 
             {/* Detail Dialog */}
-            < LeadDetailDialog
+            <LeadDetailDialog
                 lead={selectedLead}
                 open={isDetailOpen}
-                onOpenChange={setIsDetailOpen}
+                onOpenChange={(open) => {
+                    setIsDetailOpen(open)
+                    // When closing, ensure the map highlights and pans to the last viewed lead
+                    if (!open && selectedLead) {
+                        setLeadScoutState({
+                            highlightedLeadId: selectedLead.id,
+                            panToLeadId: selectedLead.id
+                        })
+                    }
+                }}
                 results={results}
                 currentIndex={selectedLeadIndex >= 0 ? selectedLeadIndex : undefined}
                 onNextLead={handleNextLead}
                 onPrevLead={handlePrevLead}
                 onSwitchToListView={() => setLeadScoutState({ viewMode: 'list' })}
+                onSwitchToMapView={() => {
+                    // Switch to map and highlight/pan to the current property
+                    setLeadScoutState({
+                        viewMode: 'map',
+                        highlightedLeadId: selectedLead?.id || null,
+                        panToLeadId: selectedLead?.id || null
+                    })
+                    setSidebarOpen(false) // Close sidebar to show full map
+                }}
+                currentViewMode={viewMode}
             />
 
         </div >
