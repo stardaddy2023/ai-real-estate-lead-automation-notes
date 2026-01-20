@@ -1400,9 +1400,18 @@ class ScoutService:
         lead["primary_photo"] = data.get("primary_photo")
         lead["alt_photos"] = data.get("alt_photos")
         
-        # Parking and description
-        lead["parking_garage"] = data.get("parking_garage")
-        lead["description"] = data.get("text")
+        # Parking/Garage detection
+        parking_garage = data.get("parking_garage")
+        lead["parking_garage"] = parking_garage
+        lead["garage_spaces"] = parking_garage
+        lead["has_garage"] = bool(parking_garage and parking_garage > 0)
+        
+        # Description and Pool detection
+        description = data.get("text") or ""
+        lead["description"] = description
+        # Parse pool from description (case-insensitive, exclude "no pool")
+        desc_lower = description.lower()
+        lead["has_pool"] = "pool" in desc_lower and "no pool" not in desc_lower
 
     async def fetch_comps(self, address: str, radius: float = 1.0, past_days: int = 180) -> List[Dict]:
         """
@@ -1431,6 +1440,85 @@ class ScoutService:
         except Exception as e:
             print(f"Error fetching comps: {e}")
             return []
+
+    def _query_cache_for_features(self, filters: Dict, limit: int) -> List[Dict]:
+        """
+        Queries the in-memory lead cache for properties matching feature filters.
+        Returns cached leads that match ZIP/bounds + feature criteria (pool/garage).
+        
+        This bypasses GIS when searching for rare features like Pool/Garage,
+        enabling progressively better results as the cache grows.
+        """
+        if not self._lead_cache:
+            return []
+            
+        target_zip = filters.get("zip_code")
+        target_bounds = filters.get("bounds")  # Dict with xmin, ymin, xmax, ymax
+        has_pool = filters.get("has_pool")
+        has_garage = filters.get("has_garage")
+        has_guest_house = filters.get("has_guest_house")
+        min_beds = filters.get("min_beds")
+        max_beds = filters.get("max_beds")
+        min_baths = filters.get("min_baths")
+        max_baths = filters.get("max_baths")
+        min_sqft = filters.get("min_sqft")
+        max_sqft = filters.get("max_sqft")
+        min_year_built = filters.get("min_year_built")
+        max_year_built = filters.get("max_year_built")
+        
+        matches = []
+        
+        for addr, lead in self._lead_cache.items():
+            # Location filter
+            if target_zip:
+                lead_zip = lead.get("address_zip") or lead.get("zip")
+                if not lead_zip or not str(lead_zip).startswith(str(target_zip)[:5]):
+                    continue
+            elif target_bounds:
+                lat = lead.get("latitude")
+                lon = lead.get("longitude")
+                if not lat or not lon:
+                    continue
+                xmin = target_bounds.get("xmin") or target_bounds.get("west")
+                xmax = target_bounds.get("xmax") or target_bounds.get("east")
+                ymin = target_bounds.get("ymin") or target_bounds.get("south")
+                ymax = target_bounds.get("ymax") or target_bounds.get("north")
+                if not (xmin <= lon <= xmax and ymin <= lat <= ymax):
+                    continue
+                    
+            # Feature filters
+            if has_pool is True and not lead.get("has_pool"):
+                continue
+            if has_garage is True and not lead.get("has_garage"):
+                continue
+            if has_guest_house is True and not lead.get("has_guest_house"):
+                continue
+                
+            # Detail filters
+            if min_beds and (lead.get("beds") or 0) < min_beds:
+                continue
+            if max_beds and (lead.get("beds") or 0) > max_beds:
+                continue
+            if min_baths and (lead.get("baths") or 0) < min_baths:
+                continue
+            if max_baths and (lead.get("baths") or 0) > max_baths:
+                continue
+            if min_sqft and (lead.get("sqft") or 0) < min_sqft:
+                continue
+            if max_sqft and (lead.get("sqft") or 0) > max_sqft:
+                continue
+            if min_year_built and (lead.get("year_built") or 0) < min_year_built:
+                continue
+            if max_year_built and (lead.get("year_built") or 0) > max_year_built:
+                continue
+                
+            matches.append(lead.copy())
+            
+            if len(matches) >= limit:
+                break
+                
+        print(f"[Cache Query] Found {len(matches)} matching leads in cache (limit: {limit})")
+        return matches
 
     async def fetch_fsbo(self, location: str) -> List[Dict]:
         """
@@ -2502,84 +2590,202 @@ class ScoutService:
                         print(f"Safety net removed {len(candidates) - len(filtered)} out-of-bounds leads.")
                     candidates = filtered
 
-            print(f"AND-Logic: Final result count: {len(candidates[:limit])}")
+            # ===== SMART ENRICHMENT STRATEGY =====
+            # If we are filtering for rare features (Pool/Garage) that require enrichment,
+            # we cannot truncate candidates to 'limit' BEFORE enrichment.
+            # Instead, we must process candidates in batches until we find enough matches.
             
-            final_results = candidates[:limit]
+            has_pool = filters.get("has_pool")
+            has_garage = filters.get("has_garage")
+            has_guest_house = filters.get("has_guest_house")
             
-            # ===== ENRICHMENT PHASE (ONLY for final candidates) =====
-            # Skip slow enrichment if requested (for faster initial results)
-            skip_enrichment = filters.get("skip_enrichment", False)
+            # Guest House is now handled at GIS level, so it doesn't trigger smart enrichment
+            smart_enrichment_needed = bool(has_pool or has_garage)
             
-            if not skip_enrichment:
-                # Step 0: Apply cached enrichment data FIRST (parcel, GIS, HomeHarvest)
-                # This prevents redundant API calls for already-enriched leads
-                cache_hits = self._apply_cached_enrichment(final_results)
-                if cache_hits > 0:
-                    print(f"Applied cached enrichment to {cache_hits} leads (skipping redundant API calls)")
-                
-                # Step 3a: Enrich Code Violations with parcel data (owner info)
-                # Skip leads already enriched during early parcel check OR from cache
-                print(f"[Scout] DEBUG: primary = {primary}, checking for Code Violations enrichment", flush=True)
-                if primary == "Code Violations":
-                    unenriched = [l for l in final_results if not l.get("_parcel_enriched") and not l.get("_cache_enriched")]
-                    if unenriched:
-                        await self._enrich_violations_with_parcel_data(unenriched)
-                        print(f"Parcel enrichment: {len(unenriched)} leads enriched, {len(final_results) - len(unenriched)} skipped (cached/already done)", flush=True)
+            final_results = []
+            
+            # ===== CACHE-FIRST STRATEGY FOR POOL/GARAGE =====
+            # Query cache BEFORE fetching new data from GIS
+            if smart_enrichment_needed:
+                cache_hits = self._query_cache_for_features(filters, limit)
+                if cache_hits:
+                    final_results.extend(cache_hits)
+                    print(f"[Cache-First] Got {len(cache_hits)} results from cache")
+                    
+                    if len(final_results) >= limit:
+                        # Cache satisfied the full request - skip GIS entirely!
+                        print(f"[Cache-First] Cache satisfied full request ({len(final_results)} >= {limit}). Skipping GIS fetch.")
+                        final_results = final_results[:limit]
+                        smart_enrichment_needed = False  # Skip the GIS loop below
                     else:
-                        print(f"Skipping parcel enrichment ({len(final_results)} already enriched from cache)", flush=True)
+                        # Cache gave partial results - dedupe candidates to avoid re-processing
+                        cached_addrs = {(c.get("address") or "").upper() for c in cache_hits}
+                        original_count = len(candidates)
+                        candidates = [c for c in candidates if (c.get("address") or "").upper() not in cached_addrs]
+                        print(f"[Cache-First] Deduped candidates: {original_count} -> {len(candidates)} (removed {original_count - len(candidates)} already cached)")
+                        # Update limit for remaining fetch
+                        limit = limit - len(cache_hits)
+                        print(f"[Cache-First] Need {limit} more results from GIS")
+            
+            if smart_enrichment_needed:
+                print(f"[Scout] Smart Enrichment Active: Fetching candidates until {limit} matches found...")
+                
+                # We have a large pool of 'candidates' (up to 5x-10x limit from earlier fetch)
+                # Process them in batches
+                batch_size = 25
+                processed_count = 0
+                
+                while len(final_results) < limit and processed_count < len(candidates):
+                    # Take next batch
+                    batch = candidates[processed_count : processed_count + batch_size]
+                    processed_count += len(batch)
                     
-                # Step 3b: Enrich Zip Codes (for ALL leads that miss it, e.g. Violations or Parcels)
-                # This is fast (spatial query) so we do it for all leads missing zip
-                leads_needing_zip = [l for l in final_results if not l.get("address_zip")]
-                if leads_needing_zip:
-                    try:
-                        await self._enrich_violations_with_zip_codes(leads_needing_zip)
-                    except Exception as zip_err:
-                        print(f"[Scout] ERROR in zip code enrichment: {zip_err}", flush=True)
-
-                
-                # Step 3b: Run HomeHarvest and GIS enrichment IN PARALLEL for speed
-                # HomeHarvest can be skipped for faster response (adds ~45s when enabled)
-                skip_hh = filters.get("skip_homeharvest", False)
-                
-                gis_task = asyncio.create_task(self._enrich_with_gis_layers(final_results))
-                
-                if skip_hh:
-                    # Fast mode - apply cached HomeHarvest data (no new API calls) + GIS enrichment
-                    print("Fast mode: applying cached HomeHarvest data (no new API calls)")
-                    cache_applied = self._apply_homeharvest_from_cache(final_results)
-                    if cache_applied > 0:
-                        print(f"  Applied cached HomeHarvest data to {cache_applied} leads")
-                    try:
-                        await asyncio.wait_for(gis_task, timeout=30.0)
-                    except asyncio.TimeoutError:
-                        print("GIS enrichment timed out")
-                        gis_task.cancel()
-                else:
-                    # Full enrichment with HomeHarvest (~45s)
-                    hh_task = asyncio.create_task(self._enrich_with_homeharvest(final_results))
+                    if not batch:
+                        break
+                        
+                    print(f"[Scout] Processing batch {processed_count//batch_size} ({len(batch)} leads)... Found {len(final_results)}/{limit} so far.")
                     
-                    # Wait for both with a global timeout
-                    try:
-                        await asyncio.wait_for(
-                            asyncio.gather(hh_task, gis_task, return_exceptions=True),
-                            timeout=90.0  # Increased from 45s for slower property types
-                        )
-                    except asyncio.TimeoutError:
-                        print("Enrichment timed out, returning partial results")
-                        hh_task.cancel()
-                        gis_task.cancel()
-
-                # Tax delinquency check is the slowest (uses Playwright) - skip by default
-                # Only run if explicitly requested or if lead count is small
-                if len(final_results) <= 10 and not filters.get("skip_tax_check", True):
-                    await self._check_tax_delinquency(final_results)
+                    # Enrich this batch
+                    # Step 1: Apply cache
+                    self._apply_cached_enrichment(batch)
+                    
+                    # Step 2: Run HomeHarvest + GIS (Parallel)
+                    skip_hh = filters.get("skip_homeharvest", False)
+                    gis_task = asyncio.create_task(self._enrich_with_gis_layers(batch))
+                    
+                    if skip_hh:
+                        self._apply_homeharvest_from_cache(batch)
+                        try:
+                            await asyncio.wait_for(gis_task, timeout=30.0)
+                        except asyncio.TimeoutError:
+                            gis_task.cancel()
+                    else:
+                        hh_task = asyncio.create_task(self._enrich_with_homeharvest(batch))
+                        try:
+                            await asyncio.wait_for(
+                                asyncio.gather(hh_task, gis_task, return_exceptions=True),
+                                timeout=90.0
+                            )
+                        except asyncio.TimeoutError:
+                            hh_task.cancel()
+                            gis_task.cancel()
+                            
+                    # Step 3: Apply Filters IMMEDIATELY to this batch
+                    # Define filter function (same as below, but applied per batch)
+                    min_beds = filters.get("min_beds")
+                    max_beds = filters.get("max_beds")
+                    min_baths = filters.get("min_baths")
+                    max_baths = filters.get("max_baths")
+                    min_sqft = filters.get("min_sqft")
+                    max_sqft = filters.get("max_sqft")
+                    min_year_built = filters.get("min_year_built")
+                    max_year_built = filters.get("max_year_built")
+                    
+                    def matches_details(lead: Dict) -> bool:
+                        # Pool/Garage (The reason we are here)
+                        if has_pool is True and not lead.get("has_pool"): return False
+                        if has_garage is True and not lead.get("has_garage"): return False
+                        
+                        # Other details
+                        if min_beds and (lead.get("beds") or 0) < min_beds: return False
+                        if max_beds and (lead.get("beds") or 0) > max_beds: return False
+                        if min_baths and (lead.get("baths") or 0) < min_baths: return False
+                        if max_baths and (lead.get("baths") or 0) > max_baths: return False
+                        if min_sqft and (lead.get("sqft") or 0) < min_sqft: return False
+                        if max_sqft and (lead.get("sqft") or 0) > max_sqft: return False
+                        if min_year_built and (lead.get("year_built") or 0) < min_year_built: return False
+                        if max_year_built and (lead.get("year_built") or 0) > max_year_built: return False
+                        
+                        return True
+                        
+                    # Filter batch
+                    valid_leads = [l for l in batch if matches_details(l)]
+                    final_results.extend(valid_leads)
+                    
+                    print(f"[Scout] Batch result: {len(valid_leads)} valid matches. Total: {len(final_results)}")
+                    
+            else:
+                # Standard Logic (Truncate -> Enrich -> Filter)
+                # This is faster for common searches where we don't expect high drop-off
+                print(f"AND-Logic: Final result count: {len(candidates[:limit])}")
+                final_results = candidates[:limit]
                 
+                # Enrich
+                skip_enrichment = filters.get("skip_enrichment", False)
+                if not skip_enrichment:
+                    self._apply_cached_enrichment(final_results)
+                    
+                    # Code Violations / Zip enrichment (legacy support)
+                    if primary == "Code Violations":
+                        unenriched = [l for l in final_results if not l.get("_parcel_enriched") and not l.get("_cache_enriched")]
+                        if unenriched: await self._enrich_violations_with_parcel_data(unenriched)
+                    
+                    leads_needing_zip = [l for l in final_results if not l.get("address_zip")]
+                    if leads_needing_zip: await self._enrich_violations_with_zip_codes(leads_needing_zip)
 
-                # Step FINAL: Save all enriched leads to cache for future searches
-                saved = self._save_to_lead_cache(final_results)
-                if saved > 0:
-                    print(f"Saved {saved} enriched leads to cache (total cached: {len(self._lead_cache)})")
+                    # HomeHarvest + GIS
+                    skip_hh = filters.get("skip_homeharvest", False)
+                    gis_task = asyncio.create_task(self._enrich_with_gis_layers(final_results))
+                    
+                    if skip_hh:
+                        self._apply_homeharvest_from_cache(final_results)
+                        try:
+                            await asyncio.wait_for(gis_task, timeout=30.0)
+                        except asyncio.TimeoutError:
+                            gis_task.cancel()
+                    else:
+                        hh_task = asyncio.create_task(self._enrich_with_homeharvest(final_results))
+                        try:
+                            await asyncio.wait_for(asyncio.gather(hh_task, gis_task, return_exceptions=True), timeout=90.0)
+                        except asyncio.TimeoutError:
+                            hh_task.cancel()
+                            gis_task.cancel()
+
+            # Tax delinquency check (rarely used)
+            if len(final_results) <= 10 and not filters.get("skip_tax_check", True):
+                await self._check_tax_delinquency(final_results)
+
+            # Save to cache
+            self._save_to_lead_cache(final_results)
+
+            # Final Truncate (in case smart loop overshot slightly)
+            final_results = final_results[:limit]
+            
+            # Apply filters one last time for Standard Logic path (Smart path already did it)
+            if not smart_enrichment_needed:
+                # Re-apply filters for standard path just in case
+                # (Logic copied from original code for safety)
+                min_beds = filters.get("min_beds")
+                max_beds = filters.get("max_beds")
+                min_baths = filters.get("min_baths")
+                max_baths = filters.get("max_baths")
+                min_sqft = filters.get("min_sqft")
+                max_sqft = filters.get("max_sqft")
+                min_year_built = filters.get("min_year_built")
+                max_year_built = filters.get("max_year_built")
+                has_pool = filters.get("has_pool")
+                has_garage = filters.get("has_garage")
+                has_guest_house = filters.get("has_guest_house")
+                
+                if any([min_beds, max_beds, min_baths, max_baths, min_sqft, max_sqft, 
+                        min_year_built, max_year_built, has_pool, has_garage, has_guest_house]):
+                    
+                    def matches_property_details_final(lead: Dict) -> bool:
+                        if min_beds and (lead.get("beds") or 0) < min_beds: return False
+                        if max_beds and (lead.get("beds") or 0) > max_beds: return False
+                        if min_baths and (lead.get("baths") or 0) < min_baths: return False
+                        if max_baths and (lead.get("baths") or 0) > max_baths: return False
+                        if min_sqft and (lead.get("sqft") or 0) < min_sqft: return False
+                        if max_sqft and (lead.get("sqft") or 0) > max_sqft: return False
+                        if min_year_built and (lead.get("year_built") or 0) < min_year_built: return False
+                        if max_year_built and (lead.get("year_built") or 0) > max_year_built: return False
+                        if has_pool is True and not lead.get("has_pool"): return False
+                        if has_garage is True and not lead.get("has_garage"): return False
+                        # Guest House handled at GIS level, but double check here
+                        if has_guest_house is True and not lead.get("has_guest_house"): return False
+                        return True
+                        
+                    final_results = [l for l in final_results if matches_property_details_final(l)]
 
             # Sanitize results to replace NaN with None (JSON compliance)
             # Recursive function to handle nested dicts/lists
@@ -3028,13 +3234,42 @@ class ScoutService:
         # 2. Property Type Filters (OR logic - any selected type matches)
         # Only apply filter if specific types selected (not empty, not "all")
         property_types = filters.get('property_types') or []
-        if property_types and "all" not in [t.lower() for t in property_types]:
+        property_subtypes = filters.get('property_subtypes') or []  # Explicit parcel codes
+        
+        if property_subtypes:
+            # Use explicit sub-type codes directly (e.g. "81" for Vacant Land - Residential)
+            prefixes = property_subtypes
+        elif property_types and "all" not in [t.lower() for t in property_types]:
             prefixes = self._get_codes_for_types(property_types)
-            if prefixes:
-                # Use LIKE 'prefix%' for each prefix, combined with OR
-                # e.g. (PARCEL_USE LIKE '01%' OR PARCEL_USE LIKE '03%')
+        else:
+            prefixes = []
+            
+        if prefixes:
+            # Use LIKE 'prefix%' for each prefix, combined with OR
+            # e.g. (PARCEL_USE LIKE '01%' OR PARCEL_USE LIKE '03%')
+            # Add Guest House filter (018x) if requested
+            # CRITICAL FIX: If Guest House is requested, we should PRIORITIZE it over generic Single Family (01)
+            # Otherwise, the limit (100) gets filled with standard SFRs (0100) and we filter them all out later
+            if filters.get("has_guest_house"):
+                print("DEBUG: Optimizing Guest House search - Replacing generic '01'/'87' with '018'")
+                # Remove generic SFR prefixes if present
+                if "01" in prefixes: prefixes.remove("01")
+                if "87" in prefixes: prefixes.remove("87")
+                # Add specific Guest House prefix
+                if "018" not in prefixes: prefixes.append("018")
+                
+                # Re-generate conditions with updated prefixes
                 prefix_conditions = [f"PARCEL_USE LIKE '{p}%'" for p in prefixes]
-                where_parts.append(f"({' OR '.join(prefix_conditions)})")
+            else:
+                prefix_conditions = [f"PARCEL_USE LIKE '{p}%'" for p in prefixes]
+                
+            where_parts.append(f"({' OR '.join(prefix_conditions)})")
+                
+            where_parts.append(f"({' OR '.join(prefix_conditions)})")
+        elif filters.get("has_guest_house"):
+            # Guest House ONLY (no other types selected)
+            print("DEBUG: Filtering for Guest House ONLY (018%)")
+            where_parts.append("PARCEL_USE LIKE '018%'")
 
         # 4. Ensure Address Exists
         where_parts.append("ADDRESS_OL <> ''")
@@ -3486,6 +3721,9 @@ class ScoutService:
         use_code = attr.get("PARCEL_USE", "")
         prop_type = self._map_parcel_use_to_type(use_code)
         
+        # Guest House Detection: PARCEL_USE 018x = SFR with Additional Unit (Guest House)
+        has_guest_house = str(use_code).startswith("018") if use_code else False
+        
         # Extract Assessed Value and Zoning directly
         assessed_value = attr.get("FCV")
         zoning = attr.get("CURZONE_OL")
@@ -3551,8 +3789,11 @@ class ScoutService:
             "nearby_development": None,
             "beds": None,
             "baths": None,
-            "pool": None,
-            "garage": None,
+            # Property features (pool/garage from HomeHarvest, guest house from PARCEL_USE)
+            "has_pool": None,  # Detected from HomeHarvest description
+            "has_garage": None,  # Detected from HomeHarvest parking_garage
+            "garage_spaces": None,
+            "has_guest_house": has_guest_house,  # Detected from PARCEL_USE 018x
             "arv": None,
             "phone": None,
             "email": None

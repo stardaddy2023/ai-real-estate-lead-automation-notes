@@ -63,6 +63,7 @@ export interface AppState {
         results: ScoutResult[];
         loading: boolean;
         selectedPropertyTypes: string[];
+        selectedPropertySubTypes: string[];  // Parcel use codes for sub-types
         selectedDistressTypes: string[];
         limit: number;
         minBeds: string;
@@ -71,14 +72,21 @@ export interface AppState {
         maxBaths: string;
         minSqft: string;
         maxSqft: string;
+        minYearBuilt: string;
+        maxYearBuilt: string;
         selectedHotList: string[];
         selectedStatuses: string[];
+        // Property feature filters
+        hasPool: boolean | null;
+        hasGarage: boolean | null;
+        hasGuestHouse: boolean | null;
         viewMode: 'map' | 'list';
         highlightedLeadId: string | null;
         panToLeadId: string | null;
         selectedLeadIds: Set<string>;
         bounds: { north: number, south: number, east: number, west: number } | null;
         error: string | null;
+        lastViewedLeadId: string | null;
     };
 
     setSelectedProperty: (property: Property | null) => void;
@@ -122,6 +130,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         results: [],
         loading: false,
         selectedPropertyTypes: [],
+        selectedPropertySubTypes: [],  // Parcel use codes for sub-types
         selectedDistressTypes: [],
         limit: 100,
         minBeds: "",
@@ -130,14 +139,21 @@ export const useAppStore = create<AppState>((set, get) => ({
         maxBaths: "",
         minSqft: "",
         maxSqft: "",
+        minYearBuilt: "",
+        maxYearBuilt: "",
         selectedHotList: [],
         selectedStatuses: [],
+        // Property feature filters
+        hasPool: null,
+        hasGarage: null,
+        hasGuestHouse: null,
         viewMode: 'map',
         highlightedLeadId: null,
         panToLeadId: null,
         selectedLeadIds: new Set(),
         bounds: null,
         error: null,
+        lastViewedLeadId: null,
     },
 
     // Scout State (Legacy)
@@ -166,6 +182,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             results: [],
             loading: false,
             selectedPropertyTypes: [],
+            selectedPropertySubTypes: [],
             selectedDistressTypes: [],
             limit: 100,
             minBeds: "",
@@ -174,14 +191,21 @@ export const useAppStore = create<AppState>((set, get) => ({
             maxBaths: "",
             minSqft: "",
             maxSqft: "",
+            minYearBuilt: "",
+            maxYearBuilt: "",
             selectedHotList: [],
             selectedStatuses: [],
+            // Property feature filters
+            hasPool: null,
+            hasGarage: null,
+            hasGuestHouse: null,
             viewMode: 'map',
             highlightedLeadId: null,
             panToLeadId: null,
             selectedLeadIds: new Set(),
             bounds: null,
             error: null,
+            lastViewedLeadId: null,
         }
     })),
 

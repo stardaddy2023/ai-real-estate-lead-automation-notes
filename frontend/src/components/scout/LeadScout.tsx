@@ -45,9 +45,10 @@ export default function LeadScout() {
     const { leadScout, setLeadScoutState } = useAppStore()
     const {
         query, results, loading,
-        selectedPropertyTypes, selectedDistressTypes,
+        selectedPropertyTypes, selectedPropertySubTypes, selectedDistressTypes,
         selectedHotList, selectedStatuses,
         limit, minBeds, maxBeds, minBaths, maxBaths, minSqft, maxSqft,
+        minYearBuilt, maxYearBuilt, hasPool, hasGarage, hasGuestHouse,
         viewMode, highlightedLeadId, panToLeadId, selectedLeadIds,
         bounds
     } = leadScout
@@ -99,6 +100,7 @@ export default function LeadScout() {
         onViewDetails: (lead) => {
             setSelectedLead(lead)
             setIsDetailOpen(true)
+            setLeadScoutState({ lastViewedLeadId: lead.id })
         },
         onImport: (lead) => handleImport(lead),
         // Selection props for checkbox column
@@ -261,6 +263,7 @@ export default function LeadScout() {
             const term = ignoreQuery ? "" : query.trim()
             const payload: any = {
                 property_types: selectedPropertyTypes,
+                property_subtypes: selectedPropertySubTypes, // Parcel use codes for sub-types
                 distress_type: selectedDistressTypes, // Allow empty list for generic search
                 hot_list: selectedHotList, // FSBO, Price Reduced, High DOM, New Listing
                 listing_statuses: selectedStatuses, // For Sale, Contingent, Pending, etc.
@@ -270,9 +273,16 @@ export default function LeadScout() {
                 max_baths: maxBaths ? parseInt(maxBaths) : undefined,
                 min_sqft: minSqft ? parseInt(minSqft) : undefined,
                 max_sqft: maxSqft ? parseInt(maxSqft) : undefined,
+                min_year_built: minYearBuilt ? parseInt(minYearBuilt) : undefined,
+                max_year_built: maxYearBuilt ? parseInt(maxYearBuilt) : undefined,
+                has_pool: hasPool,
+                has_garage: hasGarage,
+                has_guest_house: hasGuestHouse,
                 limit: limit,
                 bounds: newBounds, // Include bounds in payload
-                skip_homeharvest: !includePropertyDetails // Fast mode when toggle is OFF
+                // Force HomeHarvest enrichment if searching for specific features that require it (Pool, Garage)
+                // Guest House (018x) is from GIS so it doesn't require HomeHarvest
+                skip_homeharvest: !includePropertyDetails && !hasPool && !hasGarage
             }
 
             // Smart Classification
@@ -371,24 +381,42 @@ export default function LeadScout() {
     }
 
     const handleImport = async (lead: ScoutResult) => {
+        // Single lead import - uses the bulk API with one lead
         try {
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
-            const res = await fetch(`${baseUrl}/api/v1/leads`, {
+            const res = await fetch(`${baseUrl}/api/v1/leads/import`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: JSON.stringify([{
                     address: lead.address,
+                    address_zip: lead.address_zip,
                     owner_name: lead.owner_name,
                     mailing_address: lead.mailing_address,
+                    latitude: lead.latitude,
+                    longitude: lead.longitude,
+                    bedrooms: lead.beds,
+                    bathrooms: lead.baths,
+                    sqft: lead.sqft,
+                    year_built: lead.year_built,
                     property_type: lead.property_type,
-                    equity_value: lead.assessed_value, // Proxy
-                    status: "New",
-                    notes: `Scouted via LeadScout. Distress: ${lead.distress_signals.join(', ')}`
-                })
+                    parcel_id: lead.parcel_id,
+                    zoning: lead.zoning,
+                    has_pool: lead.has_pool || false,
+                    has_garage: lead.has_garage || false,
+                    has_guesthouse: lead.has_guest_house || false,
+                    distress_score: lead.distress_score || 0
+                }])
             })
 
             if (res.ok) {
-                toast({ title: "Lead Imported", description: `${lead.address} added to Inbox.` })
+                const result = await res.json()
+                if (result.imported > 0) {
+                    toast({ title: "Lead Imported", description: `${lead.address} added to Inbox.` })
+                } else {
+                    toast({ title: "Already in Inbox", description: `${lead.address} was already imported.`, variant: "default" })
+                }
+            } else {
+                throw new Error("Import failed")
             }
         } catch (error) {
             toast({ title: "Import failed", variant: "destructive" })
@@ -417,19 +445,55 @@ export default function LeadScout() {
     const handleBulkImport = async () => {
         if (selectedLeadIds.size === 0) return
 
-        let successCount = 0
         setLeadScoutState({ loading: true })
 
-        for (const id of Array.from(selectedLeadIds)) {
-            const lead = results.find(r => r.id === id)
-            if (lead) {
-                await handleImport(lead)
-                successCount++
-            }
-        }
+        try {
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
-        setLeadScoutState({ loading: false, selectedLeadIds: new Set() })
-        toast({ title: "Bulk Import Complete", description: `Imported ${successCount} leads.` })
+            // Convert selected leads to import format
+            const leadsToImport = Array.from(selectedLeadIds)
+                .map(id => results.find(r => r.id === id))
+                .filter(Boolean)
+                .map(lead => ({
+                    address: lead!.address,
+                    address_zip: lead!.address_zip,
+                    owner_name: lead!.owner_name,
+                    mailing_address: lead!.mailing_address,
+                    latitude: lead!.latitude,
+                    longitude: lead!.longitude,
+                    bedrooms: lead!.beds,
+                    bathrooms: lead!.baths,
+                    sqft: lead!.sqft,
+                    year_built: lead!.year_built,
+                    property_type: lead!.property_type,
+                    parcel_id: lead!.parcel_id,
+                    zoning: lead!.zoning,
+                    has_pool: lead!.has_pool || false,
+                    has_garage: lead!.has_garage || false,
+                    has_guesthouse: (lead as any).has_guest_house || false,
+                    distress_score: lead!.distress_score || 0
+                }))
+
+            const res = await fetch(`${baseUrl}/api/v1/leads/import`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(leadsToImport)
+            })
+
+            if (res.ok) {
+                const result = await res.json()
+                setLeadScoutState({ loading: false, selectedLeadIds: new Set() })
+                toast({
+                    title: "Bulk Import Complete",
+                    description: result.message
+                })
+            } else {
+                throw new Error("Bulk import failed")
+            }
+        } catch (error) {
+            setLeadScoutState({ loading: false })
+            toast({ title: "Bulk Import Failed", variant: "destructive" })
+        }
     }
 
     // Toggle Filters
@@ -453,7 +517,7 @@ export default function LeadScout() {
     const handleMarkerClick = (lead: ScoutResult) => {
         // Open sidebar and scroll to the clicked property
         setSidebarOpen(true)
-        setLeadScoutState({ highlightedLeadId: lead.id, panToLeadId: lead.id })
+        setLeadScoutState({ highlightedLeadId: lead.id, panToLeadId: lead.id, lastViewedLeadId: lead.id })
 
         // Scroll to item in list
         setTimeout(() => {
@@ -502,6 +566,56 @@ export default function LeadScout() {
                 description: "MLS filters require detailed property data.",
                 duration: 3000
             })
+        }
+    }
+
+    const handleFeatureChange = (key: 'hasPool' | 'hasGarage' | 'hasGuestHouse', val: boolean | null) => {
+        setLeadScoutState({ [key]: val })
+
+        // Only Pool and Garage require HomeHarvest details. Guest House is from GIS.
+        if (val && !includePropertyDetails && (key === 'hasPool' || key === 'hasGarage')) {
+            setIncludePropertyDetails(true)
+            toast({
+                title: "Details Enabled",
+                description: "Pool and Garage filters require detailed property data.",
+                duration: 3000
+            })
+        }
+
+    }
+
+    const handleDetailsToggle = (checked: boolean) => {
+        if (checked) {
+            setIncludePropertyDetails(true)
+            return
+        }
+
+        // If disabling, check for dependent filters
+        const mlsFilters = ["FSBO", "Price Reduced", "High Days on Market", "New Listing"]
+        const hasMlsFilter = selectedHotList.some(f => mlsFilters.includes(f))
+
+        if (hasPool || hasGarage || hasMlsFilter) {
+            const confirmDisable = window.confirm(
+                "Disabling Property Details will also disable the following active filters:\n\n" +
+                (hasPool ? "• Pool\n" : "") +
+                (hasGarage ? "• Garage\n" : "") +
+                (hasMlsFilter ? "• MLS Filters (FSBO, New Listing, etc.)\n" : "") +
+                "\nDo you want to proceed?"
+            )
+
+            if (confirmDisable) {
+                // User confirmed: Disable details and clear dependent filters
+                setIncludePropertyDetails(false)
+                setLeadScoutState({
+                    hasPool: null,
+                    hasGarage: null,
+                    selectedHotList: selectedHotList.filter(f => !mlsFilters.includes(f))
+                })
+            }
+            // If cancelled, do nothing (checkbox stays checked)
+        } else {
+            // No conflicts, just disable
+            setIncludePropertyDetails(false)
         }
     }
 
@@ -561,6 +675,8 @@ export default function LeadScout() {
                             <LeadFilters
                                 selectedPropertyTypes={selectedPropertyTypes}
                                 setSelectedPropertyTypes={(val) => setLeadScoutState({ selectedPropertyTypes: val })}
+                                selectedPropertySubTypes={selectedPropertySubTypes}
+                                setSelectedPropertySubTypes={(val) => setLeadScoutState({ selectedPropertySubTypes: val })}
                                 selectedDistressTypes={selectedDistressTypes}
                                 setSelectedDistressTypes={(val) => setLeadScoutState({ selectedDistressTypes: val })}
                                 selectedHotList={selectedHotList}
@@ -579,6 +695,16 @@ export default function LeadScout() {
                                 setMinSqft={(val) => setLeadScoutState({ minSqft: val })}
                                 maxSqft={maxSqft}
                                 setMaxSqft={(val) => setLeadScoutState({ maxSqft: val })}
+                                minYearBuilt={minYearBuilt}
+                                setMinYearBuilt={(val) => setLeadScoutState({ minYearBuilt: val })}
+                                maxYearBuilt={maxYearBuilt}
+                                setMaxYearBuilt={(val) => setLeadScoutState({ maxYearBuilt: val })}
+                                hasPool={hasPool}
+                                setHasPool={(val) => handleFeatureChange('hasPool', val)}
+                                hasGarage={hasGarage}
+                                setHasGarage={(val) => handleFeatureChange('hasGarage', val)}
+                                hasGuestHouse={hasGuestHouse}
+                                setHasGuestHouse={(val) => handleFeatureChange('hasGuestHouse', val)}
                                 onSearch={() => handleSearch(false)}
                             />
                             <div className="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1" />
@@ -586,7 +712,7 @@ export default function LeadScout() {
                                 <input
                                     type="checkbox"
                                     checked={includePropertyDetails}
-                                    onChange={(e) => setIncludePropertyDetails(e.target.checked)}
+                                    onChange={(e) => handleDetailsToggle(e.target.checked)}
                                     className="w-3.5 h-3.5 rounded border-gray-400 text-green-600 focus:ring-green-500 focus:ring-1"
                                 />
                                 <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Details</span>
@@ -658,7 +784,7 @@ export default function LeadScout() {
                                                 <input
                                                     type="checkbox"
                                                     checked={includePropertyDetails}
-                                                    onChange={(e) => setIncludePropertyDetails(e.target.checked)}
+                                                    onChange={(e) => handleDetailsToggle(e.target.checked)}
                                                     className="w-5 h-5 rounded border-gray-600 text-green-600 focus:ring-green-500 bg-gray-800"
                                                 />
                                             </div>
@@ -687,6 +813,16 @@ export default function LeadScout() {
                                                     setMinSqft={(val) => setLeadScoutState({ minSqft: val })}
                                                     maxSqft={maxSqft}
                                                     setMaxSqft={(val) => setLeadScoutState({ maxSqft: val })}
+                                                    minYearBuilt={minYearBuilt}
+                                                    setMinYearBuilt={(val) => setLeadScoutState({ minYearBuilt: val })}
+                                                    maxYearBuilt={maxYearBuilt}
+                                                    setMaxYearBuilt={(val) => setLeadScoutState({ maxYearBuilt: val })}
+                                                    hasPool={hasPool}
+                                                    setHasPool={(val) => handleFeatureChange('hasPool', val)}
+                                                    hasGarage={hasGarage}
+                                                    setHasGarage={(val) => handleFeatureChange('hasGarage', val)}
+                                                    hasGuestHouse={hasGuestHouse}
+                                                    setHasGuestHouse={(val) => handleFeatureChange('hasGuestHouse', val)}
                                                     onSearch={() => { }} // No-op, search is manual
                                                 />
                                             </div>
@@ -1091,7 +1227,7 @@ export default function LeadScout() {
                                     data={filteredResults}
                                     onRowClick={(row) => {
                                         setSelectedLead(row as ScoutResult)
-                                        setLeadScoutState({ highlightedLeadId: (row as ScoutResult).id })
+                                        setLeadScoutState({ highlightedLeadId: (row as ScoutResult).id, lastViewedLeadId: (row as ScoutResult).id })
                                         setIsDetailOpen(true)
                                     }}
                                 />
@@ -1171,7 +1307,7 @@ export default function LeadScout() {
                                         }}
                                         onClick={() => {
                                             setSelectedLead(lead)
-                                            setLeadScoutState({ panToLeadId: lead.id })
+                                            setLeadScoutState({ panToLeadId: lead.id, lastViewedLeadId: lead.id })
                                             setIsDetailOpen(true)
                                         }}
                                     >
@@ -1252,6 +1388,21 @@ export default function LeadScout() {
                                                     +{(lead.distress_signals?.length ?? 0) - 2} more
                                                 </Badge>
                                             )}
+                                            {(lead as any).has_pool && (
+                                                <Badge variant="outline" className="text-[10px] border-blue-900 text-blue-400 bg-blue-950/30">
+                                                    Pool
+                                                </Badge>
+                                            )}
+                                            {(lead as any).has_garage && (
+                                                <Badge variant="outline" className="text-[10px] border-gray-600 text-gray-300 bg-gray-800/30">
+                                                    Garage
+                                                </Badge>
+                                            )}
+                                            {(lead as any).has_guest_house && (
+                                                <Badge variant="outline" className="text-[10px] border-purple-900 text-purple-400 bg-purple-950/30">
+                                                    Guest House
+                                                </Badge>
+                                            )}
                                         </div>
                                     </Card>
                                 ))}
@@ -1265,7 +1416,7 @@ export default function LeadScout() {
                 < div className="absolute inset-0 z-0" >
                     <GoogleScoutMap
                         leads={results}
-                        highlightedLeadId={highlightedLeadId}
+                        highlightedLeadId={highlightedLeadId || leadScout.lastViewedLeadId}
                         panToLeadId={panToLeadId}
                         onMarkerClick={handleMarkerClick}
                         onMapClick={handleMapClick}

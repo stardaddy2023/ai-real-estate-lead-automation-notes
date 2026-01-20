@@ -152,6 +152,93 @@ async def create_lead(lead_in: LeadCreate, db: AsyncSession = Depends(get_db)):
     await db.refresh(db_lead)
     return db_lead
 
+
+class LeadImportItem(BaseModel):
+    """Schema for importing leads from Scout"""
+    address: str
+    address_zip: Optional[str] = None
+    owner_name: Optional[str] = None
+    mailing_address: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    bedrooms: Optional[int] = None
+    bathrooms: Optional[float] = None
+    sqft: Optional[int] = None
+    year_built: Optional[int] = None
+    property_type: Optional[str] = None
+    parcel_id: Optional[str] = None
+    zoning: Optional[str] = None
+    has_pool: bool = False
+    has_garage: bool = False
+    has_guesthouse: bool = False
+    distress_score: int = 0
+
+
+class LeadImportResponse(BaseModel):
+    imported: int
+    skipped: int
+    total: int
+    message: str
+
+
+@app.post("/api/v1/leads/import", response_model=LeadImportResponse)
+async def import_leads(leads: List[LeadImportItem], db: AsyncSession = Depends(get_db)):
+    """
+    Bulk import leads from LeadScout into the database.
+    Dedupes by address (skips if already exists).
+    """
+    imported_count = 0
+    skipped_count = 0
+    
+    for lead_data in leads:
+        # Normalize address for deduplication
+        address_normalized = lead_data.address.strip().upper()
+        
+        # Check if lead already exists
+        stmt = select(LeadModel).where(
+            LeadModel.address_street == address_normalized
+        )
+        result = await db.execute(stmt)
+        existing = result.scalars().first()
+        
+        if existing:
+            skipped_count += 1
+            continue
+        
+        # Create new lead
+        db_lead = LeadModel(
+            address_street=lead_data.address,
+            address_zip=lead_data.address_zip,
+            owner_name=lead_data.owner_name,
+            mailing_address=lead_data.mailing_address,
+            latitude=lead_data.latitude,
+            longitude=lead_data.longitude,
+            bedrooms=lead_data.bedrooms,
+            bathrooms=lead_data.bathrooms,
+            sqft=lead_data.sqft,
+            year_built=lead_data.year_built,
+            property_type=lead_data.property_type,
+            parcel_id=lead_data.parcel_id,
+            zoning=lead_data.zoning,
+            has_pool=lead_data.has_pool,
+            has_garage=lead_data.has_garage,
+            has_guesthouse=lead_data.has_guesthouse,
+            distress_score=lead_data.distress_score,
+            status="New",
+            source="LeadScout"
+        )
+        db.add(db_lead)
+        imported_count += 1
+    
+    await db.commit()
+    
+    return LeadImportResponse(
+        imported=imported_count,
+        skipped=skipped_count,
+        total=len(leads),
+        message=f"Imported {imported_count} leads, skipped {skipped_count} duplicates"
+    )
+
 # --- OFFERS ---
 @app.post("/api/v1/offers", response_model=Offer)
 async def create_offer(offer_in: OfferCreate, db: AsyncSession = Depends(get_db)):
@@ -270,6 +357,12 @@ async def analyze_lead_endpoint(lead_id: str, db: AsyncSession = Depends(get_db)
 
 @app.post("/leads/{lead_id}/skiptrace")
 async def skip_trace_endpoint(lead_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Perform skip trace lookup on a lead using BatchData API.
+    Updates the lead with phone, email, and contact info.
+    """
+    from app.services.skip_trace_service import get_skip_trace_service
+    
     stmt = select(LeadModel).where(LeadModel.id == lead_id)
     result = await db.execute(stmt)
     lead = result.scalars().first()
@@ -277,19 +370,34 @@ async def skip_trace_endpoint(lead_id: str, db: AsyncSession = Depends(get_db)):
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     
-    agent = EngagementAgent()
-    result = await agent.skip_trace({"address": lead.address_street})
+    # Get skip trace service (uses BatchData API or mock mode)
+    skip_trace = get_skip_trace_service()
     
-    if result.get("status") == "found":
-        lead.phone = result.get("phone")
-        lead.email = result.get("email")
-        lead.owner_name = result.get("owner_name")
-        lead.mailing_address = result.get("mailing_address")
-        lead.social_ids = result.get("social_ids")
+    # Perform lookup
+    result = await skip_trace.lookup(
+        address=lead.address_street,
+        owner_name=lead.owner_name,
+        zip_code=lead.address_zip
+    )
+    
+    # Update lead with results
+    if result.status == "found":
+        lead.phone = result.phone
+        lead.email = result.email
+        lead.owner_name = result.owner_name or lead.owner_name  # Don't overwrite if empty
+        lead.mailing_address = result.mailing_address or lead.mailing_address
+        lead.social_ids = result.social_ids or {}
+        lead.status = "Skiptraced"  # Update status
         await db.commit()
         await db.refresh(lead)
     
-    return lead
+    # Return lead data with skip trace message
+    lead_dict = {k: v for k, v in lead.__dict__.items() if not k.startswith('_')}
+    return {
+        **lead_dict,
+        "skip_trace_status": result.status,
+        "skip_trace_message": result.message
+    }
 
 @app.post("/leads/{lead_id}/offer")
 async def generate_offer_endpoint(lead_id: str, db: AsyncSession = Depends(get_db)):
@@ -372,6 +480,7 @@ class SearchFilters(BaseModel):
     address: Optional[str] = None
     distress_type: Optional[Union[List[str], str]] = None
     property_types: Optional[List[str]] = None
+    property_subtypes: Optional[List[str]] = None  # Parcel use codes for sub-types
     limit: int = 100
     bounds: Optional[Dict[str, float]] = None # {xmin, ymin, xmax, ymax}
     skip_homeharvest: bool = False # Fast mode - skip HomeHarvest enrichment
@@ -385,6 +494,12 @@ class SearchFilters(BaseModel):
     max_baths: Optional[int] = None
     min_sqft: Optional[int] = None
     max_sqft: Optional[int] = None
+    min_year_built: Optional[int] = None
+    max_year_built: Optional[int] = None
+    # Property feature filters
+    has_pool: Optional[bool] = None
+    has_garage: Optional[bool] = None
+    has_guest_house: Optional[bool] = None
 
 @app.post("/scout/search")
 async def search_leads(filters: SearchFilters):

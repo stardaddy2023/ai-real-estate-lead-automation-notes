@@ -68,8 +68,11 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
         violations?: Array<{ description: string; activity_num: string }>
         phone?: string
         email?: string
-        pool?: boolean
-        garage?: boolean
+        // Property features
+        has_pool?: boolean
+        has_garage?: boolean
+        has_guest_house?: boolean
+        garage_spaces?: number
         // HomeHarvest/MLS fields
         half_baths?: number
         stories?: number
@@ -416,6 +419,30 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
                                         <p className="font-medium text-white">{lead.sqft ? `${lead.sqft.toLocaleString()} sqft` : "N/A"}</p>
                                     </div>
                                 </div>
+
+                                {/* Property Features (Pool, Garage, Guest House) */}
+                                {(extLead.has_pool || extLead.has_garage || extLead.has_guest_house) && (
+                                    <div className="mt-3 pt-3 border-t border-gray-700">
+                                        <p className="text-xs text-gray-500 mb-2">Property Features</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {extLead.has_pool && (
+                                                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">
+                                                    🏊 Pool
+                                                </Badge>
+                                            )}
+                                            {extLead.has_garage && (
+                                                <Badge className="bg-gray-500/20 text-gray-300 border-gray-500/50">
+                                                    🚗 Garage {extLead.garage_spaces ? `(${extLead.garage_spaces})` : ""}
+                                                </Badge>
+                                            )}
+                                            {extLead.has_guest_house && (
+                                                <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50">
+                                                    🏠 Guest House
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Assessor Link - only show for non-MLS leads (MLS has "View Original Listing" in Listing Details) */}
                                 {extLead.assessor_url && !isMLSListing && (

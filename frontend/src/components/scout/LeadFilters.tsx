@@ -9,19 +9,76 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/components/ui/use-toast'
 
-export const PROPERTY_TYPES = [
-    "Single Family",
-    "Multi Family",
-    "Condo",
-    "Vacant Land",
-    "Commercial",
-    "Mobile Home Park",
-    "Industrial / Storage",
-    "Parking",
-    "Partially Complete",
-    "Salvage / Teardown",
-    "Mixed Use"
-]
+// Property types with sub-types and Pima County parcel use codes
+export const PROPERTY_TYPES_WITH_SUBTYPES: Record<string, { codes: string[], subtypes: { name: string, code: string }[] | null }> = {
+    "Single Family": {
+        codes: ["01", "87"],
+        subtypes: null  // No sub-types
+    },
+    "Multi Family": {
+        codes: ["03", "02"],
+        subtypes: [
+            { name: "Duplex/Triplex", code: "02" },
+            { name: "Apartments", code: "03" }
+        ]
+    },
+    "Condo": {
+        codes: ["04", "05"],
+        subtypes: null
+    },
+    "Vacant Land": {
+        // Pima County 4-digit codes: 00XX where XX = 1Y=Residential, 2Y=Commercial, 3Y=Industrial
+        // Using 3-digit prefixes for LIKE 'prefix%' matching
+        codes: ["00"],  // All vacant land starts with 00
+        subtypes: [
+            { name: "Residential", code: "001" },   // Matches 0011, 0012, 0013, 0014
+            { name: "Commercial", code: "002" },    // Matches 0020, 0021, 0022, 0026
+            { name: "Industrial", code: "003" },    // Matches 0030, 0031, 0032
+            { name: "Condo", code: "004" }          // Matches 0040, 0041
+        ]
+    },
+    "Commercial": {
+        codes: ["10", "11", "12", "13", "14", "15", "16", "17", "18", "19"],
+        subtypes: [
+            { name: "Office/Bank", code: "10" },
+            { name: "Retail/Store", code: "11" },
+            { name: "Auto/Service", code: "12" },
+            { name: "Restaurant", code: "13" },
+            { name: "Hotel/Motel", code: "14" }
+        ]
+    },
+    "Mobile Home Park": {
+        codes: ["07", "08"],
+        subtypes: null
+    },
+    "Industrial / Storage": {
+        codes: ["20", "21", "22", "23", "24", "25"],
+        subtypes: [
+            { name: "Manufacturing", code: "20" },
+            { name: "Warehouse", code: "21" },
+            { name: "Mining/Quarry", code: "23" }
+        ]
+    },
+    "Parking": {
+        codes: ["17"],
+        subtypes: null
+    },
+    "Partially Complete": {
+        codes: ["93", "94"],
+        subtypes: null
+    },
+    "Salvage / Teardown": {
+        codes: ["95", "96"],
+        subtypes: null
+    },
+    "Mixed Use": {
+        codes: ["09"],
+        subtypes: null
+    }
+}
+
+// Simple array for backwards compatibility
+export const PROPERTY_TYPES = Object.keys(PROPERTY_TYPES_WITH_SUBTYPES)
 export const DISTRESS_TYPES = [
     "Code Violations",
     "Absentee Owner",
@@ -59,21 +116,58 @@ export const LISTING_STATUS_TYPES = [
 // Reusable Content Components
 // ============================================
 
-function PropertyTypeContent({ selectedPropertyTypes, togglePropertyType }: { selectedPropertyTypes: string[], togglePropertyType: (t: string) => void }) {
+function PropertyTypeContent({
+    selectedPropertyTypes,
+    togglePropertyType,
+    selectedSubTypes,
+    toggleSubType
+}: {
+    selectedPropertyTypes: string[],
+    togglePropertyType: (t: string) => void,
+    selectedSubTypes?: string[],
+    toggleSubType?: (subtype: string) => void
+}) {
     return (
         <div className="space-y-2">
-            {PROPERTY_TYPES.map(type => (
-                <div key={type} className="flex items-center space-x-2">
-                    <Checkbox
-                        id={`type-${type}`}
-                        checked={selectedPropertyTypes.includes(type)}
-                        onCheckedChange={() => togglePropertyType(type)}
-                    />
-                    <label htmlFor={`type-${type}`} className="text-sm leading-none cursor-pointer text-gray-200">
-                        {type}
-                    </label>
-                </div>
-            ))}
+            {PROPERTY_TYPES.map(type => {
+                const typeConfig = PROPERTY_TYPES_WITH_SUBTYPES[type]
+                const isSelected = selectedPropertyTypes.includes(type)
+                const hasSubtypes = typeConfig?.subtypes && typeConfig.subtypes.length > 0
+
+                return (
+                    <div key={type}>
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id={`type-${type}`}
+                                checked={isSelected}
+                                onCheckedChange={() => togglePropertyType(type)}
+                            />
+                            <label htmlFor={`type-${type}`} className="text-sm leading-none cursor-pointer text-gray-200">
+                                {type}
+                            </label>
+                        </div>
+
+                        {/* Sub-types appear indented when parent is selected */}
+                        {hasSubtypes && isSelected && toggleSubType && selectedSubTypes && (
+                            <div className="ml-6 mt-2 pl-2 border-l border-gray-700 space-y-1.5">
+                                <p className="text-xs text-gray-500 mb-1">Filter by Sub-Type:</p>
+                                {typeConfig.subtypes!.map(subtype => (
+                                    <div key={subtype.code} className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={`subtype-${subtype.code}`}
+                                            checked={selectedSubTypes.includes(subtype.code)}
+                                            onCheckedChange={() => toggleSubType(subtype.code)}
+                                        />
+                                        <label htmlFor={`subtype-${subtype.code}`} className="text-xs leading-none cursor-pointer text-gray-300">
+                                            {subtype.name}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )
+            })}
         </div>
     )
 }
@@ -81,7 +175,9 @@ function PropertyTypeContent({ selectedPropertyTypes, togglePropertyType }: { se
 function PropertyDetailsContent({
     minBeds, setMinBeds, maxBeds, setMaxBeds,
     minBaths, setMinBaths, maxBaths, setMaxBaths,
-    minSqft, setMinSqft, maxSqft, setMaxSqft
+    minSqft, setMinSqft, maxSqft, setMaxSqft,
+    minYearBuilt, setMinYearBuilt, maxYearBuilt, setMaxYearBuilt,
+    hasPool, setHasPool, hasGarage, setHasGarage, hasGuestHouse, setHasGuestHouse
 }: PropertyDetailsFilterProps) {
     return (
         <div className="space-y-3">
@@ -146,6 +242,54 @@ function PropertyDetailsContent({
                         onChange={(e) => setMaxSqft(e.target.value)}
                         placeholder="Max"
                     />
+                </div>
+            </div>
+            {/* Year Built */}
+            <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Year Built</Label>
+                <div className="flex gap-2">
+                    <input
+                        type="number"
+                        className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white"
+                        value={minYearBuilt}
+                        onChange={(e) => setMinYearBuilt(e.target.value)}
+                        placeholder="Min"
+                    />
+                    <span className="text-gray-400 self-center">-</span>
+                    <input
+                        type="number"
+                        className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white"
+                        value={maxYearBuilt}
+                        onChange={(e) => setMaxYearBuilt(e.target.value)}
+                        placeholder="Max"
+                    />
+                </div>
+            </div>
+            {/* Property Features */}
+            <div className="space-y-2 pt-2 border-t border-gray-700">
+                <Label className="text-xs text-muted-foreground">Property Features</Label>
+                <div className="flex flex-wrap gap-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox
+                            checked={hasPool === true}
+                            onCheckedChange={(checked) => setHasPool(checked ? true : null)}
+                        />
+                        <span className="text-sm text-white">🏊 Pool</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox
+                            checked={hasGarage === true}
+                            onCheckedChange={(checked) => setHasGarage(checked ? true : null)}
+                        />
+                        <span className="text-sm text-white">🚗 Garage</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox
+                            checked={hasGuestHouse === true}
+                            onCheckedChange={(checked) => setHasGuestHouse(checked ? true : null)}
+                        />
+                        <span className="text-sm text-white">🏠 Guest House</span>
+                    </label>
                 </div>
             </div>
         </div>
@@ -252,25 +396,49 @@ function ListingStatusContent({ selectedStatuses, toggleStatus }: { selectedStat
 interface PropertyTypeFilterProps {
     selectedPropertyTypes: string[]
     setSelectedPropertyTypes: (types: string[]) => void
+    selectedSubTypes?: string[]
+    setSelectedSubTypes?: (types: string[]) => void
 }
 
 export function PropertyTypeFilter({
     selectedPropertyTypes,
-    setSelectedPropertyTypes
+    setSelectedPropertyTypes,
+    selectedSubTypes = [],
+    setSelectedSubTypes
 }: PropertyTypeFilterProps) {
     const [open, setOpen] = useState(false)
 
     const togglePropertyType = (type: string) => {
         if (selectedPropertyTypes.includes(type)) {
             setSelectedPropertyTypes(selectedPropertyTypes.filter(t => t !== type))
+            // Also clear sub-types for this parent when unchecking
+            if (setSelectedSubTypes) {
+                const parentConfig = PROPERTY_TYPES_WITH_SUBTYPES[type]
+                if (parentConfig?.subtypes) {
+                    const parentSubtypeCodes = parentConfig.subtypes.map(s => s.code)
+                    setSelectedSubTypes(selectedSubTypes.filter(s => !parentSubtypeCodes.includes(s)))
+                }
+            }
         } else {
             setSelectedPropertyTypes([...selectedPropertyTypes, type])
         }
     }
 
+    const toggleSubType = (code: string) => {
+        if (!setSelectedSubTypes) return
+        if (selectedSubTypes.includes(code)) {
+            setSelectedSubTypes(selectedSubTypes.filter(c => c !== code))
+        } else {
+            setSelectedSubTypes([...selectedSubTypes, code])
+        }
+    }
+
     const handleReset = () => {
         setSelectedPropertyTypes([])
+        if (setSelectedSubTypes) setSelectedSubTypes([])
     }
+
+    const totalSelected = selectedPropertyTypes.length + selectedSubTypes.length
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -282,18 +450,18 @@ export function PropertyTypeFilter({
                 >
                     <Home className="w-3.5 h-3.5" />
                     <span className="text-xs font-medium hidden sm:inline">Type</span>
-                    {selectedPropertyTypes.length > 0 && (
+                    {totalSelected > 0 && (
                         <span className="bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                            {selectedPropertyTypes.length}
+                            {totalSelected}
                         </span>
                     )}
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[220px] p-0 bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800 shadow-xl" align="start">
+            <PopoverContent className="w-[260px] p-0 bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800 shadow-xl" align="start">
                 <div className="flex items-center justify-between p-3 border-b border-gray-100 dark:border-gray-800">
                     <h3 className="font-medium text-sm">Property Type</h3>
                     <div className="flex items-center gap-1">
-                        {selectedPropertyTypes.length > 0 && (
+                        {totalSelected > 0 && (
                             <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs text-muted-foreground hover:text-foreground" onClick={handleReset}>
                                 <RotateCcw className="w-3 h-3" />
                             </Button>
@@ -303,8 +471,13 @@ export function PropertyTypeFilter({
                         </Button>
                     </div>
                 </div>
-                <ScrollArea className="max-h-[300px] p-3">
-                    <PropertyTypeContent selectedPropertyTypes={selectedPropertyTypes} togglePropertyType={togglePropertyType} />
+                <ScrollArea className="max-h-[400px] p-3">
+                    <PropertyTypeContent
+                        selectedPropertyTypes={selectedPropertyTypes}
+                        togglePropertyType={togglePropertyType}
+                        selectedSubTypes={selectedSubTypes}
+                        toggleSubType={toggleSubType}
+                    />
                 </ScrollArea>
             </PopoverContent>
         </Popover>
@@ -327,6 +500,16 @@ interface PropertyDetailsFilterProps {
     setMinSqft: (val: string) => void
     maxSqft: string
     setMaxSqft: (val: string) => void
+    minYearBuilt: string
+    setMinYearBuilt: (val: string) => void
+    maxYearBuilt: string
+    setMaxYearBuilt: (val: string) => void
+    hasPool: boolean | null
+    setHasPool: (val: boolean | null) => void
+    hasGarage: boolean | null
+    setHasGarage: (val: boolean | null) => void
+    hasGuestHouse: boolean | null
+    setHasGuestHouse: (val: boolean | null) => void
 }
 
 export function PropertyDetailsFilter(props: PropertyDetailsFilterProps) {
@@ -334,7 +517,9 @@ export function PropertyDetailsFilter(props: PropertyDetailsFilterProps) {
     const {
         minBeds, setMinBeds, maxBeds, setMaxBeds,
         minBaths, setMinBaths, maxBaths, setMaxBaths,
-        minSqft, setMinSqft, maxSqft, setMaxSqft
+        minSqft, setMinSqft, maxSqft, setMaxSqft,
+        minYearBuilt, setMinYearBuilt, maxYearBuilt, setMaxYearBuilt,
+        hasPool, setHasPool, hasGarage, setHasGarage, hasGuestHouse, setHasGuestHouse
     } = props
 
     const handleReset = () => {
@@ -344,10 +529,15 @@ export function PropertyDetailsFilter(props: PropertyDetailsFilterProps) {
         setMaxBaths("")
         setMinSqft("")
         setMaxSqft("")
+        setMinYearBuilt("")
+        setMaxYearBuilt("")
+        setHasPool(null)
+        setHasGarage(null)
+        setHasGuestHouse(null)
     }
 
-    const hasActiveFilters = minBeds || maxBeds || minBaths || maxBaths || minSqft || maxSqft
-    const activeCount = [minBeds, maxBeds, minBaths, maxBaths, minSqft, maxSqft].filter(Boolean).length
+    const hasActiveFilters = minBeds || maxBeds || minBaths || maxBaths || minSqft || maxSqft || minYearBuilt || maxYearBuilt || hasPool || hasGarage || hasGuestHouse
+    const activeCount = [minBeds, maxBeds, minBaths, maxBaths, minSqft, maxSqft, minYearBuilt, maxYearBuilt, hasPool, hasGarage, hasGuestHouse].filter(Boolean).length
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -630,6 +820,8 @@ export function ListingStatusFilter({
 interface LeadFiltersProps {
     selectedPropertyTypes: string[]
     setSelectedPropertyTypes: (types: string[]) => void
+    selectedPropertySubTypes?: string[]
+    setSelectedPropertySubTypes?: (types: string[]) => void
     selectedDistressTypes: string[]
     setSelectedDistressTypes: (types: string[]) => void
     selectedHotList: string[]
@@ -648,6 +840,16 @@ interface LeadFiltersProps {
     setMinSqft: (val: string) => void
     maxSqft: string
     setMaxSqft: (val: string) => void
+    minYearBuilt: string
+    setMinYearBuilt: (val: string) => void
+    maxYearBuilt: string
+    setMaxYearBuilt: (val: string) => void
+    hasPool: boolean | null
+    setHasPool: (val: boolean | null) => void
+    hasGarage: boolean | null
+    setHasGarage: (val: boolean | null) => void
+    hasGuestHouse: boolean | null
+    setHasGuestHouse: (val: boolean | null) => void
     onSearch: () => void
     mobile?: boolean
 }
@@ -747,6 +949,8 @@ export function LeadFilters(props: LeadFiltersProps) {
             <PropertyTypeFilter
                 selectedPropertyTypes={props.selectedPropertyTypes}
                 setSelectedPropertyTypes={props.setSelectedPropertyTypes}
+                selectedSubTypes={props.selectedPropertySubTypes}
+                setSelectedSubTypes={props.setSelectedPropertySubTypes}
             />
             <PropertyDetailsFilter
                 minBeds={props.minBeds}
@@ -761,6 +965,16 @@ export function LeadFilters(props: LeadFiltersProps) {
                 setMinSqft={props.setMinSqft}
                 maxSqft={props.maxSqft}
                 setMaxSqft={props.setMaxSqft}
+                minYearBuilt={props.minYearBuilt}
+                setMinYearBuilt={props.setMinYearBuilt}
+                maxYearBuilt={props.maxYearBuilt}
+                setMaxYearBuilt={props.setMaxYearBuilt}
+                hasPool={props.hasPool}
+                setHasPool={props.setHasPool}
+                hasGarage={props.hasGarage}
+                setHasGarage={props.setHasGarage}
+                hasGuestHouse={props.hasGuestHouse}
+                setHasGuestHouse={props.setHasGuestHouse}
             />
             <DistressFlagsFilter
                 selectedDistressTypes={props.selectedDistressTypes}
