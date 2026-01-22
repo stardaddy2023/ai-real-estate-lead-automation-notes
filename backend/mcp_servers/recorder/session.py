@@ -67,39 +67,106 @@ DOC_TYPE_MAP = {
 
 RECORDER_URL = "https://pimacountyaz-web.tylerhost.net/web/search/DOCSEARCH55S10"
 
+# Cookie file location for persistent sessions
+COOKIES_FILE = BACKEND_DIR / "cache" / "recorder_cookies.json"
+import json
+
 
 class RecorderSession:
     """
-    Manages a single recorder browser session.
-    - User initializes once (solves CAPTCHA manually)
-    - Session stays alive for automated searches
-    - Close when done working
+    Manages a single recorder browser session with cookie persistence.
+    - First tries to use saved cookies (headless, instant)
+    - Falls back to manual CAPTCHA if cookies expired
+    - Saves cookies after successful authentication
     """
     
     def __init__(self):
         self.playwright = None
         self.browser = None
         self.page = None
+        self.context = None
         self.initialized = False
+        self._headless_mode = False  # Track if we're in headless mode
     
-    async def initialize(self):
-        """
-        Initialize the recorder session.
-        Opens browser for user to solve CAPTCHA.
-        """
-        if self.initialized:
-            print("Session already initialized")
+    def _load_cookies(self) -> list:
+        """Load cookies from file if they exist."""
+        if COOKIES_FILE.exists():
+            try:
+                with open(COOKIES_FILE, "r") as f:
+                    cookies = json.load(f)
+                print(f"Loaded {len(cookies)} cookies from cache", flush=True)
+                return cookies
+            except Exception as e:
+                print(f"Failed to load cookies: {e}", flush=True)
+        return []
+    
+    def _save_cookies(self, cookies: list):
+        """Save cookies to file for future sessions."""
+        try:
+            COOKIES_FILE.parent.mkdir(parents=True, exist_ok=True)
+            with open(COOKIES_FILE, "w") as f:
+                json.dump(cookies, f, indent=2)
+            print(f"Saved {len(cookies)} cookies to cache", flush=True)
+        except Exception as e:
+            print(f"Failed to save cookies: {e}", flush=True)
+    
+    def get_cookies_status(self) -> dict:
+        """Get status of saved cookies."""
+        if not COOKIES_FILE.exists():
+            return {"exists": False, "age_hours": None, "count": 0}
+        
+        import time
+        try:
+            mtime = COOKIES_FILE.stat().st_mtime
+            age_hours = (time.time() - mtime) / 3600
+            with open(COOKIES_FILE, "r") as f:
+                cookies = json.load(f)
+            return {
+                "exists": True,
+                "age_hours": round(age_hours, 1),
+                "count": len(cookies),
+                "file_path": str(COOKIES_FILE)
+            }
+        except Exception as e:
+            return {"exists": False, "error": str(e)}
+    
+    async def validate_session(self) -> bool:
+        """Check if the browser session is still valid."""
+        if not self.initialized:
+            return False
+            
+        if not self.page or not self.browser:
+            self.initialized = False
+            return False
+            
+        try:
+            # Check if page is still open and connected
+            if self.page.is_closed():
+                print("Session validation failed: Page is closed")
+                self.initialized = False
+                return False
+                
+            # Optional: Check if browser is connected
+            if not self.browser.is_connected():
+                print("Session validation failed: Browser is disconnected")
+                self.initialized = False
+                return False
+                
+            # ACTIVE CHECK: Try to evaluate simple JS to ensure page is responsive
+            # This catches cases where the page is technically "open" but crashed or disconnected
+            await self.page.evaluate("1")
+                
             return True
-        
-        print("=" * 50)
-        print("RECORDER SESSION - INITIALIZATION")
-        print("=" * 50)
-        print()
-        print("Opening browser with stealth mode...")
-        
+        except Exception as e:
+            print(f"Session validation error: {e}")
+            self.initialized = False
+            return False
+    
+    async def _create_browser_context(self, headless: bool = True):
+        """Create browser and context with stealth settings."""
         self.playwright = await async_playwright().start()
         self.browser = await self.playwright.chromium.launch(
-            headless=False,
+            headless=headless,
             args=[
                 "--disable-blink-features=AutomationControlled",
                 "--disable-dev-shm-usage",
@@ -109,14 +176,14 @@ class RecorderSession:
         )
         
         # Create context with realistic settings
-        context = await self.browser.new_context(
+        self.context = await self.browser.new_context(
             viewport={"width": 1920, "height": 1080},
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             locale="en-US",
             timezone_id="America/Phoenix",
         )
         
-        self.page = await context.new_page()
+        self.page = await self.context.new_page()
         
         # Apply playwright-stealth to hide automation markers (v2.0.0 API)
         stealth = Stealth()
@@ -145,32 +212,101 @@ class RecorderSession:
             };
         """)
         
+        self._headless_mode = headless
+    
+    async def _verify_search_page(self, timeout: int = 5000) -> bool:
+        """Check if we're on the search page (past CAPTCHA)."""
+        try:
+            doc_input = self.page.locator("#field_selfservice_documentTypes")
+            await doc_input.wait_for(timeout=timeout)
+            return True
+        except:
+            return False
+    
+    async def initialize(self, force_manual: bool = False):
+        """
+        Initialize the recorder session.
+        
+        Flow:
+        1. If not forcing manual, try headless with saved cookies
+        2. If cookies work -> instant session (no browser window)
+        3. If cookies fail -> open browser for manual CAPTCHA
+        4. After manual CAPTCHA -> save cookies for next time
+        """
+        if self.initialized:
+            print("Session already initialized")
+            return True
+        
+        saved_cookies = self._load_cookies()
+        
+        # Try headless with cookies first (unless forcing manual)
+        if saved_cookies and not force_manual:
+            print("=" * 50)
+            print("RECORDER SESSION - TRYING CACHED COOKIES")
+            print("=" * 50)
+            
+            await self._create_browser_context(headless=True)
+            
+            # Inject saved cookies
+            await self.context.add_cookies(saved_cookies)
+            
+            # Navigate and check if we bypass CAPTCHA
+            print(f"Navigating to {RECORDER_URL}...", flush=True)
+            await self.page.goto(RECORDER_URL)
+            
+            # Give it a moment, then check if we're on search page
+            await self.page.wait_for_timeout(2000)
+            
+            if await self._verify_search_page(timeout=5000):
+                self.initialized = True
+                print("✓ Cookies valid! Session ready (headless mode).", flush=True)
+                return True
+            else:
+                print("✗ Cookies expired or invalid. Closing headless browser...", flush=True)
+                await self.close()
+        
+        # Manual CAPTCHA flow
+        print("=" * 50)
+        print("RECORDER SESSION - MANUAL CAPTCHA REQUIRED")
+        print("=" * 50)
+        print()
+        print("Opening browser for CAPTCHA solving...")
+        
+        await self._create_browser_context(headless=False)
+        
         # Navigate to recorder page
         print(f"Navigating to {RECORDER_URL}...", flush=True)
         await self.page.goto(RECORDER_URL)
         
-        print("Browser opened with stealth mode. Please:", flush=True)
+        print("Browser opened. Please:", flush=True)
         print("  1. Solve the reCAPTCHA checkbox", flush=True)
         print("  2. Click 'I Accept' to get to the search page", flush=True)
         
         print("Waiting for user to solve CAPTCHA and reach search page...", flush=True)
         
-        # Verify we're on the search page
-        try:
-            doc_input = self.page.locator("#field_selfservice_documentTypes")
-            # Wait up to 120 seconds for user to solve CAPTCHA
-            await doc_input.wait_for(timeout=120000)
+        # Wait for user to complete CAPTCHA (up to 120 seconds)
+        if await self._verify_search_page(timeout=120000):
+            # Save cookies for next time!
+            cookies = await self.context.cookies()
+            self._save_cookies(cookies)
+            
             self.initialized = True
-            print("Session initialized! Recorder is ready for searches.", flush=True)
+            print("✓ Session initialized! Cookies saved for future sessions.", flush=True)
             return True
-        except Exception as e:
-            print(f"Could not verify search page: {e}", flush=True)
+        else:
+            print("✗ Could not verify search page. CAPTCHA may not have been solved.", flush=True)
             return False
+    
+    async def refresh_cookies(self):
+        """Force a manual CAPTCHA flow to get fresh cookies."""
+        print("Forcing cookie refresh...", flush=True)
+        await self.close()
+        return await self.initialize(force_manual=True)
     
     async def search_by_doc_type(self, doc_type: str, days_back: int = 30, limit: int = 50) -> List[Dict]:
         """Search for documents by document type with date range."""
-        if not self.initialized:
-            return [{"error": "Session not initialized"}]
+        if not self.initialized or not await self.validate_session():
+            return [{"error": "Session not initialized or browser closed. Please re-initialize."}]
         
         results = []
         
@@ -356,7 +492,444 @@ class RecorderSession:
         
         return results
     
-    async def search(self, distress_filter: str = None, doc_type: str = None, limit: int = 50):
+    async def search_by_sequence(self, seq_num: str) -> List[Dict]:
+        """Search for a document by its sequence number."""
+        if not self.initialized or not await self.validate_session():
+            return [{"error": "Session not initialized or browser closed. Please re-initialize."}]
+        
+        print(f"Searching by sequence number: {seq_num}...", flush=True)
+        results = []
+        
+        try:
+            # Clear previous selections
+            has_existing_selection = await self.page.evaluate("""(() => {
+                const holder = document.querySelector('#field_selfservice_documentTypes-holder');
+                if (holder) {
+                    return holder.querySelectorAll('li.cblist-input-list.transition-background').length > 0;
+                }
+                return false;
+            })()""")
+            
+            if has_existing_selection:
+                print("    Clearing previous doc type selections...", flush=True)
+                clear_btn = self.page.locator("#clearSearchButton")
+                if await clear_btn.is_visible(timeout=2000):
+                    await clear_btn.click()
+                    await self.page.wait_for_load_state("networkidle")
+                    await self.page.wait_for_timeout(1000)
+            
+            # Find Sequence Number input - Try multiple common selectors for Tyler Tech
+            seq_input = None
+            selectors = [
+                "#field_RecordingDateID_SequenceNumber",
+                "input[name='SequenceNumber']", 
+                "input[aria-label='Sequence Number']",
+                "input[placeholder='Sequence Number']"
+            ]
+            
+            for selector in selectors:
+                if await self.page.locator(selector).count() > 0:
+                    seq_input = self.page.locator(selector).first
+                    print(f"    Found sequence input via: {selector}", flush=True)
+                    break
+            
+            if not seq_input:
+                # Fallback: Find by label text
+                print("    Trying to find sequence input by label...", flush=True)
+                try:
+                    # Find label with text "Sequence" and get associated input
+                    seq_input = self.page.locator("label:has-text('Sequence')").locator("..").locator("input").first
+                    if await seq_input.count() == 0:
+                         print("    Could not find sequence input", flush=True)
+                         return [{"error": "Sequence number input field not found"}]
+                except:
+                    return [{"error": "Sequence number input field not found"}]
+
+            # Clear and fill sequence number
+            await seq_input.fill("")
+            await seq_input.type(seq_num, delay=50)
+            print(f"    Filled sequence number: {seq_num}", flush=True)
+            
+            # Clear date fields to ensure we find the exact doc regardless of date
+            try:
+                await self.page.locator("#field_RecordingDateID_DOT_StartDate").fill("")
+                await self.page.locator("#field_RecordingDateID_DOT_EndDate").fill("")
+                print("    Cleared date range filters", flush=True)
+            except:
+                pass
+                
+            await self.page.wait_for_timeout(500)
+            
+            # Click Search
+            print("    Clicking Search...", flush=True)
+            await self.page.evaluate("document.querySelector('#searchButton').click()")
+            
+            try:
+                await self.page.wait_for_load_state("networkidle", timeout=15000)
+            except:
+                pass
+            
+            # Wait for results
+            try:
+                await self.page.wait_for_selector("li.ss-search-row", timeout=10000)
+            except:
+                await self.page.wait_for_timeout(2000)
+            
+            rows = await self.page.locator("li.ss-search-row").all()
+            
+            if rows:
+                print(f"    Found {len(rows)} result rows", flush=True)
+                
+                # Parse results (same logic as search_by_doc_type)
+                for row in rows:
+                    try:
+                        row_data = await row.evaluate("""(row) => {
+                            const doc_id = row.getAttribute('data-documentid') || '';
+                            const h1 = row.querySelector('h1');
+                            let doc_number = '';
+                            let doc_type = '';
+                            if (h1) {
+                                const h1Text = h1.innerText || '';
+                                const parts = h1Text.split('•').map(s => s.trim());
+                                doc_number = parts[0] || '';
+                                doc_type = parts[1] || '';
+                            }
+                            
+                            let record_date = '';
+                            const columns = row.querySelectorAll('.searchResultThreeColumn');
+                            for (const col of columns) {
+                                const colText = col.innerText || '';
+                                const boldEl = col.querySelector('b');
+                                const value = boldEl ? boldEl.innerText.trim() : '';
+                                if (colText.includes('Recording Date')) record_date = value;
+                            }
+                            
+                            return { doc_id, doc_number, doc_type, record_date };
+                        }""")
+                        
+                        if row_data and row_data.get("doc_id"):
+                            results.append(row_data)
+                    except Exception as e:
+                        print(f"    Error parsing row: {e}", flush=True)
+            else:
+                print(f"    No results found for sequence {seq_num}", flush=True)
+
+        except Exception as e:
+            print(f"Sequence search error: {e}")
+            return [{"error": str(e)}]
+            
+        return results
+    
+    async def search_by_name(self, name: str, search_type: str = "grantor", deed_types_only: bool = True, limit: int = 20) -> List[Dict]:
+        """
+        Search for documents by Grantor or Grantee name.
+        
+        Args:
+            name: The name to search for (e.g., owner name from GIS)
+            search_type: "grantor", "grantee", or "both" 
+            deed_types_only: If True, filter for deed-related document types
+            limit: Maximum number of results to return
+            
+        Returns:
+            List of documents found, sorted by recording date (newest first)
+        """
+        if not self.initialized or not await self.validate_session():
+            return [{"error": "Session not initialized or browser closed. Please re-initialize."}]
+        
+        print(f"Searching by {search_type}: {name}...", flush=True)
+        results = []
+        
+        try:
+            # ALWAYS click Clear button at start of every search to reset form
+            print("    Clicking Clear Search to reset form...", flush=True)
+            clear_btn = self.page.locator("#clearSearchButton")
+            if await clear_btn.is_visible(timeout=3000):
+                await clear_btn.click()
+                await self.page.wait_for_load_state("networkidle")
+                await self.page.wait_for_timeout(1000)
+                print("    Form cleared successfully", flush=True)
+            else:
+                print("    Clear button not found, continuing...", flush=True)
+            
+            # Also manually clear the name fields as backup
+            for field_id in ["#field_GrantorName", "#field_GranteeName", "input[name='GrantorName']", "input[name='GranteeName']"]:
+                try:
+                    field = self.page.locator(field_id).first
+                    if await field.count() > 0:
+                        await field.fill("")
+                except:
+                    pass
+            
+            # Helper to find input
+            async def find_input(label_text, possible_ids):
+                # 1. Try specific IDs
+                for selector in possible_ids:
+                    if await self.page.locator(selector).count() > 0:
+                        print(f"    Found {label_text} input via: {selector}", flush=True)
+                        return self.page.locator(selector).first
+                
+                # 2. Try by Label Text
+                try:
+                    # Find label with exact text or containing text
+                    label = self.page.locator(f"label:has-text('{label_text}')").first
+                    if await label.count() > 0:
+                        # Check 'for' attribute
+                        for_id = await label.get_attribute("for")
+                        if for_id:
+                            print(f"    Found {label_text} input via label 'for' attribute: #{for_id}", flush=True)
+                            return self.page.locator(f"#{for_id}")
+                        
+                        # Check if input is nested
+                        if await label.locator("input").count() > 0:
+                            print(f"    Found {label_text} input nested in label", flush=True)
+                            return label.locator("input").first
+                            
+                        # Check parent's input (common in form groups)
+                        # label -> parent -> input
+                        parent_input = label.locator("..").locator("input").first
+                        if await parent_input.count() > 0:
+                            print(f"    Found {label_text} input via parent traversal", flush=True)
+                            return parent_input
+                except Exception as e:
+                    print(f"    Error finding input by label '{label_text}': {e}", flush=True)
+                    
+                return None
+
+            # Fill Grantor field
+            if search_type in ["grantor", "both"]:
+                grantor_input = await find_input("Grantor", [
+                    "#field_GrantorName", 
+                    "#field_Grantor",
+                    "input[name='GrantorName']",
+                    "input[aria-label*='Grantor']", 
+                    "input[placeholder*='Grantor']"
+                ])
+                
+                if grantor_input:
+                    await grantor_input.fill("")
+                    await grantor_input.type(name, delay=30)
+                    print(f"    Filled Grantor: {name}", flush=True)
+                else:
+                    print("    ERROR: Could not find Grantor input field", flush=True)
+            
+            # Fill Grantee field - use GranteeID (that's the actual field name on the site)
+            if search_type in ["grantee", "both"]:
+                grantee_input = await find_input("Grantee", [
+                    "#field_GranteeID",   # This is the actual field name on the site
+                    "#field_GranteeName", 
+                    "input[name='GranteeID']",
+                    "input[name='GranteeName']",
+                ])
+                
+                if grantee_input:
+                    await grantee_input.fill("")
+                    await grantee_input.type(name, delay=30)
+                    print(f"    Filled Grantee: {name}", flush=True)
+                else:
+                    print("    ERROR: Could not find Grantee input field", flush=True)
+            
+            # Clear date fields to search all time
+            try:
+                await self.page.locator("#field_RecordingDateID_DOT_StartDate").fill("")
+                await self.page.locator("#field_RecordingDateID_DOT_EndDate").fill("")
+            except:
+                pass
+            
+            await self.page.wait_for_timeout(500)
+            
+            # Click Search
+            print("    Clicking Search...", flush=True)
+            await self.page.evaluate("document.querySelector('#searchButton').click()")
+            
+            try:
+                await self.page.wait_for_load_state("networkidle", timeout=15000)
+            except:
+                pass
+            
+            # Wait for results
+            try:
+                await self.page.wait_for_selector("li.ss-search-row", timeout=10000)
+            except:
+                await self.page.wait_for_timeout(2000)
+            
+            rows = await self.page.locator("li.ss-search-row").all()
+            
+            if rows:
+                print(f"    Found {len(rows)} result rows", flush=True)
+                
+                # Deed-related document types to filter for
+                deed_keywords = ["DEED", "WARRANTY", "QUITCLAIM", "QCD", "GRANT", "TRANSFER", "CONVEY", "SALE"]
+                
+                for row in rows[:limit * 2]:  # Get extra to filter
+                    try:
+                        # DEBUG: Print first row HTML to understand structure
+                        if results == []:
+                            html = await row.inner_html()
+                            print(f"    DEBUG: First row HTML (truncated): {html[:500]}...", flush=True)
+
+                        row_data = await row.evaluate("""(row) => {
+                            try {
+                                const doc_id = row.getAttribute('data-documentid') || '';
+                                
+                                // Try finding the header text (Doc Number + Type)
+                                // It might be in an h1, or just a div with specific class
+                                let h1Text = '';
+                                const h1 = row.querySelector('h1');
+                                if (h1) {
+                                    h1Text = h1.innerText;
+                                } else {
+                                    // Fallback: try finding text that looks like a doc number
+                                    const headerLink = row.querySelector('a.doc-link');
+                                    if (headerLink) h1Text = headerLink.innerText;
+                                }
+                                
+                                let doc_number = '';
+                                let doc_type = '';
+                                if (h1Text) {
+                                    const parts = h1Text.split('•').map(s => s.trim());
+                                    doc_number = parts[0] || '';
+                                    doc_type = parts[parts.length - 1] || ''; // Type is usually last
+                                }
+                                
+                                let record_date = '';
+                                let grantor = '';
+                                let grantee = '';
+                                
+                                // Try finding columns
+                                const columns = row.querySelectorAll('.searchResultThreeColumn, .col-md-4');
+                                for (const col of columns) {
+                                    const colText = col.innerText || '';
+                                    const boldEl = col.querySelector('b, strong, span.value');
+                                    const value = boldEl ? boldEl.innerText.trim() : '';
+                                    
+                                    if (colText.includes('Recording Date')) record_date = value;
+                                    if (colText.includes('Grantor')) grantor = value;
+                                    if (colText.includes('Grantee')) grantee = value;
+                                }
+                                
+                                // Parse Book/Page
+                                let book_page = '';
+                                const headerText = row.innerText;
+                                const bpMatch = headerText.match(/B:\s*(\d+)\s*P:\s*(\d+)/);
+                                if (bpMatch) {
+                                    book_page = `B: ${bpMatch[1]} P: ${bpMatch[2]}`;
+                                }
+
+                                // Parse Related Documents
+                                let related_docs = [];
+                                // Look for the Related Documents section
+                                // It's usually in a div or ul with specific classes or text
+                                // Based on screenshot, it looks like rows inside the main row
+                                const relatedRows = row.querySelectorAll('li.ss-search-row-related, .related-document-row, tr.related-doc'); 
+                                // If specific class not found, try searching by text content in nested divs
+                                if (relatedRows.length === 0) {
+                                    const allDivs = row.querySelectorAll('div');
+                                    for (const div of allDivs) {
+                                        if (div.innerText && div.innerText.includes('Related Documents')) {
+                                            // Found the header, now look for siblings or children that look like docs
+                                            // This is tricky without seeing HTML. Let's try a generic approach:
+                                            // Look for text patterns like "Document Number" followed by values
+                                        }
+                                    }
+                                }
+
+                                // Robust approach for Related Docs based on typical Tyler structure:
+                                // They are often in a separate UL or Table nested in the row
+                                const relatedSection = Array.from(row.querySelectorAll('div, ul, table')).find(el => el.innerText && el.innerText.includes('Related Documents'));
+                                if (relatedSection) {
+                                    // Try to find lines that look like docs
+                                    // Pattern: DocNumber Type Date Book/Page
+                                    const lines = relatedSection.innerText.split('\n');
+                                    for (const line of lines) {
+                                        // Skip the header line
+                                        if (line.includes('Related Documents')) continue;
+                                        
+                                        // Simple heuristic: if line has a date and some text, it might be a doc
+                                        // Better: look for the document number pattern (usually starts with year like 2012...)
+                                        const docNumMatch = line.match(/(\d{8,})/); // 8+ digits
+                                        if (docNumMatch) {
+                                            related_docs.push({
+                                                doc_number: docNumMatch[0],
+                                                full_text: line.trim()
+                                            });
+                                        }
+                                    }
+                                }
+
+                                return { doc_id, doc_number, doc_type, record_date, grantor, grantee, h1Text, book_page, related_docs };
+                            } catch (e) {
+                                return { error: e.toString() };
+                            }
+                        }""")
+                        
+                        if row_data.get("error"):
+                            print(f"    JS Parsing Error: {row_data['error']}", flush=True)
+                            continue
+                            
+                        # print(f"    DEBUG: Parsed row data: {row_data}", flush=True)
+                        
+                        if row_data and row_data.get("doc_id"):
+                            # Filter for deeds if requested
+                            is_deed = False
+                            if deed_types_only:
+                                doc_type_upper = row_data.get("doc_type", "").upper()
+                                # Expanded list of relevant document types
+                                relevant_keywords = [
+                                    # Deeds
+                                    "DEED", "WARRANTY", "QUITCLAIM", "QCD", "GRANT", "TRANSFER", "CONVEY",
+                                    # Trust & Mortgage docs
+                                    "TRUST", "DEED OF TRUST", "MORTGAGE", "RECONVEYANCE", "SUBSTITUTION",
+                                    # Liens & Encumbrances
+                                    "LIEN", "MECHANICS LIEN", "FEDERAL", "TAX LIEN", "RELEASE", "SATISFACTION",
+                                    # Notices & Court
+                                    "NOTICE", "LIS PENDENS", "NOTICE OF DEFAULT", "NOTICE SALE",
+                                    "JUDGMENT", "ABSTRACT JUDGMENT",
+                                    # Other relevant
+                                    "SALE", "AGREEMENT", "EASEMENT", "AFFIDAVIT", "ASSIGNMENT", "ASSUMPTION"
+                                ]
+                                if any(k in doc_type_upper for k in relevant_keywords):
+                                    is_deed = True
+                            else:
+                                is_deed = True
+                                
+                            if is_deed:
+                                results.append(row_data)
+                    except Exception as e:
+                        print(f"    Error parsing row: {e}", flush=True)
+                        continue
+                        
+                        if row_data and row_data.get("doc_id"):
+                            # Filter for deed types if requested
+                            if deed_types_only:
+                                doc_type_upper = row_data.get("doc_type", "").upper()
+                                if any(kw in doc_type_upper for kw in deed_keywords):
+                                    results.append(row_data)
+                            else:
+                                results.append(row_data)
+                                
+                            if len(results) >= limit:
+                                break
+                    except Exception as e:
+                        print(f"    Error parsing row: {e}", flush=True)
+                
+                # Sort by recording date (newest first)
+                from datetime import datetime
+                def parse_date(d):
+                    try:
+                        return datetime.strptime(d.get("record_date", ""), "%m/%d/%Y")
+                    except:
+                        return datetime.min
+                results.sort(key=parse_date, reverse=True)
+                
+            else:
+                print(f"    No results found for name: {name}", flush=True)
+        
+        except Exception as e:
+            print(f"Name search error: {e}")
+            return [{"error": str(e)}]
+        
+        return results
+    
         """Search for documents using active session."""
         if not self.initialized:
             return [{"error": "Session not initialized. Call initialize() first."}]

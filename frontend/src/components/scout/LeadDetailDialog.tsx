@@ -3,8 +3,30 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScoutResult } from '@/lib/store'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { User, Phone, Mail, Building2, DollarSign, AlertTriangle, Gavel, FileText, MapPin, Droplets, TrendingUp, Home, Calendar, Ruler, ChevronLeft, ChevronRight, List as ListIcon, Map as MapIcon } from 'lucide-react'
+import { User, Phone, Mail, Building2, DollarSign, AlertTriangle, Gavel, FileText, MapPin, Droplets, TrendingUp, Home, Calendar, Ruler, ChevronLeft, ChevronRight, List as ListIcon, Map as MapIcon, Zap, Loader2, Search, Download } from 'lucide-react'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/simple-accordion"
+
+// Analysis state type
+interface AnalysisResult {
+    score: number
+    label: string
+    emoji: string
+    signals: string[]
+    breakdown: { motivation: number; equity: number; asset: number }
+    action: string
+}
+
+// Recording document from Recorder search
+interface RecordingDocument {
+    doc_id: string
+    doc_number: string
+    doc_type: string
+    record_date: string
+}
+
+// Module-level cache for recorder results (persists between property switches)
+// Keyed by owner_name to avoid re-fetching when switching between same properties
+const recorderCache = new Map<string, RecordingDocument[]>()
 
 interface LeadDetailDialogProps {
     lead: ScoutResult | null
@@ -49,10 +71,24 @@ const parseAltPhotos = (altPhotos: string | undefined): string[] => {
 
 export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead, onPrevLead, currentIndex, onSwitchToListView, onSwitchToMapView, currentViewMode }: LeadDetailDialogProps) {
     const [currentImageIndex, setCurrentImageIndex] = useState(0)
+    const [isAnalyzing, setIsAnalyzing] = useState(false)
+    const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
+    const [isLoadingRecordings, setIsLoadingRecordings] = useState(false)
+    const [recordingHistory, setRecordingHistory] = useState<RecordingDocument[]>([])
+    const [recordingError, setRecordingError] = useState<string | null>(null)
 
-    // Reset image index when lead changes
+    // Reset image index and analysis when lead changes, but restore cached recorder results
     useEffect(() => {
         setCurrentImageIndex(0)
+        setAnalysisResult(null)
+        setRecordingError(null)
+
+        // Check if we have cached recorder results for this owner
+        if (lead?.owner_name && recorderCache.has(lead.owner_name)) {
+            setRecordingHistory(recorderCache.get(lead.owner_name) || [])
+        } else {
+            setRecordingHistory([])
+        }
     }, [lead?.id])
 
     if (!lead) return null
@@ -100,6 +136,18 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
         assessor_url?: string
         source?: string  // homeharvest_mls or gis
         mls_id?: string  // MLS listing ID for display
+        // Recording/Deed Info from GIS
+        seq_num?: string
+        docket?: string
+        page?: number
+        record_date?: string | number
+        // Propensity Analysis
+        propensity_score?: number
+        propensity_label?: string
+        propensity_emoji?: string
+        propensity_signals?: string[]
+        propensity_breakdown?: { motivation: number; equity: number; asset: number }
+        propensity_action?: string
     }
 
     // Check if this is an MLS listing (has listing-specific data)
@@ -131,6 +179,70 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
     const canNavigateLeads = results && results.length > 1
     const canGoPrev = canNavigateLeads && currentIndex !== undefined && currentIndex > 0
     const canGoNext = canNavigateLeads && currentIndex !== undefined && currentIndex < results.length - 1
+
+    // Handle Analyze button click
+    const handleAnalyze = async () => {
+        if (!lead || isAnalyzing) return
+
+        setIsAnalyzing(true)
+        try {
+            const response = await fetch('http://127.0.0.1:8000/api/v1/scout/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    address: lead.address,
+                    owner_name: lead.owner_name,
+                    mailing_address: lead.mailing_address,
+                    distress_signals: lead.distress_signals || [],
+                    violation_count: (lead as any).violation_count || 0,
+                    record_date: extLead.record_date,
+                    seq_num: extLead.seq_num,
+                    beds: lead.beds,
+                    baths: lead.baths,
+                })
+            })
+            const data = await response.json()
+            setAnalysisResult(data)
+        } catch (error) {
+            console.error('Analysis failed:', error)
+        } finally {
+            setIsAnalyzing(false)
+        }
+    }
+
+    // Handle Recording History Lookup
+    const handleLookupRecordings = async () => {
+        if (!lead?.owner_name || isLoadingRecordings) return
+
+        setIsLoadingRecordings(true)
+        setRecordingError(null)
+        try {
+            // Search by owner name as BOTH grantor (seller) and grantee (buyer) to find all their documents
+            const response = await fetch(`http://127.0.0.1:8000/api/v1/recorder/search/name/${encodeURIComponent(lead.owner_name)}?search_type=both&deed_only=false&limit=20`)
+            if (!response.ok) {
+                // Check for 503 (session not active)
+                if (response.status === 503) {
+                    const errorData = await response.json().catch(() => null)
+                    setRecordingError(errorData?.detail || 'Recorder session not active. Open the Recorder page first.')
+                    return
+                }
+                throw new Error('Failed to search recorder')
+            }
+            const data = await response.json()
+            if (data.results && data.results.length > 0) {
+                setRecordingHistory(data.results)
+                // Cache results by owner name for persistence
+                recorderCache.set(lead.owner_name, data.results)
+            } else {
+                setRecordingError('No deed records found for this owner')
+            }
+        } catch (error) {
+            console.error('Recording lookup failed:', error)
+            setRecordingError('Recorder search failed. Please try again.')
+        } finally {
+            setIsLoadingRecordings(false)
+        }
+    }
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -254,9 +366,74 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
                                     {signal}
                                 </Badge>
                             ))}
+                            {/* Analyze Button */}
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleAnalyze}
+                                disabled={isAnalyzing}
+                                className={`ml-2 border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/20 ${analysisResult ? 'bg-yellow-500/10' : ''}`}
+                            >
+                                {isAnalyzing ? (
+                                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                ) : (
+                                    <Zap className="h-3 w-3 mr-1" />
+                                )}
+                                {analysisResult ? `${analysisResult.emoji} ${analysisResult.score}` : 'Analyze'}
+                            </Button>
                         </div>
                     </div>
                 </DialogHeader>
+
+                {/* Propensity Analysis Results (shown after analysis) */}
+                {analysisResult && (
+                    <div className="mb-4 p-4 bg-gradient-to-r from-yellow-900/20 to-orange-900/20 border border-yellow-500/30 rounded-lg">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                                <span className="text-2xl">{analysisResult.emoji}</span>
+                                <div>
+                                    <span className="text-lg font-bold text-white">{analysisResult.score}</span>
+                                    <span className="text-sm text-gray-400 ml-2">/ 100</span>
+                                    <Badge className={`ml-2 ${analysisResult.label === 'Hot' ? 'bg-green-500/20 text-green-400' :
+                                        analysisResult.label === 'Warm' ? 'bg-yellow-500/20 text-yellow-400' :
+                                            'bg-gray-500/20 text-gray-400'
+                                        }`}>{analysisResult.label}</Badge>
+                                </div>
+                            </div>
+                            <p className="text-sm text-gray-400">{analysisResult.action}</p>
+                        </div>
+
+                        {/* Score Breakdown */}
+                        <div className="grid grid-cols-3 gap-2 mb-3">
+                            <div className="p-2 bg-gray-800/50 rounded text-center">
+                                <p className="text-xs text-gray-400">Motivation</p>
+                                <p className="text-lg font-bold text-red-400">+{analysisResult.breakdown.motivation}</p>
+                            </div>
+                            <div className="p-2 bg-gray-800/50 rounded text-center">
+                                <p className="text-xs text-gray-400">Equity</p>
+                                <p className="text-lg font-bold text-green-400">{analysisResult.breakdown.equity >= 0 ? '+' : ''}{analysisResult.breakdown.equity}</p>
+                            </div>
+                            <div className="p-2 bg-gray-800/50 rounded text-center">
+                                <p className="text-xs text-gray-400">Asset</p>
+                                <p className="text-lg font-bold text-blue-400">+{analysisResult.breakdown.asset}</p>
+                            </div>
+                        </div>
+
+                        {/* Detected Signals */}
+                        {analysisResult.signals.length > 0 && (
+                            <div>
+                                <p className="text-xs text-gray-500 mb-2">Detected Signals</p>
+                                <div className="flex flex-wrap gap-1">
+                                    {analysisResult.signals.map((signal, idx) => (
+                                        <Badge key={idx} className="bg-gray-700/50 text-gray-300 text-xs">
+                                            {signal}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Quick Stats Bar */}
                 <div className="grid grid-cols-5 gap-2 py-4 border-b border-gray-700">
@@ -284,7 +461,7 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
                     </div>
                 </div>
 
-                <Accordion type="single" collapsible defaultValue={isMLSListing ? "listing" : "property"} className="w-full mt-2">
+                <Accordion type="multiple" defaultValue={["listing", "property", "recorder", "contact", "financials", "distress"]} className="w-full mt-2">
 
                     {/* Listing Details (MLS Only) */}
                     {isMLSListing && (
@@ -453,6 +630,57 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
                                         </a>
                                     </div>
                                 )}
+
+                                {/* Recording Info Section - Always show with lookup button */}
+                                <div className="mt-3 pt-3 border-t border-gray-700">
+                                    <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                                        <Gavel className="h-3 w-3" /> Recording & Sale Info
+                                    </p>
+
+                                    {/* Show existing data if available */}
+                                    {(extLead.seq_num || extLead.last_sold_date || extLead.last_sold_price || extLead.docket || extLead.record_date) && (
+                                        <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                                            {extLead.seq_num && (
+                                                <div className="p-3 bg-gray-800/50 rounded-lg">
+                                                    <p className="text-xs text-gray-400">Sequence #</p>
+                                                    <p className="font-medium text-white font-mono">{extLead.seq_num}</p>
+                                                </div>
+                                            )}
+                                            {extLead.docket && (
+                                                <div className="p-3 bg-gray-800/50 rounded-lg">
+                                                    <p className="text-xs text-gray-400">Docket/Page</p>
+                                                    <p className="font-medium text-white">{extLead.docket}{extLead.page ? ` / ${extLead.page}` : ''}</p>
+                                                </div>
+                                            )}
+                                            {extLead.record_date && (
+                                                <div className="p-3 bg-gray-800/50 rounded-lg">
+                                                    <p className="text-xs text-gray-400">Recording Date</p>
+                                                    <p className="font-medium text-white">
+                                                        {typeof extLead.record_date === 'number'
+                                                            ? new Date(extLead.record_date).toLocaleDateString()
+                                                            : extLead.record_date}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {extLead.last_sold_date && (
+                                                <div className="p-3 bg-gray-800/50 rounded-lg">
+                                                    <p className="text-xs text-gray-400">Last Sale Date</p>
+                                                    <p className="font-medium text-white">
+                                                        {new Date(extLead.last_sold_date).toLocaleDateString()}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {extLead.last_sold_price && (
+                                                <div className="p-3 bg-gray-800/50 rounded-lg">
+                                                    <p className="text-xs text-gray-400">Last Sale Price</p>
+                                                    <p className="font-medium text-green-400">{formatCurrency(extLead.last_sold_price)}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+
+                                </div>
                             </div>
 
                             {/* Location & Zoning Row */}
@@ -507,6 +735,87 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
                                     </div>
                                 </div>
                             </div>
+                        </AccordionContent>
+                    </AccordionItem>
+
+                    {/* Recorder Data - Moved here */}
+                    <AccordionItem value="recorder" className="border-gray-700">
+                        <AccordionTrigger className="text-white hover:text-green-400">
+                            <div className="flex items-center gap-2">
+                                <Gavel className="h-4 w-4 text-yellow-400" />
+                                Recorder Data
+                                {recordingHistory.length > 0 && (
+                                    <Badge className="ml-2 bg-purple-500/20 text-purple-300 text-[10px]">
+                                        {recordingHistory.length} found
+                                    </Badge>
+                                )}
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            {/* Recording History Lookup Button */}
+                            {recordingHistory.length === 0 && !recordingError && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleLookupRecordings}
+                                    disabled={isLoadingRecordings || !lead.owner_name}
+                                    className="w-full bg-purple-900/20 border-purple-500/30 text-purple-400 hover:bg-purple-900/40 flex items-center justify-center gap-2"
+                                >
+                                    {isLoadingRecordings ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            Searching Recorder...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Search className="h-4 w-4" />
+                                            Lookup Full Recording History
+                                        </>
+                                    )}
+                                </Button>
+                            )}
+
+                            {recordingError && (
+                                <p className="text-xs text-amber-400/70 mt-2 text-center">{recordingError}</p>
+                            )}
+
+                            {recordingHistory.length > 0 && (
+                                <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+                                    {recordingHistory.map((doc, i) => (
+                                        <div
+                                            key={doc.doc_id || i}
+                                            className="flex items-center justify-between p-3 bg-gray-800/80 hover:bg-gray-700/80 rounded-lg border border-gray-700/50 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                <div className="w-2 h-2 rounded-full bg-purple-400 shrink-0" />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-sm font-medium text-white">
+                                                        {doc.doc_type || 'DEED'}
+                                                    </p>
+                                                    <p className="text-xs text-gray-400 font-mono">
+                                                        Doc #{doc.doc_number}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3 shrink-0">
+                                                <span className="text-xs text-gray-400">
+                                                    {doc.record_date}
+                                                </span>
+                                                <a
+                                                    href={`http://127.0.0.1:8000/api/v1/recorder/download/${doc.doc_id}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="p-1.5 rounded bg-purple-500/20 hover:bg-purple-500/40 text-purple-300 transition-colors"
+                                                    title="Download PDF"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <Download className="h-3.5 w-3.5" />
+                                                </a>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </AccordionContent>
                     </AccordionItem>
 
@@ -627,22 +936,7 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
                         </AccordionItem>
                     )}
 
-                    {/* Recorder Data */}
-                    <AccordionItem value="recorder" className="border-gray-700">
-                        <AccordionTrigger className="text-white hover:text-green-400">
-                            <div className="flex items-center gap-2">
-                                <Gavel className="h-4 w-4 text-yellow-400" />
-                                Recorder Data
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                            <div className="p-6 border border-dashed border-gray-600 rounded-lg text-center bg-gray-800/30">
-                                <FileText className="h-8 w-8 mx-auto mb-2 text-gray-500" />
-                                <p className="text-gray-400">Recorder data integration coming soon.</p>
-                                <p className="text-xs text-gray-500 mt-1">Liens, Judgments, and Foreclosure notices</p>
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
+
 
                 </Accordion>
 

@@ -36,6 +36,8 @@ class DocumentResult(BaseModel):
     doc_number: str
     doc_type: str
     record_date: str
+    book_page: Optional[str] = None
+    related_docs: Optional[List[Dict[str, str]]] = None
 
 
 class SearchResponse(BaseModel):
@@ -49,6 +51,35 @@ class DownloadResponse(BaseModel):
     doc_id: str
     file_path: Optional[str] = None
     error: Optional[str] = None
+
+
+class BulkLookupRequest(BaseModel):
+    """Request for bulk recorder lookup."""
+    leads: List[dict]  # List of {owner_name, address} objects
+
+
+class LeadRecorderResult(BaseModel):
+    """Recorder results for a single lead."""
+    address: str
+    owner_name: str
+    documents: List[DocumentResult]
+    doc_count: int
+    has_deed_of_trust: bool = False
+    has_lis_pendens: bool = False
+    has_notice_sale: bool = False
+    has_lien: bool = False
+    has_judgment: bool = False
+    has_reconveyance: bool = False
+    last_deed_date: Optional[str] = None
+    error: Optional[str] = None
+
+
+class BulkLookupResponse(BaseModel):
+    """Response from bulk recorder lookup."""
+    results: List[LeadRecorderResult]
+    total_processed: int
+    total_success: int
+    total_errors: int
 
 
 class ExtractResponse(BaseModel):
@@ -69,36 +100,63 @@ async def get_session() -> RecorderSession:
 
 @router.get("/status", response_model=SessionStatus)
 async def get_status():
-    """Get current recorder session status."""
+    """Get current recorder session status, including cookie info."""
     global _session
-    # Don't use lock here - just check current state
-    is_initialized = _session is not None and _session.initialized
+    session = await get_session()
+    
+    is_initialized = session.initialized
+    cookies_info = session.get_cookies_status()
+    
+    if is_initialized:
+        message = "Session ready (headless mode)" if session._headless_mode else "Session ready"
+    elif cookies_info.get("exists"):
+        message = f"Cookies available ({cookies_info.get('age_hours', 0):.1f}h old). Click Initialize to try them."
+    else:
+        message = "No session or cookies. Click Initialize to solve CAPTCHA."
     
     return SessionStatus(
         initialized=is_initialized,
-        needs_captcha=False,
+        needs_captcha=not is_initialized and not cookies_info.get("exists"),
         ready=is_initialized,
-        message="Session ready" if is_initialized else "Session not initialized. Click Search to initialize."
+        message=message
     )
+
+
+@router.get("/cookies/status")
+async def get_cookies_status():
+    """Get status of saved cookies."""
+    session = await get_session()
+    return session.get_cookies_status()
+
+
+@router.post("/cookies/refresh")
+async def refresh_cookies():
+    """Force a manual CAPTCHA flow to get fresh cookies."""
+    session = await get_session()
+    success = await session.refresh_cookies()
+    if success:
+        return {"success": True, "message": "Cookies refreshed successfully"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to refresh cookies")
 
 
 @router.post("/initialize")
 async def initialize_session():
     """
     Initialize the browser session.
-    Note: This will open a browser window that requires manual CAPTCHA solving.
-    Call /status to check when the session is ready.
+    Will try to use saved cookies first (headless, instant).
+    Falls back to manual CAPTCHA if cookies don't work.
     """
     session = await get_session()
     
     if session.initialized:
         return {"success": True, "message": "Session already initialized"}
     
-    # Start initialization in background (browser will open)
     success = await session.initialize()
     
     if success:
-        return {"success": True, "message": "Session initialized successfully"}
+        mode = "headless with saved cookies" if session._headless_mode else "manual CAPTCHA"
+        return {"success": True, "message": f"Session initialized via {mode}"}
     else:
         raise HTTPException(status_code=500, detail="Failed to initialize session")
 
@@ -147,14 +205,22 @@ async def search_documents(doc_type: str, limit: int = 100):
     
     session = await get_session()
     
-    # Auto-initialize if needed
+    # Check if session is initialized - DON'T auto-init during search (blocks for CAPTCHA)
     if not session.initialized:
-        success = await session.initialize()
-        if not success:
-            raise HTTPException(status_code=500, detail="Failed to initialize browser session. Please try again.")
+        raise HTTPException(
+            status_code=503, 
+            detail="Recorder session not active. Please open the Recorder page first to solve the CAPTCHA."
+        )
     
     doc_type_full = DOC_TYPE_MAP[doc_type]
     results = await session.search_by_doc_type(doc_type_full, limit=limit)
+    
+    # Check for error in results
+    if results and "error" in results[0]:
+        error_msg = results[0]["error"]
+        if "Session not initialized" in error_msg or "browser closed" in error_msg:
+            raise HTTPException(status_code=503, detail=error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
     
     return SearchResponse(
         results=[
@@ -168,6 +234,216 @@ async def search_documents(doc_type: str, limit: int = 100):
         ],
         total=len(results),
         doc_type=doc_type_full
+    )
+
+
+@router.get("/search/sequence/{seq_num}", response_model=SearchResponse)
+async def search_by_sequence(seq_num: str):
+    """
+    Search for a document by its sequence number.
+    Will auto-initialize browser session if not already initialized.
+    """
+    session = await get_session()
+    
+    # Auto-initialize if needed
+    if not session.initialized:
+        success = await session.initialize()
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to initialize browser session. Please try again.")
+    
+    results = await session.search_by_sequence(seq_num)
+    
+    # Check for error in results
+    if results and "error" in results[0]:
+        error_msg = results[0]["error"]
+        if "Session not initialized" in error_msg or "browser closed" in error_msg:
+            raise HTTPException(status_code=503, detail=error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+    
+    return SearchResponse(
+        results=[
+            DocumentResult(
+                doc_id=r.get("doc_id", ""),
+                doc_number=r.get("doc_number", ""),
+                doc_type=r.get("doc_type", ""),
+                record_date=r.get("record_date", "")
+            )
+            for r in results
+        ],
+        total=len(results),
+        doc_type="SEQUENCE_SEARCH"
+    )
+
+
+@router.get("/search/name/{name}", response_model=SearchResponse)
+async def search_by_name(name: str, search_type: str = "grantor", deed_only: bool = True, limit: int = 50):
+    """
+    Search for documents by Grantor or Grantee name.
+    
+    Args:
+        name: The name to search for (e.g., property owner name)
+        search_type: "grantor" (seller), "grantee" (buyer), or "both"
+        deed_only: If True, only return deed-related documents
+        limit: Maximum results to return
+        
+    Returns:
+        List of matching documents sorted by recording date (newest first)
+    """
+    session = await get_session()
+    
+    # Check if session is initialized - DON'T auto-init during search (blocks for CAPTCHA)
+    if not session.initialized:
+        raise HTTPException(
+            status_code=503, 
+            detail="Recorder session not active. Please open the Recorder page first to solve the CAPTCHA."
+        )
+    
+    results = await session.search_by_name(name, search_type=search_type, deed_types_only=deed_only, limit=limit)
+    
+    # Check for error in results
+    if results and "error" in results[0]:
+        error_msg = results[0]["error"]
+        if "Session not initialized" in error_msg or "browser closed" in error_msg:
+            raise HTTPException(status_code=503, detail=error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+    
+    return SearchResponse(
+        results=[
+            DocumentResult(
+                doc_id=r.get("doc_id", ""),
+                doc_number=r.get("doc_number", ""),
+                doc_type=r.get("doc_type", ""),
+                record_date=r.get("record_date", "")
+            )
+            for r in results
+        ],
+        total=len(results),
+        doc_type=f"NAME_SEARCH_{search_type.upper()}"
+    )
+
+
+@router.post("/bulk-lookup", response_model=BulkLookupResponse)
+async def bulk_lookup(request: BulkLookupRequest):
+    """
+    Bulk recorder lookup for multiple leads.
+    Searches by owner name (grantee) for each lead.
+    Rate limited to avoid overloading the recorder site.
+    """
+    session = await get_session()
+    
+    if not session.initialized:
+        raise HTTPException(
+            status_code=503, 
+            detail="Recorder session not active. Please open the Recorder page first."
+        )
+    
+    results = []
+    total_success = 0
+    total_errors = 0
+    
+    for i, lead in enumerate(request.leads):
+        owner_name = lead.get("owner_name", "")
+        address = lead.get("address", "")
+        
+        if not owner_name:
+            results.append(LeadRecorderResult(
+                address=address,
+                owner_name=owner_name,
+                documents=[],
+                doc_count=0,
+                error="No owner name provided"
+            ))
+            total_errors += 1
+            continue
+        
+        try:
+            # Search by owner name (grantee)
+            docs = await session.search_by_name(owner_name, search_type="grantee", limit=20)
+            
+            if docs and "error" in docs[0]:
+                results.append(LeadRecorderResult(
+                    address=address,
+                    owner_name=owner_name,
+                    documents=[],
+                    doc_count=0,
+                    error=docs[0]["error"]
+                ))
+                total_errors += 1
+                continue
+            
+            # Process document types and extract flags
+            doc_results = []
+            has_deed_of_trust = False
+            has_lis_pendens = False
+            has_notice_sale = False
+            has_lien = False
+            has_judgment = False
+            has_reconveyance = False
+            last_deed_date = None
+            
+            for doc in docs:
+                doc_type = doc.get("doc_type", "").upper()
+                
+                doc_results.append(DocumentResult(
+                    doc_id=doc.get("doc_id", ""),
+                    doc_number=doc.get("doc_number", ""),
+                    doc_type=doc.get("doc_type", ""),
+                    record_date=doc.get("record_date", "")
+                ))
+                
+                # Detect document type flags
+                if "DEED OF TRUST" in doc_type or "TRUST DEED" in doc_type:
+                    has_deed_of_trust = True
+                if "LIS PENDENS" in doc_type:
+                    has_lis_pendens = True
+                if "NOTICE" in doc_type and "SALE" in doc_type:
+                    has_notice_sale = True
+                if "LIEN" in doc_type:
+                    has_lien = True
+                if "JUDGMENT" in doc_type:
+                    has_judgment = True
+                if "RECONVEYANCE" in doc_type:
+                    has_reconveyance = True
+                
+                # Track last deed date (WARRANTY DEED, QUIT CLAIM DEED, etc.)
+                if "DEED" in doc_type and "TRUST" not in doc_type:
+                    if not last_deed_date:
+                        last_deed_date = doc.get("record_date")
+            
+            results.append(LeadRecorderResult(
+                address=address,
+                owner_name=owner_name,
+                documents=doc_results,
+                doc_count=len(doc_results),
+                has_deed_of_trust=has_deed_of_trust,
+                has_lis_pendens=has_lis_pendens,
+                has_notice_sale=has_notice_sale,
+                has_lien=has_lien,
+                has_judgment=has_judgment,
+                has_reconveyance=has_reconveyance,
+                last_deed_date=last_deed_date
+            ))
+            total_success += 1
+            
+            # Rate limit between searches (2 seconds)
+            if i < len(request.leads) - 1:
+                await asyncio.sleep(2)
+                
+        except Exception as e:
+            results.append(LeadRecorderResult(
+                address=address,
+                owner_name=owner_name,
+                documents=[],
+                doc_count=0,
+                error=str(e)
+            ))
+            total_errors += 1
+    
+    return BulkLookupResponse(
+        results=results,
+        total_processed=len(request.leads),
+        total_success=total_success,
+        total_errors=total_errors
     )
 
 
