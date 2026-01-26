@@ -3,7 +3,7 @@ import asyncio
 from playwright.async_api import async_playwright
 
 async def scrape_assessor():
-    parcel_id = "117023950"
+    parcel_id = "121-01-2560"
     url = f"https://asr.pima.gov/parcel-details?parcel={parcel_id}"
     print(f"Navigating to {url}...")
     

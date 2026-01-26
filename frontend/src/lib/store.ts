@@ -19,6 +19,7 @@ export interface Property {
 export interface ScoutResult {
     id: string;
     address: string;
+    address_zip?: string;
     latitude: number;
     longitude: number;
     owner_name?: string;
@@ -31,6 +32,7 @@ export interface ScoutResult {
     baths?: number;
     year_built?: number;
     distress_signals: string[];
+    distress_score?: number;
     violation_count?: number;
     violation_description?: string;
     parcel_id?: string;
@@ -45,6 +47,19 @@ export interface ScoutResult {
     school_district?: string;
     tax_status?: string;
     tax_link?: string;
+    // Property features
+    has_pool?: boolean;
+    has_garage?: boolean;
+    has_guest_house?: boolean;
+    // Recording Info
+    seq_num?: string;
+    docket?: string;
+    page?: number;
+    record_date?: string;
+    // Propensity Scoring
+    propensity_score?: number;
+    propensity_label?: string;
+    propensity_signals?: string[];
 }
 
 export interface AppState {

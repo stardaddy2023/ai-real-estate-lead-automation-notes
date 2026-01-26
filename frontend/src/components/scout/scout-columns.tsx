@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal, Eye, Download, AlertTriangle, Phone, Mail } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, Eye, Download, AlertTriangle, Phone, Mail, Zap, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -59,11 +59,22 @@ type ExtendedScoutResult = ScoutResult & {
     list_price?: number
     days_on_market?: number
     status?: string
+    // Propensity Scoring
+    propensity_score?: number
+    propensity_label?: string
+    propensity_signals?: string[]
+    // Recording Info
+    seq_num?: string
+    docket?: string
+    page?: number
+    record_date?: string
 }
 
 interface ScoutColumnsOptions {
     onViewDetails?: (lead: ScoutResult) => void
     onImport?: (lead: ScoutResult) => void
+    onAnalyze?: (lead: ScoutResult) => void
+    analyzingIds?: Set<string>
     // Selection props
     selectedIds?: Set<string>
     onToggleSelect?: (id: string) => void
@@ -427,6 +438,86 @@ export function createScoutColumns(options: ScoutColumnsOptions = {}): ColumnDef
                         <Badge className="bg-red-500/20 text-red-400 text-xs">
                             {signals.length}
                         </Badge>
+                    </div>
+                )
+            },
+        },
+
+        // ============ PROPENSITY SCORE (Heat Column) ============
+        {
+            id: "score",
+            accessorFn: (row) => {
+                const lead = row as ExtendedScoutResult
+                // Use propensity_score if analyzed, otherwise calculate initial estimate
+                if (lead.propensity_score !== undefined) return lead.propensity_score
+                // Initial estimate: distress signals count * 10 (capped at 50 to indicate unanalyzed)
+                const distressCount = (lead.distress_signals?.length || 0)
+                const violationBonus = lead.violation_count && lead.violation_count > 0 ? 20 : 0
+                return Math.min(50, distressCount * 10 + violationBonus)
+            },
+            header: ({ column }) => (
+                <Button
+                    variant="ghost"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    className="px-1"
+                >
+                    Score
+                    <ArrowUpDown className="ml-1 h-3 w-3" />
+                </Button>
+            ),
+            cell: ({ row }) => {
+                const lead = row.original as ExtendedScoutResult
+                const isAnalyzed = lead.propensity_score !== undefined
+                const isAnalyzing = options.analyzingIds?.has(lead.id)
+
+                // Calculate display score
+                let displayScore: number
+                if (isAnalyzed) {
+                    displayScore = lead.propensity_score!
+                } else {
+                    // Initial estimate from distress signals
+                    const distressCount = (lead.distress_signals?.length || 0)
+                    const violationBonus = lead.violation_count && lead.violation_count > 0 ? 20 : 0
+                    displayScore = Math.min(50, distressCount * 10 + violationBonus)
+                }
+
+                if (isAnalyzing) {
+                    return <Loader2 className="h-4 w-4 animate-spin text-yellow-400" />
+                }
+
+                // Heat bar color based on score
+                let barColor = "bg-gray-600"
+                let textColor = "text-gray-400"
+                if (isAnalyzed) {
+                    if (displayScore >= 80) {
+                        barColor = "bg-green-500"
+                        textColor = "text-green-400"
+                    } else if (displayScore >= 51) {
+                        barColor = "bg-yellow-500"
+                        textColor = "text-yellow-400"
+                    } else {
+                        barColor = "bg-gray-500"
+                        textColor = "text-gray-400"
+                    }
+                } else {
+                    // Unanalyzed - use blue tint to indicate estimate
+                    barColor = displayScore > 0 ? "bg-blue-600" : "bg-gray-600"
+                    textColor = displayScore > 0 ? "text-blue-400" : "text-gray-500"
+                }
+
+                return (
+                    <div
+                        className="flex items-center gap-2 cursor-pointer group"
+                        title={isAnalyzed ? (lead.propensity_signals?.join('\n') || 'Click to re-analyze') : 'Click to analyze'}
+                        onClick={(e) => { e.stopPropagation(); if (!isAnalyzed) options.onAnalyze?.(lead) }}
+                    >
+                        <div className="w-12 h-2 bg-gray-700 rounded-full overflow-hidden">
+                            <div className={`h-full ${barColor} transition-all`} style={{ width: `${displayScore}%` }} />
+                        </div>
+                        <span className={`text-xs font-bold ${textColor}`}>{displayScore}</span>
+                        {!isAnalyzed && (
+                            <Zap className="h-3 w-3 text-yellow-500 opacity-50 group-hover:opacity-100" />
+                        )}
                     </div>
                 )
             },

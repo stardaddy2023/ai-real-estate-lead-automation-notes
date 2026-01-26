@@ -2,6 +2,12 @@ import os
 import logging
 import sys
 import asyncio
+
+# Fix for Windows asyncio compatibility - use Proactor policy (Required for Playwright subprocesses)
+# MUST BE SET BEFORE ANY OTHER ASYNCIO OPERATIONS
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
 from typing import List, Optional, Union, Dict, Any
 from fastapi import FastAPI, Depends, HTTPException, Security
 from fastapi.security.api_key import APIKeyHeader
@@ -9,10 +15,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import Base, engine, get_db
-
-# Fix for Windows asyncio compatibility - use Selector policy (NOT Proactor)
-if sys.platform == "win32":
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 # New Models & Schemas
 from app.models.orm import LeadModel
@@ -237,6 +239,74 @@ async def import_leads(leads: List[LeadImportItem], db: AsyncSession = Depends(g
         skipped=skipped_count,
         total=len(leads),
         message=f"Imported {imported_count} leads, skipped {skipped_count} duplicates"
+    )
+
+
+class LeadAnalyzeRequest(BaseModel):
+    """Request to analyze a lead for propensity scoring"""
+    address: str
+    owner_name: Optional[str] = None
+    mailing_address: Optional[str] = None
+    distress_signals: List[str] = []
+    violation_count: Optional[int] = 0
+    record_date: Optional[str] = None
+    seq_num: Optional[str] = None
+    beds: Optional[int] = None
+    baths: Optional[float] = None
+
+
+class LeadAnalyzeResponse(BaseModel):
+    """Response from lead propensity analysis"""
+    score: int
+    label: str
+    emoji: str
+    signals: List[str]
+    breakdown: Dict[str, int]
+    action: str
+
+
+@app.post("/api/v1/scout/analyze", response_model=LeadAnalyzeResponse)
+async def analyze_lead(lead_data: LeadAnalyzeRequest):
+    """
+    Analyze a lead from LeadScout and calculate propensity score.
+    
+    Returns score (0-100), label (Cold/Warm/Hot), and detected signals.
+    """
+    from app.services.scoring_service import get_scoring_service
+    
+    scorer = get_scoring_service()
+    
+    # Convert request to dict for scoring
+    lead_dict = {
+        "address": lead_data.address,
+        "owner_name": lead_data.owner_name,
+        "mailing_address": lead_data.mailing_address,
+        "distress_signals": lead_data.distress_signals,
+        "violation_count": lead_data.violation_count,
+        "record_date": lead_data.record_date,
+        "seq_num": lead_data.seq_num,
+        "beds": lead_data.beds,
+        "baths": lead_data.baths,
+    }
+    
+    # Score the lead
+    result = scorer.score_lead(lead_dict)
+    
+    # Determine recommended action
+    if result.score >= 80:
+        action = "Skip trace + call immediately"
+    elif result.score >= 51:
+        action = "Add to automated drip campaign"
+    else:
+        action = "Archive or low-priority drip"
+    
+    return LeadAnalyzeResponse(
+        score=result.score,
+        label=result.label,
+        emoji=result.emoji,
+        signals=result.signals,
+        breakdown=result.breakdown,
+        action=action
     )
 
 # --- OFFERS ---

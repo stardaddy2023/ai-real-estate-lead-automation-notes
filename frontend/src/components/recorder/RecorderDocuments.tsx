@@ -309,9 +309,55 @@ export function RecorderDocuments() {
                         </div>
 
                         {!status?.ready && (
-                            <div className="p-4 rounded-lg border border-blue-500/30 bg-blue-500/10 text-blue-200 text-sm flex items-center">
-                                <span className="mr-2">ℹ️</span>
-                                Session not active. Click <strong>&nbsp;Search&nbsp;</strong> to initialize browser and start searching.
+                            <div className={`p-4 rounded-lg border text-sm space-y-3 ${status?.needs_captcha
+                                    ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-200'
+                                    : 'border-blue-500/30 bg-blue-500/10 text-blue-200'
+                                }`}>
+                                <div className="flex items-center">
+                                    <span className="mr-2">{status?.needs_captcha ? '⚠️' : '🍪'}</span>
+                                    <span>{status?.message || 'Checking status...'}</span>
+                                </div>
+                                <button
+                                    onClick={async () => {
+                                        setSearching(true);
+                                        try {
+                                            const res = await fetch(`${API_BASE}/initialize`, { method: 'POST' });
+                                            if (res.ok) {
+                                                const data = await res.json();
+                                                // Show success message briefly
+                                                if (data.message) {
+                                                    console.log('Initialize result:', data.message);
+                                                }
+                                                await fetchStatus();
+                                            } else {
+                                                const err = await res.json();
+                                                alert(err.detail || 'Failed to initialize session');
+                                            }
+                                        } catch (error) {
+                                            console.error('Failed to initialize:', error);
+                                            alert('Failed to initialize session. Check if backend is running.');
+                                        } finally {
+                                            setSearching(false);
+                                        }
+                                    }}
+                                    disabled={searching}
+                                    className={`px-4 py-2 font-bold rounded-md transition-all disabled:opacity-50 flex items-center ${status?.needs_captcha
+                                            ? 'bg-yellow-500 text-black hover:bg-yellow-400'
+                                            : 'bg-blue-500 text-white hover:bg-blue-400'
+                                        }`}
+                                >
+                                    {searching ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                            {status?.needs_captcha ? 'Opening browser...' : 'Trying cookies...'}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <RefreshCw className="w-4 h-4 mr-2" />
+                                            {status?.needs_captcha ? 'Initialize (Solve CAPTCHA)' : 'Initialize (Try Cookies)'}
+                                        </>
+                                    )}
+                                </button>
                             </div>
                         )}
 

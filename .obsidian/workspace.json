@@ -4,235 +4,20 @@
     "type": "split",
     "children": [
       {
-        "id": "68a9d6c55a1d6740",
+        "id": "49c8d47e5ced8674",
         "type": "tabs",
         "children": [
           {
-            "id": "799d6f6f5d8c3959",
+            "id": "708376fe9f1395bf",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ARELA Notes/Data Sources Distressed Property Pima County.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "Data Sources Distressed Property Pima County"
-            }
-          },
-          {
-            "id": "1164b7a172b4fc2d",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ARELA Notes/Market Analysis and KPI.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Market Analysis and KPI"
-            }
-          },
-          {
-            "id": "a864e14f19c696c7",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ARELA Notes/Market Analysis and KPI.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Market Analysis and KPI"
-            }
-          },
-          {
-            "id": "73846fbe41661ff9",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ARELA Notes/Market Analysis and KPI.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Market Analysis and KPI"
-            }
-          },
-          {
-            "id": "a587ca64e8d41760",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ARELA Notes/ARELA Workflow UI Architecture.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ARELA Workflow UI Architecture"
-            }
-          },
-          {
-            "id": "d7375ad698c26abc",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ARELA Notes/Non-Judicial Foreclosure States.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Non-Judicial Foreclosure States"
-            }
-          },
-          {
-            "id": "7fbe8abf5896f692",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ARELA Notes/Wholesale KPI Leaders.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Wholesale KPI Leaders"
-            }
-          },
-          {
-            "id": "44db1e45e335258a",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ARELA Notes/ARELA Org Chart and Roles.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ARELA Org Chart and Roles"
-            }
-          },
-          {
-            "id": "7dd8a91304b68a61",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ARELA Notes/ARELA Org Chart and Roles.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ARELA Org Chart and Roles"
-            }
-          },
-          {
-            "id": "388858f55358b84e",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ARELA Notes/ARELA Master Architectural Blueprint.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ARELA Master Architectural Blueprint"
-            }
-          },
-          {
-            "id": "cf13886381eec9b8",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Build Docs/00_SYSTEM_TOPOLOGY.md.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "00_SYSTEM_TOPOLOGY.md"
-            }
-          },
-          {
-            "id": "685c0f5739e00233",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Build Docs/01_AGENT_ROSTER.md.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "01_AGENT_ROSTER.md"
-            }
-          },
-          {
-            "id": "639235e0b7d791bc",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ARELA Notes/Data Sources Distressed Property Pima County.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Data Sources Distressed Property Pima County"
-            }
-          },
-          {
-            "id": "e9ea9a2e4b70a078",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ARELA Notes/Reventure Maps.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Reventure Maps"
-            }
-          },
-          {
-            "id": "d786fd6b109ca3c9",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ARELA Notes/Old_ARELA Front End UI Design.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Old_ARELA Front End UI Design"
-            }
-          },
-          {
-            "id": "eae7d7d6e5097863",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Build Docs/00_SYSTEM_TOPOLOGY.md.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "00_SYSTEM_TOPOLOGY.md"
+              "title": "New tab"
             }
           }
-        ],
-        "currentTab": 15
+        ]
       }
     ],
     "direction": "vertical"
@@ -394,7 +179,7 @@
       "bases:Create new base": false
     }
   },
-  "active": "eae7d7d6e5097863",
+  "active": "259e50b8775258af",
   "lastOpenFiles": [
     "backend/app/services/pipeline/__pycache__/scout.cpython-314.pyc.2355786282448",
     "backend/app/services/pipeline/__pycache__/scout.cpython-314.pyc.2038926603728",

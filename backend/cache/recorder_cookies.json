@@ -1,0 +1,42 @@
+[
+  {
+    "name": "_GRECAPTCHA",
+    "value": "09AKhCRwiCBxpOOio0w5zC4YUkMD5s0sZALKtrp_9KdqZcnDHAvg4eFRzxiWvcC9lUQL7T1tkZa8ytOd4B5-saBsQ",
+    "domain": "www.google.com",
+    "path": "/recaptcha",
+    "expires": 1784758454.945872,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "JSESSIONID",
+    "value": "64DF71F6DA2D68BC3F007C4260611ACC",
+    "domain": "pimacountyaz-web.tylerhost.net",
+    "path": "/web",
+    "expires": -1,
+    "httpOnly": true,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "disclaimerAccepted",
+    "value": "true",
+    "domain": "pimacountyaz-web.tylerhost.net",
+    "path": "/web",
+    "expires": -1,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "aws-waf-token",
+    "value": "8cb3863d-ec0e-4068-92f5-d040c99c475f:EgoAjNGa6GGbAgAA:B3uxdSpiQWXgv6VWKlyf2B31YCPo4G7LDGVkFNgrJsjZU+j12xgsoYfkT9G9MiBFjxL0dvU2P42kiTJm9QjIa8kzGDDSDLihNOFfCPgnguqpdv2iIbvTeZ/888NS9JfzD9V3Ld3+29gUTrm2V0BVgb4XYProDSwlTBweKY2kk7oDtuYgVH6e2oqW7XEmh9qvAM0pKeO8gEFDDGFXil2M5lUMr0+0Mf7EvU64WsPX8FOGiVv3kWNf4Ve+MAQJx/uZpD0mZqNgRfAj4vVKHSOsmU2FTnFbIIGEDpOwdzyZI0D/SdSOHt5ggUi3",
+    "domain": ".pimacountyaz-web.tylerhost.net",
+    "path": "/",
+    "expires": 1769552045,
+    "httpOnly": false,
+    "secure": true,
+    "sameSite": "Lax"
+  }
+]

@@ -402,7 +402,10 @@ class ScoutService:
             # Define async batch fetcher
             async def fetch_batch_async(session: aiohttp.ClientSession, batch_params: Dict, batch_num: int) -> List[Dict]:
                 try:
-                    async with session.post(self.tucson_violations_url, data=batch_params, timeout=aiohttp.ClientTimeout(total=20)) as resp:
+                    headers = {
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+                    }
+                    async with session.post(self.tucson_violations_url, data=batch_params, headers=headers, timeout=aiohttp.ClientTimeout(total=20)) as resp:
                         if resp.status == 200:
                             data = await resp.json()
                             features = data.get("features", [])
@@ -558,7 +561,7 @@ class ScoutService:
                 "geometry": json.dumps(multipoint),
                 "geometryType": "esriGeometryMultipoint",
                 "spatialRel": "esriSpatialRelIntersects",
-                "outFields": "PARCEL,MAIL1,MAIL2,MAIL3,MAIL4,MAIL5,ZIP,FCV,CURZONE_OL,GISAREA,PARCEL_USE",
+                "outFields": "PARCEL,MAIL1,MAIL2,MAIL3,MAIL4,MAIL5,ZIP,FCV,CURZONE_OL,GISAREA,PARCEL_USE,SEQ_NUM_S,SEQ_NUM_D,DOCKET,PAGE,RECORDDATE,Sale_Date,Sale_Price",
                 "returnGeometry": "true",
                 "outSR": "4326",
                 "f": "json"
@@ -566,63 +569,152 @@ class ScoutService:
             
             batch_enriched = 0
             try:
-                async with session.post(base_url, data=params, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                async with session.post(base_url, data=params, timeout=aiohttp.ClientTimeout(total=30)) as resp:
                     if resp.status == 200:
                         data = await resp.json()
                         features = data.get("features", [])
                         
-                        # Pre-process parcels into Shapely polygons
-                        parcels = []
+                        # Create spatial index for faster matching
+                        from shapely.geometry import shape
+                        from shapely.strtree import STRtree
+                        
+                        parcel_polys = []
+                        parcel_map = {}
+                        
                         for f in features:
-                            attr = f.get("attributes", {})
                             geom = f.get("geometry")
                             if geom and "rings" in geom:
                                 try:
                                     poly = Polygon(geom["rings"][0])
-                                    parcels.append((poly, attr))
+                                    parcel_polys.append(poly)
+                                    parcel_map[id(poly)] = f.get("attributes", {})
                                 except:
                                     pass
                         
-                        # Match leads to parcels
-                        for lead in valid_leads:
-                            pt = Point(lead["longitude"], lead["latitude"])
-                            pt_buffer = pt.buffer(0.0001)
+                        if parcel_polys:
+                            tree = STRtree(parcel_polys)
                             
-                            for poly, attr in parcels:
-                                if poly.intersects(pt_buffer):
-                                    # Build mailing address
-                                    mail_parts = []
-                                    for k in range(1, 6):
-                                        mail_val = attr.get(f"MAIL{k}")
-                                        if mail_val and mail_val.strip():
-                                            mail_parts.append(mail_val.strip())
-                                    m_zip = attr.get("ZIP")
-                                    if m_zip and str(m_zip) != "000000000":
-                                        mail_parts.append(str(m_zip))
-                                    mailing_address = ", ".join(mail_parts)
-                                    
-                                    lead["owner_name"] = attr.get("MAIL1", "").title() if attr.get("MAIL1") else None
-                                    lead["mailing_address"] = mailing_address
-                                    if attr.get("PARCEL"):
-                                        lead["parcel_id"] = attr.get("PARCEL")
-                                    lead["zoning"] = attr.get("CURZONE_OL")
-                                    lead["lot_size"] = attr.get("GISAREA")
-                                    lead["assessed_value"] = attr.get("FCV")
-                                    
-                                    parcel_use = str(attr.get("PARCEL_USE", "")) if attr.get("PARCEL_USE") else ""
-                                    lead["parcel_use_code"] = parcel_use
-                                    lead["property_type"] = self._map_parcel_use_to_type(parcel_use)
-                                    
-                                    # Check absentee
-                                    prop_street = (lead.get("address_street") or "").upper().strip()
-                                    if prop_street and mailing_address:
-                                        if prop_street not in mailing_address.upper():
-                                            if "Absentee Owner" not in lead.get("distress_signals", []):
-                                                lead["distress_signals"].append("Absentee Owner")
-                                    
-                                    lead["_parcel_enriched"] = True
-                                    batch_enriched += 1
-                                    break
+                            for lead in valid_leads:
+                                pt = Point(lead["longitude"], lead["latitude"])
+                                # Find potential matches
+                                result_indices = tree.query(pt)
+                                
+                                for idx in result_indices:
+                                    poly = parcel_polys[idx]
+                                    if poly.contains(pt):
+                                        attrs = parcel_map[id(poly)]
+                                        
+                                        # Enrich lead with parcel data
+                                        lead["parcel_id"] = attrs.get("PARCEL")
+                                        lead["owner_name"] = attrs.get("MAIL1")
+                                        lead["mailing_address"] = f"{attrs.get('MAIL2', '')} {attrs.get('MAIL3', '')} {attrs.get('MAIL4', '')}".strip()
+                                        lead["assessed_value"] = attrs.get("FCV")
+                                        lead["zoning"] = attrs.get("CURZONE_OL")
+                                        lead["lot_sqft"] = attrs.get("GISAREA")
+                                        # --- Property Type Mapping ---
+                                        use_code = str(attrs.get("PARCEL_USE", "")).strip()
+                                        lead["parcel_use_code"] = use_code
+                                        
+                                        # Common Pima County Use Codes
+                                        PROPERTY_USE_CODES = {
+                                            "0182": "Single Family Residence",
+                                            "0011": "Vacant Residential",
+                                            "0013": "Vacant Residential (Rural)",
+                                            "0111": "Single Family Residence",
+                                            "0113": "Single Family Residence (Rural)",
+                                            "0131": "Mobile Home",
+                                            "0133": "Mobile Home (Rural)",
+                                            "0300": "Multi-Family",
+                                            "0311": "Duplex",
+                                            "0312": "Triplex",
+                                            "0313": "Fourplex",
+                                            "0411": "Apartment",
+                                            "0210": "Commercial",
+                                            "0211": "Commercial Office",
+                                            "0212": "Commercial Retail",
+                                            "0213": "Commercial Service",
+                                            "0131": "Single Family Residence",
+                                        }
+                                        
+                                        if use_code in PROPERTY_USE_CODES:
+                                            lead["property_type"] = PROPERTY_USE_CODES[use_code]
+                                            lead["use_desc"] = PROPERTY_USE_CODES[use_code]
+                                        
+                                        # --- Sales vs Recording Data ---
+                                        
+                                        # 1. Recording Information (Always populate)
+                                        record_date = attrs.get("RECORDDATE")
+                                        seq_num_d = attrs.get("SEQ_NUM_D")
+                                        docket = attrs.get("DOCKET")
+                                        page = attrs.get("PAGE")
+                                        
+                                        # Format Record Date
+                                        if record_date:
+                                            if isinstance(record_date, int) and record_date > 20000000:
+                                                s_date = str(record_date)
+                                                if len(s_date) == 8:
+                                                    lead["record_date"] = f"{s_date[:4]}-{s_date[4:6]}-{s_date[6:]}"
+                                            elif isinstance(record_date, int):
+                                                from datetime import datetime
+                                                lead["record_date"] = datetime.fromtimestamp(record_date/1000).strftime('%Y-%m-%d')
+                                            elif isinstance(record_date, str):
+                                                if len(record_date) == 8 and record_date.isdigit():
+                                                    lead["record_date"] = f"{record_date[:4]}-{record_date[4:6]}-{record_date[6:]}"
+                                                else:
+                                                    lead["record_date"] = record_date.split('T')[0]
+                                        
+                                        # Helper to format sequence numbers
+                                        def format_seq(val):
+                                            if not val: return None
+                                            s = str(val)
+                                            if s.endswith(".0"):
+                                                return s[:-2]
+                                            return s
+                                            
+                                        # Populate Recording Sequence / Docket
+                                        if seq_num_d and str(seq_num_d) != "0":
+                                            lead["recording_seq_num"] = format_seq(seq_num_d)
+                                        elif docket and page:
+                                            lead["docket"] = docket
+                                            lead["page"] = page
+                                            lead["recording_seq_num"] = f"Docket: {docket}, Page: {page}"
+
+                                        # 2. Sales Information (Prioritize real sales data)
+                                        sale_date = attrs.get("Sale_Date")
+                                        seq_num_s = attrs.get("SEQ_NUM_S")
+                                        sale_price = attrs.get("Sale_Price")
+                                        
+                                        # Only overwrite last_sold_date if we have a valid Sale_Date from GIS
+                                        if sale_date:
+                                            lead["last_sold_date"] = sale_date
+                                        elif not lead.get("last_sold_date") and lead.get("record_date"):
+                                            # Only fallback to record_date if we have NO sales date at all
+                                            # And explicitly mark it or just use it as a best guess
+                                            lead["last_sold_date"] = lead["record_date"]
+                                            
+                                        # Only overwrite seq_num (Affidavit) if we have a valid SEQ_NUM_S
+                                        if seq_num_s and str(seq_num_s) != "0":
+                                            lead["seq_num"] = format_seq(seq_num_s)
+                                        elif not lead.get("seq_num") and lead.get("recording_seq_num"):
+                                            # Fallback to recording seq num if missing
+                                            lead["seq_num"] = lead["recording_seq_num"]
+                                            
+                                        if sale_price:
+                                            lead["last_sold_price"] = sale_price
+                                        
+                                        # Check absentee
+                                        prop_street = (lead.get("address_street") or "").upper().strip()
+                                        mailing_address = lead.get("mailing_address", "")
+                                        if prop_street and mailing_address:
+                                            if prop_street not in mailing_address.upper():
+                                                if "distress_signals" not in lead:
+                                                    lead["distress_signals"] = []
+                                                if "Absentee Owner" not in lead["distress_signals"]:
+                                                    lead["distress_signals"].append("Absentee Owner")
+                                        
+                                        lead["_parcel_enriched"] = True
+                                        batch_enriched += 1
+                                        break
             except Exception as e:
                 print(f"[PERF] Batch error: {e}")
             
@@ -803,21 +895,31 @@ class ScoutService:
         
         print(f"Enriched {enriched_count}/{len(leads)} code violations with zip codes.")
 
-    async def _filter_violations_by_property_type(self, leads: List[Dict], property_types: List[str]) -> List[Dict]:
+    async def _filter_violations_by_property_type(self, leads: List[Dict], property_types: List[str], property_subtypes: List[str] = None) -> List[Dict]:
         """
         Filters code violation leads by property type using BATCH spatial query.
         Uses property type cache to skip API calls for known leads.
         Returns leads that match the selected property types.
+        
+        Args:
+            leads: List of lead dictionaries
+            property_types: High-level property types like "Vacant Land", "Single Family"
+            property_subtypes: Explicit PARCEL_USE code prefixes like "001" for Vacant Residential
         """
-        if not leads or not property_types:
+        if not leads or (not property_types and not property_subtypes):
             return leads
         
         # Skip filter if "all" is selected or list is empty
-        if "all" in [t.lower() for t in property_types]:
+        if property_types and "all" in [t.lower() for t in property_types]:
             return leads
         
-        # Get the PARCEL_USE prefixes for the selected types
-        prefixes = self._get_codes_for_types(property_types)
+        # Get the PARCEL_USE prefixes - use explicit subtypes if provided, else get from types
+        if property_subtypes:
+            prefixes = property_subtypes  # Use explicit codes like ['001'] for Vacant Residential
+            print(f"  Property subtype filter: using explicit codes {prefixes}")
+        else:
+            prefixes = self._get_codes_for_types(property_types)
+            
         if not prefixes:
             return leads
         
@@ -1020,8 +1122,8 @@ class ScoutService:
             (
                 "Parcels",
                 "https://gisdata.pima.gov/arcgis1/rest/services/GISOpenData/LandRecords/MapServer/12/query",
-                "PARCEL,MAIL1,FCV,CURZONE_OL,PARCEL_USE",
-                {"parcel_id": "PARCEL", "owner_name": "MAIL1", "assessed_value": "FCV", "zoning": "CURZONE_OL", "parcel_use_code": "PARCEL_USE"},
+                "PARCEL,MAIL1,FCV,CURZONE_OL,PARCEL_USE,SEQ_NUM_S,DOCKET,PAGE,RECORDDATE",
+                {"parcel_id": "PARCEL", "owner_name": "MAIL1", "assessed_value": "FCV", "zoning": "CURZONE_OL", "parcel_use_code": "PARCEL_USE", "seq_num": "SEQ_NUM_S", "docket": "DOCKET", "page": "PAGE", "record_date": "RECORDDATE"},
                 False  # Use multipoint intersection to get real APN from coordinates
             ),
             (
@@ -2411,6 +2513,77 @@ class ScoutService:
                 if candidates:
                     print(f"  Found {len(candidates)} parcels matching address")
                     
+                    # CRITICAL: If Code Violations filter is active, we MUST verify if this address has a violation
+                    if "Code Violations" in distress_types:
+                        print("  Verifying Code Violation status for address match...")
+                        verified_candidates = []
+                        
+                        # We need to fetch violations for the specific location of our candidates
+                        # Optimization: Instead of fetching whole zip, fetch small bounds around the property
+                        violation_points = []
+                        
+                        # Group candidates by proximity to minimize API calls? 
+                        # For now, just fetch for each candidate (usually only 1-2 for address search)
+                        for lead in candidates:
+                            lat = lead.get("latitude")
+                            lng = lead.get("longitude")
+                            
+                            if lat and lng:
+                                # Create a small buffer (~100m) around the property
+                                buffer = 0.001
+                                bounds = {
+                                    "xmin": float(lng) - buffer,
+                                    "ymin": float(lat) - buffer,
+                                    "xmax": float(lng) + buffer,
+                                    "ymax": float(lat) + buffer
+                                }
+                                
+                                # Fetch violations for this specific area
+                                v_leads = await self._fetch_code_violations({"bounds": bounds}, limit=100)
+                                
+                                for v in v_leads:
+                                    v_lat = v.get("latitude")
+                                    v_lng = v.get("longitude")
+                                    if v_lat and v_lng:
+                                        violation_points.append({
+                                            "lat": float(v_lat),
+                                            "lng": float(v_lng),
+                                            "address": v.get("address", "Unknown")
+                                        })
+                        
+                        print(f"  Loaded {len(violation_points)} violations for verification")
+                        
+                        for lead in candidates:
+                            lat = lead.get("latitude")
+                            lng = lead.get("longitude")
+                            is_violation = False
+                            
+                            if lat and lng:
+                                c_lat = float(lat)
+                                c_lng = float(lng)
+                                
+                                # Check for any violation within ~50 meters (approx 0.0005 degrees)
+                                for v in violation_points:
+                                    if abs(c_lat - v["lat"]) < 0.0005 and abs(c_lng - v["lng"]) < 0.0005:
+                                        is_violation = True
+                                        print(f"  Match found! Candidate {lead.get('address')} matches violation at {v['address']}")
+                                        if "distress_signals" not in lead:
+                                            lead["distress_signals"] = []
+                                        if "Code Violation" not in lead["distress_signals"]:
+                                            lead["distress_signals"].append("Code Violation")
+                                        break
+                            
+                            if is_violation:
+                                verified_candidates.append(lead)
+                            else:
+                                print(f"  Filtered out {lead.get('address')} - No code violation found within 50m")
+                        
+                        # Replace candidates with only verified ones
+                        candidates = verified_candidates
+                        
+                        if not candidates:
+                            print("  No candidates matched the Code Violation filter")
+                    
                     # Check for absentee owner status on each
                     for lead in candidates:
                         if self._is_absentee(lead):
@@ -2501,7 +2674,8 @@ class ScoutService:
                 # Step 1.5: Apply Property Type Filter (for Code Violations)
                 if property_types and primary == "Code Violations":
                     # Code Violations come unenriched, filter by property type first
-                    filtered_candidates = await self._filter_violations_by_property_type(candidates, property_types)
+                    property_subtypes = filters.get('property_subtypes') or []
+                    filtered_candidates = await self._filter_violations_by_property_type(candidates, property_types, property_subtypes)
                     print(f"AND-Logic: After property type filter: {len(filtered_candidates)} candidates")
                     
                     # PROGRESSIVE FETCH: If not enough results, fetch more and try again
@@ -2520,7 +2694,7 @@ class ScoutService:
                         
                         # Fetch more candidates
                         candidates = await self._fetch_primary(primary, filters, new_fetch_limit)
-                        filtered_candidates = await self._filter_violations_by_property_type(candidates, property_types)
+                        filtered_candidates = await self._filter_violations_by_property_type(candidates, property_types, property_subtypes)
                         print(f"AND-Logic: After progressive fetch: {len(filtered_candidates)} candidates")
                     
                     candidates = filtered_candidates
@@ -3236,13 +3410,19 @@ class ScoutService:
         property_types = filters.get('property_types') or []
         property_subtypes = filters.get('property_subtypes') or []  # Explicit parcel codes
         
+        # DEBUG: Log what filter values we received
+        print(f"DEBUG FILTER: property_types={property_types}, property_subtypes={property_subtypes}", flush=True)
+        
         if property_subtypes:
-            # Use explicit sub-type codes directly (e.g. "81" for Vacant Land - Residential)
+            # Use explicit sub-type codes directly (e.g. "001" for Vacant Land - Residential)
             prefixes = property_subtypes
+            print(f"DEBUG FILTER: Using property_subtypes as prefixes: {prefixes}", flush=True)
         elif property_types and "all" not in [t.lower() for t in property_types]:
             prefixes = self._get_codes_for_types(property_types)
+            print(f"DEBUG FILTER: Using property_types codes: {prefixes}", flush=True)
         else:
             prefixes = []
+            print(f"DEBUG FILTER: No property type filter applied", flush=True)
             
         if prefixes:
             # Use LIKE 'prefix%' for each prefix, combined with OR
@@ -3262,8 +3442,6 @@ class ScoutService:
                 prefix_conditions = [f"PARCEL_USE LIKE '{p}%'" for p in prefixes]
             else:
                 prefix_conditions = [f"PARCEL_USE LIKE '{p}%'" for p in prefixes]
-                
-            where_parts.append(f"({' OR '.join(prefix_conditions)})")
                 
             where_parts.append(f"({' OR '.join(prefix_conditions)})")
         elif filters.get("has_guest_house"):
@@ -3758,6 +3936,58 @@ class ScoutService:
         # Ensure we use the raw format for GIS URL (e.g. 117023950)
         raw_parcel_id = parcel_id.replace("-", "") if parcel_id else None
 
+        # --- Sales vs Recording Data (Fallback Logic) ---
+        record_date = attr.get("RECORDDATE")
+        seq_num_d = attr.get("SEQ_NUM_D")
+        docket = attr.get("DOCKET")
+        page = attr.get("PAGE")
+        
+        # Format Record Date
+        formatted_record_date = None
+        if record_date:
+            if isinstance(record_date, int) and record_date > 20000000:
+                s_date = str(record_date)
+                if len(s_date) == 8:
+                    formatted_record_date = f"{s_date[:4]}-{s_date[4:6]}-{s_date[6:]}"
+            elif isinstance(record_date, int):
+                from datetime import datetime
+                formatted_record_date = datetime.fromtimestamp(record_date/1000).strftime('%Y-%m-%d')
+            elif isinstance(record_date, str):
+                if len(record_date) == 8 and record_date.isdigit():
+                    formatted_record_date = f"{record_date[:4]}-{record_date[4:6]}-{record_date[6:]}"
+                else:
+                    formatted_record_date = record_date.split('T')[0]
+
+        # Helper to format sequence numbers
+        def format_seq(val):
+            if not val: return None
+            s = str(val)
+            if s.endswith(".0"):
+                return s[:-2]
+            return s
+            
+        recording_seq_num = None
+        if seq_num_d and str(seq_num_d) != "0":
+            recording_seq_num = format_seq(seq_num_d)
+        elif docket and page:
+            recording_seq_num = f"Docket: {docket}, Page: {page}"
+
+        # Sales Info
+        sale_date = attr.get("LAST_SALE_DATE") or attr.get("Sale_Date")
+        seq_num_s = attr.get("SEQ_NUM_S")
+        sale_price = attr.get("LAST_SALE_PRICE") or attr.get("Sale_Price")
+        
+        # Determine final values with fallback
+        final_last_sold_date = sale_date
+        if not final_last_sold_date and formatted_record_date:
+            final_last_sold_date = formatted_record_date
+            
+        final_seq_num = None
+        if seq_num_s and str(seq_num_s) != "0":
+            final_seq_num = format_seq(seq_num_s)
+        elif recording_seq_num:
+            final_seq_num = recording_seq_num
+
         return {
             "source": "pima_county_gis",
             "parcel_id": parcel_id, # Use PARCEL for joining
@@ -3769,13 +3999,19 @@ class ScoutService:
             "address_zip": zip_code,
             "mailing_address": mailing_address,
             "property_type": prop_type,
+            "parcel_use_code": use_code, # Ensure code is passed
             "year_built": attr.get("EFF_YR_BLT"), # Often missing in Layer 12
             "sqft": attr.get("IMPR_SQFT"), # Often missing in Layer 12
             "lot_size": attr.get("GISAREA") or attr.get("LAND_SQFT"), # Map GISAREA
             "zoning": attr.get("CURZONE_OL") or attr.get("ZONING"), # Map CURZONE_OL
             "assessed_value": attr.get("FCV"), # Map FCV
-            "last_sale_date": attr.get("LAST_SALE_DATE"),
-            "last_sale_price": attr.get("LAST_SALE_PRICE"),
+            "last_sold_date": final_last_sold_date,
+            "last_sold_price": sale_price,
+            "seq_num": final_seq_num,
+            "recording_seq_num": recording_seq_num,
+            "record_date": formatted_record_date,
+            "docket": docket,
+            "page": page,
             "latitude": geometry.get("y") or self._get_centroid_y(geometry),
             "longitude": geometry.get("x") or self._get_centroid_x(geometry),
             "status": "New",
@@ -3845,6 +4081,7 @@ class ScoutService:
             "0110": "Single Family Residential - Grade 1",
             "0120": "Single Family Residential - Grade 2",
             "0130": "Single Family Residential - Grade 3",
+            "0131": "Single Family Residential - Grade 3 (Urban Subdivided)",
             "0140": "Single Family Residential - Grade 4",
             "0150": "Single Family Residential - Grade 5",
             "0180": "Single Family Residential - With Additional Unit",

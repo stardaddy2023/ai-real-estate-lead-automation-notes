@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Loader2, Map as MapIcon, List as ListIcon, Download, Search, X, SlidersHorizontal, LayoutGrid, ChevronDown, Check } from 'lucide-react'
+import { Loader2, Map as MapIcon, List as ListIcon, Download, Search, X, SlidersHorizontal, LayoutGrid, ChevronDown, Check, Zap } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from '@/components/ui/sheet'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -96,6 +96,92 @@ export default function LeadScout() {
 
 
     // Create scout columns with callbacks - includes selection props for checkbox column
+    const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set())
+
+    // Handle analyze lead for propensity scoring
+    const handleAnalyze = async (lead: ScoutResult) => {
+        setAnalyzingIds(prev => new Set(prev).add(lead.id))
+
+        try {
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
+            const res = await fetch(`${baseUrl}/api/v1/scout/analyze`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    address: lead.address,
+                    owner_name: lead.owner_name,
+                    mailing_address: lead.mailing_address,
+                    distress_signals: lead.distress_signals || [],
+                    violation_count: lead.violation_count || 0,
+                    record_date: (lead as any).record_date,
+                    seq_num: (lead as any).seq_num,
+                    beds: lead.beds,
+                    baths: lead.baths,
+                })
+            })
+
+            if (res.ok) {
+                const result = await res.json()
+                // Update lead in results with score
+                setLeadScoutState({
+                    results: results.map(r =>
+                        r.id === lead.id
+                            ? { ...r, propensity_score: result.score, propensity_label: result.label, propensity_signals: result.signals }
+                            : r
+                    )
+                })
+                toast({
+                    title: `${result.emoji} Score: ${result.score}`,
+                    description: result.action
+                })
+            } else {
+                throw new Error("Analysis failed")
+            }
+        } catch (error) {
+            toast({ title: "Analysis Failed", variant: "destructive" })
+        } finally {
+            setAnalyzingIds(prev => {
+                const newSet = new Set(prev)
+                newSet.delete(lead.id)
+                return newSet
+            })
+        }
+    }
+
+    // Handle bulk analyze - skips already analyzed leads
+    const handleBulkAnalyze = async () => {
+        if (selectedLeadIds.size === 0) {
+            toast({ title: "No leads selected", variant: "default" })
+            return
+        }
+
+        // Filter to only unanalyzed leads
+        const leadsToAnalyze = results.filter(r =>
+            selectedLeadIds.has(r.id) && (r as any).propensity_score === undefined
+        )
+
+        if (leadsToAnalyze.length === 0) {
+            toast({ title: "All selected leads already analyzed", description: "Select leads without scores to analyze." })
+            return
+        }
+
+        let successCount = 0
+        let skipCount = selectedLeadIds.size - leadsToAnalyze.length
+
+        for (const lead of leadsToAnalyze) {
+            await handleAnalyze(lead)
+            successCount++
+        }
+
+        toast({
+            title: `Bulk Analysis Complete`,
+            description: `Analyzed ${successCount} leads${skipCount > 0 ? `, skipped ${skipCount} already analyzed` : ''}`
+        })
+
+        // Clear selection
+        setLeadScoutState({ selectedLeadIds: new Set() })
+    }
+
     const scoutColumns = useMemo(() => createScoutColumns({
         onViewDetails: (lead) => {
             setSelectedLead(lead)
@@ -103,6 +189,8 @@ export default function LeadScout() {
             setLeadScoutState({ lastViewedLeadId: lead.id })
         },
         onImport: (lead) => handleImport(lead),
+        onAnalyze: (lead) => handleAnalyze(lead),
+        analyzingIds,
         // Selection props for checkbox column
         selectedIds: selectedLeadIds,
         onToggleSelect: (id: string) => {
@@ -122,7 +210,7 @@ export default function LeadScout() {
             }
         },
         allSelected: results.length > 0 && selectedLeadIds.size === results.length
-    }), [selectedLeadIds, results, setLeadScoutState])
+    }), [selectedLeadIds, results, setLeadScoutState, analyzingIds])
 
     // Compute filtered results for display count and DataTable
     const filteredResults = useMemo(() => {
@@ -854,6 +942,20 @@ export default function LeadScout() {
                             </Button>
                         )}
 
+                        {/* Bulk Analyze Button */}
+                        {selectedLeadIds.size > 0 && (
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={handleBulkAnalyze}
+                                disabled={analyzingIds.size > 0}
+                                className="bg-yellow-600 hover:bg-yellow-700 text-white rounded-md h-7 text-xs px-2 shrink-0"
+                            >
+                                <Zap className="w-3 h-3 mr-1" />
+                                Analyze ({selectedLeadIds.size})
+                            </Button>
+                        )}
+
                         {/* ACTIVE FILTERS (TAGS) */}
                         {(selectedPropertyTypes.length > 0 || selectedDistressTypes.length > 0) && (
                             <div className="flex flex-wrap gap-2 mt-2 justify-center w-full pointer-events-auto">
@@ -1214,6 +1316,19 @@ export default function LeadScout() {
                                 >
                                     <Download className="w-4 h-4 mr-1" />
                                     Import {selectedLeadIds.size}
+                                </Button>
+                            )}
+
+                            {/* Right Side: Bulk Analyze Button */}
+                            {selectedLeadIds.size > 0 && (
+                                <Button
+                                    size="sm"
+                                    className="h-8 bg-yellow-600 hover:bg-yellow-700 text-white"
+                                    onClick={handleBulkAnalyze}
+                                    disabled={analyzingIds.size > 0}
+                                >
+                                    <Zap className="w-4 h-4 mr-1" />
+                                    Analyze {selectedLeadIds.size}
                                 </Button>
                             )}
                         </div>

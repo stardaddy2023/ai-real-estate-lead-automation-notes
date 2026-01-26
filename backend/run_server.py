@@ -18,6 +18,6 @@ if __name__ == "__main__":
         "app.main:app", 
         host="127.0.0.1", 
         port=8000, 
-        reload=True,
+        reload=False, # Disable reload to avoid subprocess issues with Proactor loop
         loop="asyncio" # Force uvicorn to use the standard asyncio loop (which we configured)
     )

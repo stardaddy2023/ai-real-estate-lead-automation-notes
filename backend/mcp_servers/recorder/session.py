@@ -444,42 +444,53 @@ class RecorderSession:
             for row in rows[:limit]:
                 try:
                     # Extract data from row using fast JavaScript evaluation
-                    row_data = await row.evaluate("""(row) => {
-                        const doc_id = row.getAttribute('data-documentid') || '';
-                        
-                        // Get h1 text for doc number and type
-                        const h1 = row.querySelector('h1');
-                        let doc_number = '';
-                        let doc_type = '';
-                        if (h1) {
-                            const h1Text = h1.innerText || '';
-                            const parts = h1Text.split('•').map(s => s.trim());
-                            doc_number = parts[0] || '';
-                            doc_type = parts[1] || '';
-                        }
-                        
-                        // Get column data
-                        let record_date = '';
-                        let grantor = '';
-                        let grantee = '';
-                        
-                        const columns = row.querySelectorAll('.searchResultThreeColumn');
-                        for (const col of columns) {
-                            const colText = col.innerText || '';
-                            const boldEl = col.querySelector('b');
-                            const value = boldEl ? boldEl.innerText.trim() : '';
+                    # Extract data using Python Playwright API
+                    doc_id = await row.get_attribute('data-documentid') or ''
+                    
+                    # Get h1 text
+                    h1 = row.locator('h1').first
+                    h1_text = await h1.text_content() if await h1.count() > 0 else ''
+                    
+                    doc_number = ''
+                    doc_type = ''
+                    if h1_text:
+                        parts = []
+                        if '•' in h1_text:
+                            parts = h1_text.split('•')
+                        elif '-' in h1_text:
+                            parts = h1_text.split('-')
+                        else:
+                            parts = [h1_text]
                             
-                            if (colText.includes('Recording Date')) {
-                                record_date = value;
-                            } else if (colText.includes('Grantor')) {
-                                grantor = value;
-                            } else if (colText.includes('Grantee')) {
-                                grantee = value;
-                            }
-                        }
+                        doc_number = parts[0].strip()
+                        doc_type = parts[1].strip() if len(parts) > 1 else ''
+                    
+                    # Get columns
+                    record_date = ''
+                    grantor = ''
+                    grantee = ''
+                    
+                    columns = await row.locator('.searchResultThreeColumn').all()
+                    for col in columns:
+                        col_text = await col.text_content()
+                        bold = col.locator('b').first
+                        value = (await bold.text_content()).strip() if await bold.count() > 0 else ''
                         
-                        return { doc_id, doc_number, doc_type, record_date, grantor, grantee };
-                    }""")
+                        if 'Recording Date' in col_text:
+                            record_date = value
+                        elif 'Grantor' in col_text:
+                            grantor = value
+                        elif 'Grantee' in col_text:
+                            grantee = value
+                            
+                    row_data = {
+                        "doc_id": doc_id,
+                        "doc_number": doc_number,
+                        "doc_type": doc_type,
+                        "record_date": record_date,
+                        "grantor": grantor,
+                        "grantee": grantee
+                    }
                     
                     if row_data and row_data.get("doc_id"):
                         results.append(row_data)
@@ -583,29 +594,50 @@ class RecorderSession:
                 # Parse results (same logic as search_by_doc_type)
                 for row in rows:
                     try:
-                        row_data = await row.evaluate("""(row) => {
-                            const doc_id = row.getAttribute('data-documentid') || '';
-                            const h1 = row.querySelector('h1');
-                            let doc_number = '';
-                            let doc_type = '';
-                            if (h1) {
-                                const h1Text = h1.innerText || '';
-                                const parts = h1Text.split('•').map(s => s.trim());
-                                doc_number = parts[0] || '';
-                                doc_type = parts[1] || '';
-                            }
-                            
-                            let record_date = '';
-                            const columns = row.querySelectorAll('.searchResultThreeColumn');
-                            for (const col of columns) {
-                                const colText = col.innerText || '';
-                                const boldEl = col.querySelector('b');
-                                const value = boldEl ? boldEl.innerText.trim() : '';
-                                if (colText.includes('Recording Date')) record_date = value;
-                            }
-                            
-                            return { doc_id, doc_number, doc_type, record_date };
-                        }""")
+                        # Extract data using Python Playwright API to avoid JS syntax errors
+                        doc_id = await row.get_attribute('data-documentid') or ''
+                        
+                        # Get h1 text
+                        h1 = row.locator('h1').first
+                        h1_text = await h1.text_content() if await h1.count() > 0 else ''
+                        
+                        doc_number = ''
+                        doc_type = ''
+                        if h1_text:
+                            # Split by bullet (•) or dash
+                            # Python handles unicode natively, so this is safe
+                            parts = []
+                            if '•' in h1_text:
+                                parts = h1_text.split('•')
+                            elif '-' in h1_text:
+                                parts = h1_text.split('-')
+                            else:
+                                parts = [h1_text]
+                                
+                            doc_number = parts[0].strip()
+                            doc_type = parts[1].strip() if len(parts) > 1 else ''
+                        
+                        # Get columns
+                        record_date = ''
+                        try:
+                            columns = await row.locator('.searchResultThreeColumn').all()
+                            for col in columns:
+                                # Use text_content() instead of inner_text() to avoid potential JS errors
+                                col_text = await col.text_content()
+                                if 'Recording Date' in col_text:
+                                    # Extract value from bold tag if present
+                                    bold = col.locator('b').first
+                                    if await bold.count() > 0:
+                                        record_date = (await bold.text_content()).strip()
+                        except Exception as e:
+                            print(f"    Warning: Error parsing columns: {e}", flush=True)
+                        
+                        row_data = {
+                            "doc_id": doc_id,
+                            "doc_number": doc_number,
+                            "doc_type": doc_type,
+                            "record_date": record_date
+                        }
                         
                         if row_data and row_data.get("doc_id"):
                             results.append(row_data)
@@ -926,6 +958,192 @@ class RecorderSession:
         
         except Exception as e:
             print(f"Name search error: {e}")
+            return [{"error": str(e)}]
+        
+        return results
+    
+    async def search_by_name_and_date(self, name: str, record_date: str, search_type: str = "both", limit: int = 20) -> List[Dict]:
+        """
+        Search for documents by name AND recording date.
+        This is more targeted than just name search - finds all docs for an owner on a specific date.
+        
+        Args:
+            name: Owner name to search for
+            record_date: Recording date in MM/DD/YYYY format
+            search_type: "grantor", "grantee", or "both"
+            limit: Maximum results
+            
+        Returns:
+            List of documents found for this name on this date
+        """
+        if not self.initialized or not await self.validate_session():
+            return [{"error": "Session not initialized or browser closed."}]
+        
+        print(f"Searching by {search_type}: {name} on date: {record_date}...", flush=True)
+        results = []
+        
+        try:
+            # Clear form first
+            print("    Clearing search form...", flush=True)
+            clear_btn = self.page.locator("#clearSearchButton")
+            if await clear_btn.is_visible(timeout=3000):
+                await clear_btn.click()
+                await self.page.wait_for_load_state("networkidle")
+                await self.page.wait_for_timeout(1000)
+            
+            # Fill date range (same date for start and end)
+            try:
+                start_date_input = self.page.locator("#field_RecordingDateID_DOT_StartDate")
+                end_date_input = self.page.locator("#field_RecordingDateID_DOT_EndDate")
+                
+                if await start_date_input.count() > 0:
+                    await start_date_input.fill("")
+                    await start_date_input.type(record_date, delay=30)
+                    print(f"    Filled start date: {record_date}", flush=True)
+                    
+                if await end_date_input.count() > 0:
+                    await end_date_input.fill("")
+                    await end_date_input.type(record_date, delay=30)
+                    print(f"    Filled end date: {record_date}", flush=True)
+            except Exception as e:
+                print(f"    Error setting date: {e}", flush=True)
+            
+            # Helper to find input (robust version with label fallback)
+            async def find_input(label_text, possible_ids):
+                # 1. Try specific IDs
+                for selector in possible_ids:
+                    if await self.page.locator(selector).count() > 0:
+                        print(f"    Found {label_text} input via: {selector}", flush=True)
+                        return self.page.locator(selector).first
+                
+                # 2. Try by Label Text
+                try:
+                    label = self.page.locator(f"label:has-text('{label_text}')").first
+                    if await label.count() > 0:
+                        for_id = await label.get_attribute("for")
+                        if for_id:
+                            print(f"    Found {label_text} input via label 'for' attribute: #{for_id}", flush=True)
+                            return self.page.locator(f"#{for_id}")
+                        
+                        if await label.locator("input").count() > 0:
+                            print(f"    Found {label_text} input nested in label", flush=True)
+                            return label.locator("input").first
+                            
+                        parent_input = label.locator("..").locator("input").first
+                        if await parent_input.count() > 0:
+                            print(f"    Found {label_text} input via parent traversal", flush=True)
+                            return parent_input
+                except Exception as e:
+                    print(f"    Error finding input by label '{label_text}': {e}", flush=True)
+                    
+                return None
+            
+            if search_type in ["grantor", "both"]:
+                grantor_input = await find_input("Grantor", [
+                    "#field_GrantorName", 
+                    "#field_Grantor",
+                    "input[name='GrantorName']",
+                    "input[aria-label*='Grantor']", 
+                    "input[placeholder*='Grantor']"
+                ])
+                
+                if grantor_input:
+                    await grantor_input.fill("")
+                    await grantor_input.type(name, delay=30)
+                    print(f"    Filled Grantor: {name}", flush=True)
+                else:
+                    print("    ERROR: Could not find Grantor input field", flush=True)
+            
+            if search_type in ["grantee", "both"]:
+                grantee_input = await find_input("Grantee", [
+                    "#field_GranteeID",
+                    "#field_GranteeName", 
+                    "input[name='GranteeID']",
+                    "input[aria-label*='Grantee']",
+                    "input[placeholder*='Grantee']"
+                ])
+                
+                if grantee_input:
+                    await grantee_input.fill("")
+                    await grantee_input.type(name, delay=30)
+                    print(f"    Filled Grantee: {name}", flush=True)
+                else:
+                    print("    ERROR: Could not find Grantee input field", flush=True)
+            
+            await self.page.wait_for_timeout(500)
+            
+            # Click Search
+            print("    Clicking Search...", flush=True)
+            await self.page.evaluate("document.querySelector('#searchButton').click()")
+            
+            try:
+                await self.page.wait_for_load_state("networkidle", timeout=15000)
+            except:
+                pass
+            
+            # Wait for results
+            try:
+                await self.page.wait_for_selector("li.ss-search-row", timeout=10000)
+            except:
+                await self.page.wait_for_timeout(2000)
+            
+            rows = await self.page.locator("li.ss-search-row").all()
+            
+            if rows:
+                print(f"    Found {len(rows)} results for {name} on {record_date}", flush=True)
+                
+                for row in rows[:limit]:
+                    try:
+                        row_data = await row.evaluate("""(row) => {
+                            try {
+                                const doc_id = row.getAttribute('data-documentid') || '';
+                                const h1 = row.querySelector('h1');
+                                let doc_number = '';
+                                let doc_type = '';
+                                if (h1) {
+                                    const parts = h1.innerText.split('•').map(s => s.trim());
+                                    doc_number = parts[0] || '';
+                                    doc_type = parts[parts.length - 1] || '';
+                                }
+                                
+                                let record_date = '';
+                                let grantor = '';
+                                let grantee = '';
+                                let book_page = '';
+                                
+                                const columns = row.querySelectorAll('.searchResultThreeColumn, .col-md-4');
+                                for (const col of columns) {
+                                    const colText = col.innerText || '';
+                                    const boldEl = col.querySelector('b, strong, span.value');
+                                    const value = boldEl ? boldEl.innerText.trim() : '';
+                                    
+                                    if (colText.includes('Recording Date')) record_date = value;
+                                    if (colText.includes('Grantor')) grantor = value;
+                                    if (colText.includes('Grantee')) grantee = value;
+                                }
+                                
+                                // Parse Book/Page
+                                const headerText = row.innerText;
+                                const bpMatch = headerText.match(/B:\\s*(\\d+)\\s*P:\\s*(\\d+)/);
+                                if (bpMatch) {
+                                    book_page = `B: ${bpMatch[1]} P: ${bpMatch[2]}`;
+                                }
+                                
+                                return { doc_id, doc_number, doc_type, record_date, grantor, grantee, book_page };
+                            } catch (e) {
+                                return { error: e.toString() };
+                            }
+                        }""")
+                        
+                        if row_data and row_data.get("doc_id"):
+                            results.append(row_data)
+                    except Exception as e:
+                        print(f"    Error parsing row: {e}", flush=True)
+            else:
+                print(f"    No results found for {name} on {record_date}", flush=True)
+        
+        except Exception as e:
+            print(f"Name+Date search error: {e}")
             return [{"error": str(e)}]
         
         return results

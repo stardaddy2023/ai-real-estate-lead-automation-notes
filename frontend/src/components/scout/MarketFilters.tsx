@@ -56,101 +56,84 @@ export function MarketFilters() {
             </PopoverTrigger>
             <PopoverContent className="w-[400px] p-0 bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800 shadow-xl" align="end">
                 <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
-                    <h3 className="font-semibold text-lg">Filters</h3>
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground" onClick={handleReset}>
-                            <RotateCcw className="w-3 h-3 mr-1" /> Reset
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setOpen(false)}>
-                            <X className="w-4 h-4" />
-                        </Button>
-                    </div>
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                        Filters <span className="text-yellow-500">😎</span>
+                    </h3>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setOpen(false)}>
+                        <X className="w-4 h-4" />
+                    </Button>
                 </div>
 
-                <ScrollArea className="h-[600px] p-4">
-                    <div className="space-y-8 pr-4">
+                <div className="p-3 flex gap-2 overflow-x-auto border-b border-gray-100 dark:border-gray-800 scrollbar-hide">
+                    {/* Quick Filters (Chips) */}
+                    {['Cheapest', 'Most Expensive', 'Affordable', 'High Income', 'Most Overvalued'].map(chip => (
+                        <div key={chip} className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-medium rounded-full whitespace-nowrap cursor-pointer hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
+                            {chip}
+                        </div>
+                    ))}
+                </div>
 
-                        {/* 1. Home Value */}
+                <ScrollArea className="h-[500px] p-4">
+                    <div className="space-y-6 pr-4">
+
                         <FilterItem
                             label="Home Value"
                             range={homeValueRange}
                             setRange={setHomeValueRange}
                             min={0} max={2000000} step={10000}
                             format={formatCurrency}
+                            onRemove={() => { }}
                         />
 
-                        {/* 2. Home Price Forecast */}
                         <FilterItem
                             label="Home Price Forecast (%)"
                             range={forecastRange}
                             setRange={setForecastRange}
                             min={-20} max={20} step={1}
                             format={formatPercent}
+                            onRemove={() => { }}
                         />
 
-                        {/* 3. Home Value Growth YoY */}
                         <FilterItem
                             label="Home Value Growth (YoY)"
                             range={growthRange}
                             setRange={setGrowthRange}
                             min={-20} max={20} step={1}
                             format={formatPercent}
+                            onRemove={() => { }}
                         />
 
-                        {/* 4. Overvalued % */}
                         <FilterItem
                             label="Overvalued %"
                             range={overvaluedRange}
                             setRange={setOvervaluedRange}
                             min={-50} max={50} step={1}
                             format={formatPercent}
+                            onRemove={() => { }}
                         />
 
-                        {/* 5. Population Growth */}
                         <FilterItem
                             label="Population Growth"
                             range={popGrowthRange}
                             setRange={setPopGrowthRange}
                             min={-10} max={10} step={0.1}
                             format={formatPercent}
+                            onRemove={() => { }}
                         />
 
-                        {/* 6. Price Cut % */}
-                        <FilterItem
-                            label="Price Cut %"
-                            range={priceCutRange}
-                            setRange={setPriceCutRange}
-                            min={0} max={50} step={1}
-                            format={formatPercent}
-                        />
-
-                        {/* 7. Sale Inventory Growth YoY */}
-                        <FilterItem
-                            label="Sale Inventory Growth (YoY)"
-                            range={inventoryGrowthRange}
-                            setRange={setInventoryGrowthRange}
-                            min={-100} max={200} step={5}
-                            format={formatPercent}
-                        />
-
-                        {/* 8. Median Household Income */}
-                        <FilterItem
-                            label="Median Household Income"
-                            range={incomeRange}
-                            setRange={setIncomeRange}
-                            min={0} max={200000} step={5000}
-                            format={formatCurrency}
-                        />
-
-                        <Button variant="outline" className="w-full border-dashed text-muted-foreground gap-2">
+                        <Button variant="outline" className="w-full border-dashed text-red-500 border-red-200 hover:bg-red-50 dark:hover:bg-red-900/20 gap-2">
                             <PlusCircle className="w-4 h-4" /> Add data filters
                         </Button>
 
                     </div>
                 </ScrollArea>
 
-                <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
-                    <Button className="w-full bg-red-500 hover:bg-red-600 text-white">
+                <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 flex gap-3">
+                    <Button variant="outline" className="flex-1 border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600" onClick={handleReset}>
+                        Reset
+                    </Button>
+                    {/* Note: In a real app, this would apply the filters. For now it just closes. */}
+                    <Button className="flex-1 bg-red-500 hover:bg-red-600 text-white" onClick={() => setOpen(false)}>
                         Apply Filters
                     </Button>
                 </div>
@@ -167,15 +150,21 @@ interface FilterItemProps {
     max: number
     step: number
     format: (val: number) => string
+    onRemove: () => void
 }
 
-function FilterItem({ label, range, setRange, min, max, step, format }: FilterItemProps) {
+function FilterItem({ label, range, setRange, min, max, step, format, onRemove }: FilterItemProps) {
     return (
         <div className="space-y-3">
             <div className="flex justify-between items-center">
-                <span className="font-medium text-sm">{label}</span>
-                <X className="w-3 h-3 text-muted-foreground cursor-pointer hover:text-foreground" />
+                <span className="font-medium text-sm text-gray-700 dark:text-gray-200">{label}</span>
+                <X
+                    className="w-3 h-3 text-gray-400 cursor-pointer hover:text-red-500 transition-colors"
+                    onClick={onRemove}
+                />
             </div>
+
+            {/* Custom Styled Slider */}
             <Slider
                 defaultValue={[min, max]}
                 min={min}
@@ -184,12 +173,15 @@ function FilterItem({ label, range, setRange, min, max, step, format }: FilterIt
                 value={range}
                 onValueChange={setRange}
                 className="py-2"
+            // Note: We're using the default shadcn slider but we'd customize the track color in global css or via class overrides if needed.
+            // For now, assuming the theme handles the primary color (which we might want to force to red for this component).
             />
-            <div className="flex justify-between text-xs text-muted-foreground">
-                <div className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 min-w-[60px] text-center">
+
+            <div className="flex justify-between text-xs text-gray-500 font-medium">
+                <div className="px-3 py-1 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 shadow-sm min-w-[60px] text-center">
                     {format(range[0])}
                 </div>
-                <div className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 min-w-[60px] text-center">
+                <div className="px-3 py-1 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 shadow-sm min-w-[60px] text-center">
                     {format(range[1])}
                 </div>
             </div>

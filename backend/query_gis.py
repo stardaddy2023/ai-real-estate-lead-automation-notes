@@ -1,7 +1,7 @@
 import requests
 
 # Parcel ID (no dashes)
-parcel_id = "126090560"
+parcel_id = "13112041B"
 
 # Check Layer 4 as suggested by user
 layers = [
@@ -31,11 +31,9 @@ for layer_name, url in layers:
                     print(f"  Found {len(attrs)} fields (ALL):")
                     for k, v in sorted(attrs.items()):
                         print(f"    {k}: {v}")
-                else:
-                    # Look for pool, garage, exterior wall related fields
-                    interesting = {k: v for k, v in attrs.items() 
-                                  if any(x in k.upper() for x in ["POOL", "GARAGE", "CARPORT", "WALL", "EXTERIOR", "GUEST", "AREA", "LIVING"])}
-                    print(f"  Found {len(attrs)} fields, {len(interesting)} interesting:")
+                print(f"  Found {len(attrs)} fields (ALL):")
+                for k, v in sorted(attrs.items()):
+                    print(f"    {k}: {v}")
             else:
                 error = data.get("error", {})
                 if error:

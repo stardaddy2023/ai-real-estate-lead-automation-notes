@@ -217,8 +217,70 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
         setIsLoadingRecordings(true)
         setRecordingError(null)
         try {
+            // Construct URL with anchor parameters for smart filtering
+            const params = new URLSearchParams({
+                search_type: 'both',
+                deed_only: 'false',
+                limit: '20'
+            })
+
+            // Add anchor data if available from GIS
+            // Priority: seq_num from Recording Info, or use last_sold_date as anchor
+            if (extLead.seq_num && extLead.seq_num !== '0') {
+                params.append('anchor_seq', String(extLead.seq_num))
+            }
+            if (extLead.docket && extLead.docket !== '0') {
+                params.append('anchor_docket', String(extLead.docket))
+            }
+            if ((extLead as any).page && String((extLead as any).page) !== '0') {
+                params.append('anchor_page', String((extLead as any).page))
+            }
+
+            // Use record_date if available, otherwise fall back to last_sold_date
+            let anchorDateStr: string | null = null
+            if (extLead.record_date) {
+                // record_date from GIS layer - might be timestamp or string
+                if (typeof extLead.record_date === 'number') {
+                    anchorDateStr = new Date(extLead.record_date).toLocaleDateString('en-US')
+                } else {
+                    anchorDateStr = String(extLead.record_date)
+                }
+            } else if (extLead.last_sold_date) {
+                // last_sold_date is typically already a formatted string like "9/25/2019"
+                // Just use it as-is if it looks like a date, otherwise try to parse
+                const lastSold = String(extLead.last_sold_date)
+                if (lastSold.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+                    // Already in M/D/YYYY format, use as-is
+                    anchorDateStr = lastSold
+                } else {
+                    // Try to parse and format
+                    try {
+                        anchorDateStr = new Date(lastSold).toLocaleDateString('en-US')
+                    } catch {
+                        anchorDateStr = lastSold // Use as-is if parsing fails
+                    }
+                }
+            }
+
+            // Debug: Log all available fields to identify data issues
+            console.log('[RecorderSearch] Lead data:', {
+                source: extLead.source,
+                has_seq_num: 'seq_num' in lead,
+                has_record_date: 'record_date' in lead,
+                has_last_sold_date: 'last_sold_date' in lead,
+                seq_num: extLead.seq_num,
+                record_date: extLead.record_date,
+                last_sold_date: extLead.last_sold_date,
+                anchor_date: anchorDateStr,
+                available_keys: Object.keys(lead).join(', ')
+            })
+
+            if (anchorDateStr) {
+                params.append('anchor_date', anchorDateStr)
+            }
+
             // Search by owner name as BOTH grantor (seller) and grantee (buyer) to find all their documents
-            const response = await fetch(`http://127.0.0.1:8000/api/v1/recorder/search/name/${encodeURIComponent(lead.owner_name)}?search_type=both&deed_only=false&limit=20`)
+            const response = await fetch(`http://127.0.0.1:8000/api/v1/recorder/search/name/${encodeURIComponent(lead.owner_name)}?${params.toString()}`)
             if (!response.ok) {
                 // Check for 503 (session not active)
                 if (response.status === 503) {
@@ -633,16 +695,38 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
 
                                 {/* Recording Info Section - Always show with lookup button */}
                                 <div className="mt-3 pt-3 border-t border-gray-700">
-                                    <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                                        <Gavel className="h-3 w-3" /> Recording & Sale Info
-                                    </p>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <p className="text-xs text-gray-500 flex items-center gap-1">
+                                            <Gavel className="h-3 w-3" /> Recording & Sale Info
+                                        </p>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-6 text-xs border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                                            onClick={handleLookupRecordings}
+                                            disabled={isLoadingRecordings}
+                                        >
+                                            {isLoadingRecordings ? (
+                                                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                            ) : (
+                                                <Search className="h-3 w-3 mr-1" />
+                                            )}
+                                            Find Documents
+                                        </Button>
+                                    </div>
+
+                                    {recordingError && (
+                                        <div className="mb-2 p-2 bg-red-900/20 border border-red-500/30 rounded text-xs text-red-400">
+                                            {recordingError}
+                                        </div>
+                                    )}
 
                                     {/* Show existing data if available */}
                                     {(extLead.seq_num || extLead.last_sold_date || extLead.last_sold_price || extLead.docket || extLead.record_date) && (
                                         <div className="grid grid-cols-2 gap-3 text-sm mb-3">
                                             {extLead.seq_num && (
                                                 <div className="p-3 bg-gray-800/50 rounded-lg">
-                                                    <p className="text-xs text-gray-400">Sequence #</p>
+                                                    <p className="text-xs text-gray-400">Affidavit / Seq #</p>
                                                     <p className="font-medium text-white font-mono">{extLead.seq_num}</p>
                                                 </div>
                                             )}
@@ -679,9 +763,27 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
                                         </div>
                                     )}
 
-
+                                    {/* Recording History Results */}
+                                    {recordingHistory.length > 0 && (
+                                        <div className="mt-2 space-y-1">
+                                            <p className="text-xs text-gray-500 mb-1">Found Documents:</p>
+                                            {recordingHistory.map((doc, idx) => (
+                                                <div key={idx} className="flex items-center justify-between p-2 bg-gray-800/30 rounded border border-gray-700/50 text-xs">
+                                                    <div className="flex items-center gap-2">
+                                                        <FileText className="h-3 w-3 text-blue-400" />
+                                                        <span className="text-gray-300">{doc.doc_type}</span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="text-gray-400">{doc.record_date}</div>
+                                                        <div className="text-gray-500 font-mono">{doc.doc_number}</div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
+
 
                             {/* Location & Zoning Row */}
                             <div className="mt-3 pt-3 border-t border-gray-700">

@@ -276,36 +276,87 @@ async def search_by_sequence(seq_num: str):
 
 
 @router.get("/search/name/{name}", response_model=SearchResponse)
-async def search_by_name(name: str, search_type: str = "grantor", deed_only: bool = True, limit: int = 50):
+async def search_by_name(
+    name: str, 
+    search_type: str = "grantor", 
+    deed_only: bool = True, 
+    limit: int = 50,
+    # Anchor parameters for smart filtering
+    anchor_seq: Optional[str] = None,
+    anchor_docket: Optional[str] = None,
+    anchor_page: Optional[str] = None,
+    anchor_date: Optional[str] = None
+):
     """
     Search for documents by Grantor or Grantee name.
     
-    Args:
-        name: The name to search for (e.g., property owner name)
-        search_type: "grantor" (seller), "grantee" (buyer), or "both"
-        deed_only: If True, only return deed-related documents
-        limit: Maximum results to return
-        
-    Returns:
-        List of matching documents sorted by recording date (newest first)
+    V2 Strategy:
+    1. If anchor_seq provided: Search by sequence first to get exact deed and its date
+    2. Then search by name + date to find all related docs for that owner on that date
+    3. Return combined, deduplicated results
     """
     session = await get_session()
     
-    # Check if session is initialized - DON'T auto-init during search (blocks for CAPTCHA)
     if not session.initialized:
         raise HTTPException(
             status_code=503, 
             detail="Recorder session not active. Please open the Recorder page first to solve the CAPTCHA."
         )
     
-    results = await session.search_by_name(name, search_type=search_type, deed_types_only=deed_only, limit=limit)
+    all_results = []
+    anchor_date_from_seq = None
     
-    # Check for error in results
-    if results and "error" in results[0]:
-        error_msg = results[0]["error"]
-        if "Session not initialized" in error_msg or "browser closed" in error_msg:
-            raise HTTPException(status_code=503, detail=error_msg)
-        raise HTTPException(status_code=500, detail=error_msg)
+    # Step 1/2: If we have a sequence number, search for it first
+    if anchor_seq:
+        print(f"[Recorder API] Step 1/2: Searching by sequence {anchor_seq}", flush=True)
+        seq_results = await session.search_by_sequence(anchor_seq)
+        
+        if seq_results and "error" not in seq_results[0]:
+            for doc in seq_results:
+                all_results.append(doc)
+                # Extract the recording date from the anchor document
+                if doc.get("record_date") and not anchor_date_from_seq:
+                    anchor_date_from_seq = doc.get("record_date")
+                    print(f"[Recorder API] Found anchor date: {anchor_date_from_seq}", flush=True)
+    
+    # Step 3: Search by name + date 
+    # Use the date from seq search, or fall back to provided anchor_date
+    target_date = anchor_date_from_seq or anchor_date
+    
+    if target_date:
+        print(f"[Recorder API] Step 3: Searching by name '{name}' on date {target_date}", flush=True)
+        name_date_results = await session.search_by_name_and_date(
+            name=name,
+            record_date=target_date,
+            search_type=search_type,
+            limit=limit
+        )
+        
+        if name_date_results and "error" not in name_date_results[0]:
+            for doc in name_date_results:
+                all_results.append(doc)
+    else:
+        # No date available - fall back to regular name search with limit
+        print(f"[Recorder API] No date available, falling back to name search for '{name}'", flush=True)
+        fallback_results = await session.search_by_name(
+            name=name, 
+            search_type=search_type, 
+            deed_types_only=deed_only, 
+            limit=20  # Limit fallback to avoid too many unrelated results
+        )
+        if fallback_results and "error" not in fallback_results[0]:
+            all_results = fallback_results
+    
+    # Deduplicate by doc_number
+    seen_doc_numbers = set()
+    unique_results = []
+    for doc in all_results:
+        doc_num = doc.get("doc_number")
+        if doc_num and doc_num not in seen_doc_numbers:
+            seen_doc_numbers.add(doc_num)
+            unique_results.append(doc)
+    
+    print(f"[Recorder API] Returning {len(unique_results)} unique documents", flush=True)
     
     return SearchResponse(
         results=[
@@ -313,12 +364,14 @@ async def search_by_name(name: str, search_type: str = "grantor", deed_only: boo
                 doc_id=r.get("doc_id", ""),
                 doc_number=r.get("doc_number", ""),
                 doc_type=r.get("doc_type", ""),
-                record_date=r.get("record_date", "")
+                record_date=r.get("record_date", ""),
+                book_page=r.get("book_page"),
+                related_docs=r.get("related_docs")
             )
-            for r in results
+            for r in unique_results
         ],
-        total=len(results),
-        doc_type=f"NAME_SEARCH_{search_type.upper()}"
+        total=len(unique_results),
+        doc_type=f"SMART_SEARCH_{search_type.upper()}"
     )
 
 
