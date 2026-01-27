@@ -54,8 +54,10 @@ class ScoutService:
 
     def __init__(self):
         print("SCOUT SERVICE V4 - WITH COMPREHENSIVE LEAD CACHE")
-        # Pima County GIS - Parcels - Regional (Verified Public URL)
+    # Pima County GIS - Parcels - Regional (Verified Public URL)
         self.pima_parcels_url = "https://gisdata.pima.gov/arcgis1/rest/services/GISOpenData/LandRecords/MapServer/12/query"
+        # Pima County Assessor API (Hidden API for Sales Data)
+        self.pima_assessor_api_url = "https://www.asr.pima.gov/AssessorSiteData/api/get/parceldetails/"
         
         # Pinal County GIS - Assessor Info
         self.pinal_parcels_url = "https://rogue.casagrandeaz.gov/arcgis/rest/services/Pinal_County/Pinal_County_Assessor_Info/MapServer/0/query"
@@ -513,6 +515,63 @@ class ScoutService:
             print(f"Error fetching violations: {e}")
             return []
     
+    async def _fetch_assessor_data(self, session, parcel_id: str) -> Optional[Dict]:
+        """
+        Fetches detailed parcel data from Pima County Assessor Hidden API.
+        Used to get Sales Price which is missing from GIS layer.
+        """
+        if not parcel_id:
+            return None
+            
+        try:
+            url = self.pima_assessor_api_url
+            
+            # Mimic browser headers exactly
+            headers = {
+                "accept": "application/json, text/plain, */*",
+                "content-type": "application/x-www-form-urlencoded", # API expects this header even for JSON string body
+                "origin": "https://www.asr.pima.gov",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+            }
+            
+            # Payload is a JSON string passed as data
+            # We use 2025 as taxyear as verified
+            import datetime
+            payload = json.dumps({"parcel": parcel_id, "taxyear": datetime.datetime.now().year})
+            
+            async with session.post(url, headers=headers, data=payload, timeout=5) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    result = {}
+                    
+                    # Parse SalesInfo
+                    if "SalesInfo" in data and data["SalesInfo"]:
+                        # Get latest sale
+                        latest_sale = data["SalesInfo"][0]
+                        if latest_sale.get("SaleValue"):
+                            result["price"] = latest_sale.get("SaleValue")
+                        
+                        # Parse Date (format: Month/Year e.g. 2/2001)
+                        # or sometimes full date string?
+                        # User JSON showed: "SaleMonth":2,"SaleYear":2001
+                        if latest_sale.get("SaleYear"):
+                            month = latest_sale.get("SaleMonth", 1)
+                            year = latest_sale.get("SaleYear")
+                            # Create ISO string yyyy-mm-dd
+                            result["date"] = f"{year}-{month:02d}-01"
+                            
+                    # Parse Owner (Mailing)
+                    if "Mailing" in data and "Mailing" in data:
+                        mailing = data["Mailing"]
+                        if mailing.get("ParcelOwner"):
+                            result["owner_name"] = mailing.get("ParcelOwner").strip()
+                            
+                    return result
+        except Exception as e:
+            # print(f"Error fetching assessor data for {parcel_id}: {e}")
+            pass
+        return None
+
     async def _enrich_violations_with_parcel_data(self, leads: List[Dict]):
         """
         Enriches code violation leads with owner info from the parcel layer.
@@ -616,29 +675,9 @@ class ScoutService:
                                         lead["parcel_use_code"] = use_code
                                         
                                         # Common Pima County Use Codes
-                                        PROPERTY_USE_CODES = {
-                                            "0182": "Single Family Residence",
-                                            "0011": "Vacant Residential",
-                                            "0013": "Vacant Residential (Rural)",
-                                            "0111": "Single Family Residence",
-                                            "0113": "Single Family Residence (Rural)",
-                                            "0131": "Mobile Home",
-                                            "0133": "Mobile Home (Rural)",
-                                            "0300": "Multi-Family",
-                                            "0311": "Duplex",
-                                            "0312": "Triplex",
-                                            "0313": "Fourplex",
-                                            "0411": "Apartment",
-                                            "0210": "Commercial",
-                                            "0211": "Commercial Office",
-                                            "0212": "Commercial Retail",
-                                            "0213": "Commercial Service",
-                                            "0131": "Single Family Residence",
-                                        }
-                                        
-                                        if use_code in PROPERTY_USE_CODES:
-                                            lead["property_type"] = PROPERTY_USE_CODES[use_code]
-                                            lead["use_desc"] = PROPERTY_USE_CODES[use_code]
+                                        # --- Property Type Mapping (Centralized) ---
+                                        lead["property_type"] = self._map_parcel_use_to_type(use_code)
+                                        lead["use_desc"] = lead["property_type"]
                                         
                                         # --- Sales vs Recording Data ---
                                         
@@ -701,6 +740,24 @@ class ScoutService:
                                             
                                         if sale_price:
                                             lead["last_sold_price"] = sale_price
+                                        
+                                        # --- Fallback: Fetch from Pima Assessor API if missing ---
+                                        # Only if we don't have a valid price or date
+                                        if not lead.get("last_sold_price") or not lead.get("last_sold_date"):
+                                            # We need to fetch from the hidden API
+                                            # We'll do this serially for now inside the batch loop, or add to a secondary batch?
+                                            # Since this is "enrichment", we can just call it here.
+                                            # However, this function is `async def`, so we can await.
+                                            assessor_data = await self._fetch_assessor_data(session, attrs.get("PARCEL"))
+                                            if assessor_data:
+                                                if assessor_data.get("price") and not lead.get("last_sold_price"):
+                                                    lead["last_sold_price"] = assessor_data.get("price")
+                                                if assessor_data.get("date") and not lead.get("last_sold_date"):
+                                                    lead["last_sold_date"] = assessor_data.get("date")
+                                                # Also grab owner/mailing if missing (Assessor might be fresher)
+                                                if not lead.get("owner_name") and assessor_data.get("owner_name"):
+                                                    lead["owner_name"] = assessor_data.get("owner_name")
+
                                         
                                         # Check absentee
                                         prop_street = (lead.get("address_street") or "").upper().strip()
@@ -914,11 +971,9 @@ class ScoutService:
             return leads
         
         # Get the PARCEL_USE prefixes - use explicit subtypes if provided, else get from types
-        if property_subtypes:
-            prefixes = property_subtypes  # Use explicit codes like ['001'] for Vacant Residential
-            print(f"  Property subtype filter: using explicit codes {prefixes}")
-        else:
-            prefixes = self._get_codes_for_types(property_types)
+        all_types = (property_types or []) + (property_subtypes or [])
+        prefixes = self._get_codes_for_types(all_types)
+        print(f"  Property type filter resolved prefixes: {prefixes}")
             
         if not prefixes:
             return leads
@@ -3408,28 +3463,24 @@ class ScoutService:
         # 2. Property Type Filters (OR logic - any selected type matches)
         # Only apply filter if specific types selected (not empty, not "all")
         property_types = filters.get('property_types') or []
-        property_subtypes = filters.get('property_subtypes') or []  # Explicit parcel codes
+        property_subtypes = filters.get('property_subtypes') or []
+        
+        # Combine types and subtypes for resolution
+        all_types = property_types + property_subtypes
         
         # DEBUG: Log what filter values we received
-        print(f"DEBUG FILTER: property_types={property_types}, property_subtypes={property_subtypes}", flush=True)
+        print(f"DEBUG FILTER: property_types={property_types}, property_subtypes={property_subtypes}, combined={all_types}", flush=True)
         
-        if property_subtypes:
-            # Use explicit sub-type codes directly (e.g. "001" for Vacant Land - Residential)
-            prefixes = property_subtypes
-            print(f"DEBUG FILTER: Using property_subtypes as prefixes: {prefixes}", flush=True)
-        elif property_types and "all" not in [t.lower() for t in property_types]:
-            prefixes = self._get_codes_for_types(property_types)
-            print(f"DEBUG FILTER: Using property_types codes: {prefixes}", flush=True)
+        if all_types and "all" not in [t.lower() for t in all_types]:
+            prefixes = self._get_codes_for_types(all_types)
+            print(f"DEBUG FILTER: Using resolved codes: {prefixes}", flush=True)
         else:
             prefixes = []
             print(f"DEBUG FILTER: No property type filter applied", flush=True)
             
         if prefixes:
             # Use LIKE 'prefix%' for each prefix, combined with OR
-            # e.g. (PARCEL_USE LIKE '01%' OR PARCEL_USE LIKE '03%')
-            # Add Guest House filter (018x) if requested
-            # CRITICAL FIX: If Guest House is requested, we should PRIORITIZE it over generic Single Family (01)
-            # Otherwise, the limit (100) gets filled with standard SFRs (0100) and we filter them all out later
+            # e.g. (PARCEL_USE LIKE '0131%' OR PARCEL_USE LIKE '0111%')
             if filters.get("has_guest_house"):
                 print("DEBUG: Optimizing Guest House search - Replacing generic '01'/'87' with '018'")
                 # Remove generic SFR prefixes if present
@@ -3438,12 +3489,9 @@ class ScoutService:
                 # Add specific Guest House prefix
                 if "018" not in prefixes: prefixes.append("018")
                 
-                # Re-generate conditions with updated prefixes
-                prefix_conditions = [f"PARCEL_USE LIKE '{p}%'" for p in prefixes]
-            else:
-                prefix_conditions = [f"PARCEL_USE LIKE '{p}%'" for p in prefixes]
-                
+            prefix_conditions = [f"PARCEL_USE LIKE '{p}%'" for p in prefixes]
             where_parts.append(f"({' OR '.join(prefix_conditions)})")
+            
         elif filters.get("has_guest_house"):
             # Guest House ONLY (no other types selected)
             print("DEBUG: Filtering for Guest House ONLY (018%)")
@@ -3455,7 +3503,14 @@ class ScoutService:
         where_clause = " AND ".join(where_parts)
         
         # DEBUG: Log the exact WHERE clause being used
-        print(f"  GIS Query WHERE clause: {where_clause}")
+        print(f"DEBUG: Final prefixes: {prefixes}")
+        print(f"DEBUG: GIS Query WHERE clause: {where_clause}")
+        
+        try:
+            with open("debug_query.txt", "a") as f:
+                 f.write(f"\n--- SEARCH QUERY ---\nTypes: {all_types}\nPrefixes: {prefixes}\nWHERE: {where_clause}\n--------------------\n")
+        except:
+             pass
         
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
@@ -4051,9 +4106,8 @@ class ScoutService:
         
         code = str(parcel_use).strip()
         
-        # 4-digit codes with full descriptions
         full_code_map = {
-            # Vacant Land (00-XX)
+            # --- Vacant Land (00-XX) ---
             "0010": "Vacant Land - Undetermined",
             "0011": "Vacant Land - Residential, Urban Subdivided",
             "0012": "Vacant Land - Residential, Urban Non-Subdivided",
@@ -4072,34 +4126,91 @@ class ScoutService:
             "0071": "Vacant Land - Incomplete Subdivision, Urban Subdivided",
             "0080": "Vacant Land - Manufactured Home",
             
-            # Single Family (01-XX) - Site ≤5 Acres
+            # --- Single Family Residential (01-XX) ---
+            # Site <= 5 Acres
             "0100": "Single Family Residential - Site ≤5 Acres",
             "0101": "Single Family Residential - Site ≤5 Acres, Urban Subdivided",
             "0102": "Single Family Residential - Site ≤5 Acres, Urban Non-Subdivided",
             "0103": "Single Family Residential - Site ≤5 Acres, Rural Subdivided",
             "0104": "Single Family Residential - Site ≤5 Acres, Rural Non-Subdivided",
+            
+            # Grades (Standard)
             "0110": "Single Family Residential - Grade 1",
+            "0111": "Single Family Residential - Grade 1 (Urban Subdivided)",
+            "0112": "Single Family Residential - Grade 1 (Urban Non-Subdivided)",
+            "0113": "Single Family Residential - Grade 1 (Rural Subdivided)",
+            "0114": "Single Family Residential - Grade 1 (Rural Non-Subdivided)",
+            
             "0120": "Single Family Residential - Grade 2",
+            "0121": "Single Family Residential - Grade 2 (Urban Subdivided)",
+            "0122": "Single Family Residential - Grade 2 (Urban Non-Subdivided)",
+            "0123": "Single Family Residential - Grade 2 (Rural Subdivided)",
+            "0124": "Single Family Residential - Grade 2 (Rural Non-Subdivided)",
+            
             "0130": "Single Family Residential - Grade 3",
             "0131": "Single Family Residential - Grade 3 (Urban Subdivided)",
-            "0140": "Single Family Residential - Grade 4",
-            "0150": "Single Family Residential - Grade 5",
-            "0180": "Single Family Residential - With Additional Unit",
-            "0190": "Single Family Residential - Miscellaneous Improvements",
+            "0132": "Single Family Residential - Grade 3 (Urban Non-Subdivided)",
+            "0133": "Single Family Residential - Grade 3 (Rural Subdivided)",
+            "0134": "Single Family Residential - Grade 3 (Rural Non-Subdivided)",
             
-            # Multi-Family (03-XX)
-            "0310": "Multi-Family - Mixed Complex",
+            "0140": "Single Family Residential - Grade 4",
+            "0141": "Single Family Residential - Grade 4 (Urban Subdivided)",
+            "0142": "Single Family Residential - Grade 4 (Urban Non-Subdivided)",
+            "0143": "Single Family Residential - Grade 4 (Rural Subdivided)",
+            "0144": "Single Family Residential - Grade 4 (Rural Non-Subdivided)",
+            
+            "0150": "Single Family Residential - Grade 5",
+            "0151": "Single Family Residential - Grade 5 (Urban Subdivided)",
+            "0152": "Single Family Residential - Grade 5 (Urban Non-Subdivided)",
+            "0153": "Single Family Residential - Grade 5 (Rural Subdivided)",
+            "0154": "Single Family Residential - Grade 5 (Rural Non-Subdivided)",
+            
+            # Guest Houses / Additional Units
+            "0180": "Single Family Residential - With Additional Unit",
+            "0181": "Single Family Residential - With Additional Unit (Urban Subdivided)",
+            "0182": "Single Family Residential - With Additional Unit (Urban Non-Subdivided)",
+            "0183": "Single Family Residential - With Additional Unit (Rural Subdivided)",
+            "0184": "Single Family Residential - With Additional Unit (Rural Non-Subdivided)",
+            
+            # Misc
+            "0190": "Single Family Residential - Miscellaneous Improvements",
+            "0191": "Single Family Residential - Misc Improvements (Urban Subdivided)",
+            "0192": "Single Family Residential - Misc Improvements (Urban Non-Subdivided)",
+            "0193": "Single Family Residential - Misc Improvements (Rural Subdivided)",
+            "0194": "Single Family Residential - Misc Improvements (Rural Non-Subdivided)",
+            
+            # --- PUD (02-XX) ---
+            "0200": "PUD - Common Area",
+            "0260": "PUD - Residential Common Area", # Explicitly map this to avoid Multi-Family confusion
+
+            # --- Multi-Family (03-XX) ---
+            "0300": "Multi-Family - Unspecified",
+            "0310": "Multi-Family - Mixed Complex (Duplex-Fourplex)",
+            "0311": "Multi-Family - Mixed Complex (Urban Subdivided)",
+            "0312": "Multi-Family - Mixed Complex (Urban Non-Subdivided)",
+            
             "0320": "Multi-Family - Duplex",
             "0321": "Multi-Family - Duplex (2-4 Buildings)",
             "0330": "Multi-Family - Triplex",
             "0340": "Multi-Family - Fourplex",
+            
             "0350": "Multi-Family - Apartments (5-24 Units)",
             "0360": "Multi-Family - Apartments (25-99 Units)",
             "0370": "Multi-Family - Apartments (100+ Units)",
             "0380": "Multi-Family - Boarding/Rooming House",
             "0390": "Multi-Family - Apartment Cooperative",
             
-            # Condo/Townhouse (07-XX)
+            # --- Commercial (Typical) ---
+            "0410": "Hotel",
+            "0510": "Motel",
+            "1110": "Store (Retail)",
+            "1112": "Store (Retail) - Supermarket",
+            "1510": "Office Building",
+            "1520": "Medical Office",
+            "3710": "Warehouse",
+            "3750": "Mini-Warehouse (Self Storage)",
+            
+            # --- Condo/Townhouse (07-XX) ---
             "0710": "Condo/Townhouse",
             "0720": "Condo/Townhouse - Grade 2",
             "0730": "Condo/Townhouse - Grade 3",
@@ -4108,7 +4219,7 @@ class ScoutService:
             "0780": "Condo/Townhouse - Common Area w/ Improvements",
             "0790": "Condo/Townhouse - Common Area w/o Improvements",
             
-            # Manufactured Homes (08-XX)
+            # --- Mobile Homes (08-XX) ---
             "0810": "Manufactured Home Subdivision",
             "0820": "Manufactured Home - Subdivided Lot",
             "0830": "Manufactured Home - Non-Subdivided",
@@ -4117,9 +4228,12 @@ class ScoutService:
             "0860": "Manufactured Home Cooperative",
             "0890": "Manufactured Home/RV Park - Mixed",
             
-            # Rural Residential (87-XX) - Site >5 Acres
+            # --- Rural Residential > 5 Acres (87-XX) ---
             "8710": "Single Family Residential - Site >5 Acres",
             "8711": "Single Family Residential - Site >5 Acres, Urban Subdivided",
+            "8712": "Single Family Residential - Site >5 Acres, Urban Non-Subdivided",
+            "8713": "Single Family Residential - Site >5 Acres, Rural Subdivided",
+            "8714": "Single Family Residential - Site >5 Acres, Rural Non-Subdivided",
             "8720": "Single Family Residential - Site >5 Acres, Multiple Residences",
             "8730": "Rural Residential - Unsecured Manufactured Home",
             "8740": "Rural Residential - Secured Manufactured Home",
@@ -4129,6 +4243,13 @@ class ScoutService:
         # Check for exact 4-digit match first
         if code in full_code_map:
             return full_code_map[code]
+            
+        # Smart Range Mapping for Multi-Family Subtypes (03xx)
+        # Catch-all for specific unit counts even if exact code is missing (e.g. 0366 -> 0360)
+        if code.startswith("035"): return "Multi-Family - Apartments (5-24 Units)"
+        if code.startswith("036"): return "Multi-Family - Apartments (25-99 Units)"
+        if code.startswith("037"): return "Multi-Family - Apartments (100+ Units)"
+        if code.startswith("038"): return "Multi-Family - Boarding/Rooming House"
         
         # 2-digit prefix mapping with general descriptions
         prefix_map = [
@@ -4256,44 +4377,133 @@ class ScoutService:
 
     def _get_codes_for_types(self, types: List[str]) -> List[str]:
         """
-        Maps friendly property types to Pima County Use Code PREFIXES (2 digits).
+        Maps friendly property types to Pima County Use Code PREFIXES (2-4 digits).
         The query logic will use LIKE 'prefix%' to match all subtypes.
         Reference: Pima County Property Use Code Manual
         """
+        prefixes = []
+        
+        # Helper to decide if we've handled a type to avoid double matching
+        handled_types = set()
+        
+        # 1. Single Family
+        sfr_subtypes_selected = any(t in types for t in [
+            "Urban Subdivided", "Urban Non-Subdivided", 
+            "Rural Subdivided", "Rural Non-Subdivided", 
+            "With Guest House / Affixed MH"
+        ])
+        
+        if "Single Family" in types and not sfr_subtypes_selected:
+            prefixes.extend(["01", "87"])
+            handled_types.add("Single Family")
+            
+        # Specific SFR Filters
+        if "Urban Subdivided" in types:
+            base_sfr = ["010", "011", "012", "013", "014", "015", "018", "019", "871"]
+            prefixes.extend([f"{b}1" for b in base_sfr]) 
+            handled_types.add("Urban Subdivided")
+
+        if "Urban Non-Subdivided" in types:
+            base_sfr = ["010", "011", "012", "013", "014", "015", "018", "019", "871"]
+            prefixes.extend([f"{b}2" for b in base_sfr])
+            handled_types.add("Urban Non-Subdivided")
+
+        if "Rural Subdivided" in types:
+            base_sfr = ["010", "011", "012", "013", "014", "015", "018", "019", "871"]
+            prefixes.extend([f"{b}3" for b in base_sfr])
+            handled_types.add("Rural Subdivided")
+            
+        if "Rural Non-Subdivided" in types:
+            base_sfr = ["010", "011", "012", "013", "014", "015", "018", "019", "871"]
+            prefixes.extend([f"{b}4" for b in base_sfr])
+            handled_types.add("Rural Non-Subdivided")
+            
+        if "With Guest House / Affixed MH" in types:
+            prefixes.append("018")
+            handled_types.add("With Guest House / Affixed MH")
+
+        # 2. Multi-Family
+        mf_subtypes_selected = any(t in types for t in [
+            "Duplex/Triplex/Fourplex", "Apartments 5-24", 
+            "Apartments 25-99", "Apartments 100+"
+        ])
+        
+        if "Multi-Family" in types and not mf_subtypes_selected:
+            prefixes.append("03")
+            handled_types.add("Multi-Family")
+        
+        if "Duplex/Triplex/Fourplex" in types:
+            prefixes.extend(["031", "032", "033", "034"])
+            handled_types.add("Duplex/Triplex/Fourplex")
+            
+        if "Apartments 5-24" in types:
+            prefixes.append("035")
+            handled_types.add("Apartments 5-24")
+            
+        if "Apartments 25-99" in types:
+            prefixes.append("036")
+            handled_types.add("Apartments 25-99")
+            
+        if "Apartments 100+" in types:
+            prefixes.append("037")
+            handled_types.add("Apartments 100+")
+
+        # 3. Mobile Homes
+        mh_subtypes_selected = any(t in types for t in [
+            "Individual Mobile Home", "Mobile Home Park"
+        ])
+
+        if "Mobile Homes" in types and not mh_subtypes_selected:
+            prefixes.append("08")
+            handled_types.add("Mobile Homes")
+            
+        if "Individual Mobile Home" in types:
+            prefixes.extend(["081", "082", "083"])
+            handled_types.add("Individual Mobile Home")
+            
+        if "Mobile Home Park" in types:
+            prefixes.extend(["084", "085", "086", "089"])
+            handled_types.add("Mobile Home Park")
+
+        # 4. Standard Categories (Legacy/Unchanged)
         type_map = {
-            # Residential
-            "Single Family": ["01", "87"], # 01=SFR, 87=Rural SFR (>5 acres)
-            "Mobile Home": ["081", "082", "083"], # Individual Mobile Homes
-            "Mobile Home Park": ["084", "085"], # MH Parks (Commercial)
-            "Condo": ["07"], # 07=Condos/Townhouses
+            "Condo": ["07"],
             "Townhouse": ["07"],
-            # Multi-Family
-            "Multi-Family": ["03"], # 03=Multi-Res (Duplex, Triplex, Apts)
-            "Multi Family": ["03"],
-            # Commercial & Specialty
             "Commercial": ["04", "05", "06", "10", "11", "13", "14", "15", 
-                          "16", "17", "18", "19", "20", "21", "22", "23", "24", 
-                          "25", "27", "29", "30"], # Removed 12, 26, 28, 37 to be specific if needed
-            "Mixed Use": ["12"], # Store + Apt
-            "Parking": ["26"], # Garage/Carport/Lot
-            "Partially Complete": ["28"], # Distress Indicator
-            "Industrial / Storage": ["37"], # Warehouses, Mini-Storage
-            "Salvage / Teardown": ["09"], # Improvements with little/no value
-            # Land / Agricultural
+                           "16", "17", "18", "19", "20", "21", "22", "23", "24", 
+                           "25", "27", "29", "30"],
+            "Retail": ["11", "13", "14"],
+            "Office": ["15"],
+            "Industrial": ["30", "37"],
+            "Mixed Use": ["12"],
+            "Parking": ["26"],
+            "Partially Complete": ["28"],
+            "Industrial / Storage": ["37"],
+            "Salvage / Teardown": ["09"],
             "Vacant Land": ["00", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49"],
-            "Land": ["00", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49"]
         }
         
-        prefixes = []
         for t in types:
-            # Exact match first to avoid "Mobile Home" matching "Mobile Home Park" incorrectly
+            if t in handled_types:
+                continue
+                
             if t in type_map:
                 prefixes.extend(type_map[t])
             else:
-                # Fuzzy match fallback (careful with overlaps)
+                # Fuzzy match fallback
+                found = False
                 for key, val in type_map.items():
                     if t.lower() in key.lower() or key.lower() in t.lower():
                         prefixes.extend(val)
+                        found = True
+                if not found:
+                    # If specific subtypes passed that we didn't handle explicitly above
+                    # e.g. "Residential" (Vacant Land subtype)
+                    if t == "Residential": prefixes.append("001")
+                    elif t == "Commercial" and "Vacant Land" in types: prefixes.append("002") # Ambiguous if just "Commercial"
+                    elif t == "Office/Bank": prefixes.extend(["15", "16"])
+                    elif t == "Retail/Store": prefixes.extend(["11", "13", "14"])
+                    
         return list(set(prefixes))
 
     async def _enrich_with_tucson_data(self, leads: List[Dict]):

@@ -60,7 +60,7 @@ export default function LeadScout() {
     const [isDetailOpen, setIsDetailOpen] = useState(false)
     const [hoveredLeadId, setHoveredLeadId] = useState<string | null>(null)
     const [includePropertyDetails, setIncludePropertyDetails] = useState(false) // Default OFF for fast mode
-    const [sidebarOpen, setSidebarOpen] = useState(true) // Right sidebar open/closed state
+    const [sidebarOpen, setSidebarOpen] = useState(false) // Right sidebar open/closed state
     const [listFilter, setListFilter] = useState('') // Local filter for DataTable view
     const [filterOpen, setFilterOpen] = useState(false) // Filter dropdown open state
     const [filterSearch, setFilterSearch] = useState('') // Search within filter options
@@ -430,6 +430,7 @@ export default function LeadScout() {
             }
 
             setLeadScoutState({ results: leads, loading: false })
+            setSidebarOpen(false) // Ensure sidebar is closed on search results
 
             if (warning) {
                 toast({
@@ -605,6 +606,8 @@ export default function LeadScout() {
     const handleMarkerClick = (lead: ScoutResult) => {
         // Open sidebar and scroll to the clicked property
         setSidebarOpen(true)
+        setSelectedLead(lead)
+        setIsDetailOpen(true)
         setLeadScoutState({ highlightedLeadId: lead.id, panToLeadId: lead.id, lastViewedLeadId: lead.id })
 
         // Scroll to item in list

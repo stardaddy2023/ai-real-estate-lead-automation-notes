@@ -11,7 +11,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from app.services.pipeline.scout import ScoutService
 
 async def debug_property_display():
-    apn = "131121240"
+    apn = "131112150"
     print(f"Debugging Property Display for APN: {apn}...")
     
     # 1. Search by PARCEL in GIS

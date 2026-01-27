@@ -683,105 +683,9 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
                                     </div>
                                 )}
 
-                                {/* Assessor Link - only show for non-MLS leads (MLS has "View Original Listing" in Listing Details) */}
-                                {extLead.assessor_url && !isMLSListing && (
-                                    <div className="mt-3 pt-3 border-t border-gray-700">
-                                        <a href={extLead.assessor_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full p-2 bg-blue-900/20 border border-blue-500/30 rounded-lg text-blue-400 hover:bg-blue-900/40 transition-colors text-sm gap-2">
-                                            <FileText className="h-4 w-4" />
-                                            View Official Assessor Record
-                                        </a>
-                                    </div>
-                                )}
 
-                                {/* Recording Info Section - Always show with lookup button */}
-                                <div className="mt-3 pt-3 border-t border-gray-700">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <p className="text-xs text-gray-500 flex items-center gap-1">
-                                            <Gavel className="h-3 w-3" /> Recording & Sale Info
-                                        </p>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-6 text-xs border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
-                                            onClick={handleLookupRecordings}
-                                            disabled={isLoadingRecordings}
-                                        >
-                                            {isLoadingRecordings ? (
-                                                <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                                            ) : (
-                                                <Search className="h-3 w-3 mr-1" />
-                                            )}
-                                            Find Documents
-                                        </Button>
-                                    </div>
 
-                                    {recordingError && (
-                                        <div className="mb-2 p-2 bg-red-900/20 border border-red-500/30 rounded text-xs text-red-400">
-                                            {recordingError}
-                                        </div>
-                                    )}
 
-                                    {/* Show existing data if available */}
-                                    {(extLead.seq_num || extLead.last_sold_date || extLead.last_sold_price || extLead.docket || extLead.record_date) && (
-                                        <div className="grid grid-cols-2 gap-3 text-sm mb-3">
-                                            {extLead.seq_num && (
-                                                <div className="p-3 bg-gray-800/50 rounded-lg">
-                                                    <p className="text-xs text-gray-400">Affidavit / Seq #</p>
-                                                    <p className="font-medium text-white font-mono">{extLead.seq_num}</p>
-                                                </div>
-                                            )}
-                                            {extLead.docket && (
-                                                <div className="p-3 bg-gray-800/50 rounded-lg">
-                                                    <p className="text-xs text-gray-400">Docket/Page</p>
-                                                    <p className="font-medium text-white">{extLead.docket}{extLead.page ? ` / ${extLead.page}` : ''}</p>
-                                                </div>
-                                            )}
-                                            {extLead.record_date && (
-                                                <div className="p-3 bg-gray-800/50 rounded-lg">
-                                                    <p className="text-xs text-gray-400">Recording Date</p>
-                                                    <p className="font-medium text-white">
-                                                        {typeof extLead.record_date === 'number'
-                                                            ? new Date(extLead.record_date).toLocaleDateString()
-                                                            : extLead.record_date}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            {extLead.last_sold_date && (
-                                                <div className="p-3 bg-gray-800/50 rounded-lg">
-                                                    <p className="text-xs text-gray-400">Last Sale Date</p>
-                                                    <p className="font-medium text-white">
-                                                        {new Date(extLead.last_sold_date).toLocaleDateString()}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            {extLead.last_sold_price && (
-                                                <div className="p-3 bg-gray-800/50 rounded-lg">
-                                                    <p className="text-xs text-gray-400">Last Sale Price</p>
-                                                    <p className="font-medium text-green-400">{formatCurrency(extLead.last_sold_price)}</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Recording History Results */}
-                                    {recordingHistory.length > 0 && (
-                                        <div className="mt-2 space-y-1">
-                                            <p className="text-xs text-gray-500 mb-1">Found Documents:</p>
-                                            {recordingHistory.map((doc, idx) => (
-                                                <div key={idx} className="flex items-center justify-between p-2 bg-gray-800/30 rounded border border-gray-700/50 text-xs">
-                                                    <div className="flex items-center gap-2">
-                                                        <FileText className="h-3 w-3 text-blue-400" />
-                                                        <span className="text-gray-300">{doc.doc_type}</span>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <div className="text-gray-400">{doc.record_date}</div>
-                                                        <div className="text-gray-500 font-mono">{doc.doc_number}</div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
                             </div>
 
 
@@ -837,6 +741,16 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Assessor Link - Moved Here */}
+                            {extLead.assessor_url && !isMLSListing && (
+                                <div className="mt-3 pt-3 border-t border-gray-700">
+                                    <a href={extLead.assessor_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full p-2 bg-blue-900/20 border border-blue-500/30 rounded-lg text-blue-400 hover:bg-blue-900/40 transition-colors text-sm gap-2">
+                                        <FileText className="h-4 w-4" />
+                                        View Official Assessor Record
+                                    </a>
+                                </div>
+                            )}
                         </AccordionContent>
                     </AccordionItem>
 
@@ -916,6 +830,43 @@ export function LeadDetailDialog({ lead, open, onOpenChange, results, onNextLead
                                             </div>
                                         </div>
                                     ))}
+                                </div>
+                            )}
+
+                            {/* Recording Info Section - Moved Here & Expanded to 4 cols */}
+                            {(extLead.seq_num || extLead.last_sold_date || extLead.last_sold_price || extLead.docket || extLead.record_date) && (
+                                <div className="mt-4 pt-3 border-t border-gray-700">
+                                    <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                                        <FileText className="h-3 w-3" /> Property Recording Details
+                                    </p>
+                                    <div className="grid grid-cols-4 gap-2 text-sm">
+                                        {/* Field 1: Invoice/Seq */}
+                                        <div className="p-2 bg-gray-800/50 rounded-lg">
+                                            <p className="text-[10px] text-gray-400">Affidavit / Seq #</p>
+                                            <p className="font-medium text-white font-mono text-xs text-ellipsis overflow-hidden">{extLead.seq_num || "—"}</p>
+                                        </div>
+                                        {/* Field 2: Docket */}
+                                        <div className="p-2 bg-gray-800/50 rounded-lg">
+                                            <p className="text-[10px] text-gray-400">Docket/Page</p>
+                                            <p className="font-medium text-white text-xs">{extLead.docket ? `${extLead.docket}${extLead.page ? `/${extLead.page}` : ''}` : "—"}</p>
+                                        </div>
+                                        {/* Field 3: Recording Date */}
+                                        <div className="p-2 bg-gray-800/50 rounded-lg">
+                                            <p className="text-[10px] text-gray-400">Recording Date</p>
+                                            <p className="font-medium text-white text-xs text-ellipsis overflow-hidden">
+                                                {extLead.record_date ? (typeof extLead.record_date === 'number'
+                                                    ? new Date(extLead.record_date).toLocaleDateString()
+                                                    : extLead.record_date) : "—"}
+                                            </p>
+                                        </div>
+                                        {/* Field 4: Last Sale (Combined Date/Price if possible, or just Date) */}
+                                        <div className="p-2 bg-gray-800/50 rounded-lg">
+                                            <p className="text-[10px] text-gray-400">Last Sale</p>
+                                            <p className="font-medium text-white text-xs">
+                                                {extLead.last_sold_date ? new Date(extLead.last_sold_date).toLocaleDateString() : "—"}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </AccordionContent>

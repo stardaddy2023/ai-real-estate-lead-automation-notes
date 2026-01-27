@@ -13,17 +13,32 @@ import { useToast } from '@/components/ui/use-toast'
 export const PROPERTY_TYPES_WITH_SUBTYPES: Record<string, { codes: string[], subtypes: { name: string, code: string }[] | null }> = {
     "Single Family": {
         codes: ["01", "87"],
-        subtypes: null  // No sub-types
-    },
-    "Multi Family": {
-        codes: ["03", "02"],
         subtypes: [
-            { name: "Duplex/Triplex", code: "02" },
-            { name: "Apartments", code: "03" }
+            { name: "Urban Subdivided", code: "Urban Subdivided" },
+            { name: "Urban Non-Subdivided", code: "Urban Non-Subdivided" },
+            { name: "Rural Subdivided", code: "Rural Subdivided" },
+            { name: "Rural Non-Subdivided", code: "Rural Non-Subdivided" },
+            { name: "With Guest House / Affixed MH", code: "With Guest House / Affixed MH" }
+        ]
+    },
+    "Multi-Family": {
+        codes: ["03"],
+        subtypes: [
+            { name: "Duplex/Triplex/Fourplex", code: "Duplex/Triplex/Fourplex" },
+            { name: "Apartments 5-24", code: "Apartments 5-24" },
+            { name: "Apartments 25-99", code: "Apartments 25-99" },
+            { name: "Apartments 100+", code: "Apartments 100+" }
+        ]
+    },
+    "Mobile Homes": {
+        codes: ["08"],
+        subtypes: [
+            { name: "Individual Mobile Home", code: "Individual Mobile Home" },
+            { name: "Mobile Home Park", code: "Mobile Home Park" }
         ]
     },
     "Condo": {
-        codes: ["04", "05"],
+        codes: ["07"],
         subtypes: null
     },
     "Vacant Land": {
@@ -31,32 +46,28 @@ export const PROPERTY_TYPES_WITH_SUBTYPES: Record<string, { codes: string[], sub
         // Using 3-digit prefixes for LIKE 'prefix%' matching
         codes: ["00"],  // All vacant land starts with 00
         subtypes: [
-            { name: "Residential", code: "001" },   // Matches 0011, 0012, 0013, 0014
-            { name: "Commercial", code: "002" },    // Matches 0020, 0021, 0022, 0026
-            { name: "Industrial", code: "003" },    // Matches 0030, 0031, 0032
-            { name: "Condo", code: "004" }          // Matches 0040, 0041
+            { name: "Residential", code: "Residential" },   // Matches 0011, 0012, 0013, 0014
+            { name: "Commercial", code: "Commercial" },    // Matches 0020, 0021, 0022, 0026
+            { name: "Industrial", code: "Industrial" },    // Matches 0030, 0031, 0032
+            { name: "Condo", code: "Condo" }          // Matches 0040, 0041
         ]
     },
     "Commercial": {
         codes: ["10", "11", "12", "13", "14", "15", "16", "17", "18", "19"],
         subtypes: [
-            { name: "Office/Bank", code: "10" },
-            { name: "Retail/Store", code: "11" },
-            { name: "Auto/Service", code: "12" },
-            { name: "Restaurant", code: "13" },
-            { name: "Hotel/Motel", code: "14" }
+            { name: "Office/Bank", code: "Office/Bank" },
+            { name: "Retail/Store", code: "Retail/Store" },
+            { name: "Auto/Service", code: "Auto/Service" },
+            { name: "Restaurant", code: "Restaurant" },
+            { name: "Hotel/Motel", code: "Hotel/Motel" }
         ]
-    },
-    "Mobile Home Park": {
-        codes: ["07", "08"],
-        subtypes: null
     },
     "Industrial / Storage": {
         codes: ["20", "21", "22", "23", "24", "25"],
         subtypes: [
-            { name: "Manufacturing", code: "20" },
-            { name: "Warehouse", code: "21" },
-            { name: "Mining/Quarry", code: "23" }
+            { name: "Manufacturing", code: "Manufacturing" },
+            { name: "Warehouse", code: "Warehouse" },
+            { name: "Mining/Quarry", code: "Mining/Quarry" }
         ]
     },
     "Parking": {
